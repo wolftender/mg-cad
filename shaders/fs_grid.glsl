@@ -4,6 +4,7 @@ in vec4 vertex_color;
 in vec4 world_pos;
 in vec4 local_pos;
 in vec4 view_pos;
+in vec4 proj_pos;
 
 out vec4 output_color;
 

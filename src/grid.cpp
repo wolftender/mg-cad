@@ -1,4 +1,4 @@
-#include "../include/grid.hpp"
+#include "grid.hpp"
 
 namespace mini {
 	constexpr std::array<float, 12> plane_positions = {

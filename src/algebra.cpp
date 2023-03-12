@@ -1,5 +1,5 @@
 #include <stdexcept>
-#include "../include/algebra.hpp"
+#include "algebra.hpp"
 
 namespace mini {
 	float_vector_t normalize (const float_vector_t & vector) {

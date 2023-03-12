@@ -1,6 +1,6 @@
 #include <cassert>
 
-#include "../include/context.hpp"
+#include "context.hpp"
 
 namespace mini {
 	// basic shaders to render the screen buffer

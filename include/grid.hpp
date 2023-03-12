@@ -1,5 +1,5 @@
 #pragma once
-#include "../include/context.hpp"
+#include "context.hpp"
 
 namespace mini {
 	class grid_object : public graphics_obj_t {

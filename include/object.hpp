@@ -1,12 +1,31 @@
 #pragma once
-#include "../include/context.hpp"
+#include "context.hpp"
+#include "algebra.hpp"
 
 namespace mini {
 	class scene_obj_t : public graphics_obj_t {
-		public:
-			virtual const std::string& get_type_name () const = 0;
-			virtual void configure () = 0;
+		private:
+			std::string m_type_name;
 
-			virtual ~scene_obj_t () { }
+			float_vector_t m_translation;
+			float_vector_t m_euler_angles;
+			float_vector_t m_scale;
+
+		public:
+			const std::string & get_type_name () const;
+
+			const float_vector_t & get_translation () const;
+			const float_vector_t & get_euler_angles () const;
+			const float_vector_t & get_scale () const;
+
+			void set_translation (const float_vector_t & translation);
+			void set_euler_angles (const float_vector_t & euler_angles);
+			void set_scale (const float_vector_t & scale);
+
+			scene_obj_t (const std::string & type_name);
+			virtual ~scene_obj_t ();
+
+			// virtual methods
+			virtual void configure ();
 	};
 }

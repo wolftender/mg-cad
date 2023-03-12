@@ -1,5 +1,5 @@
 #pragma once
-#include "../include/algebra.hpp"
+#include "algebra.hpp"
 
 namespace mini {
 	class camera {

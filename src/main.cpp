@@ -3,8 +3,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "../include/app.hpp"
-#include "../include/algebra.hpp"
+#include "app.hpp"
+#include "algebra.hpp"
 
 int main (int argc, char ** argv) {
 	// initialize glfw

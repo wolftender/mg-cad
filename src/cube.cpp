@@ -1,4 +1,4 @@
-#include "../include/cube.hpp"
+#include "cube.hpp"
 
 namespace mini {
 	constexpr std::array<float, 72> cube_positions = { 
@@ -113,7 +113,7 @@ namespace mini {
 		0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23 
 	};
 
-	cube_object::cube_object (std::shared_ptr<shader_t> shader) {
+	cube_object::cube_object (std::shared_ptr<shader_t> shader) : scene_obj_t ("colored cube") {
 		constexpr int num_vertices = 24;
 		constexpr GLuint a_position = 0;
 		constexpr GLuint a_color = 1;
@@ -168,5 +168,8 @@ namespace mini {
 
 		glDrawElements (GL_TRIANGLES, cube_indices.size (), GL_UNSIGNED_INT, NULL);
 		glBindVertexArray (static_cast<GLuint>(NULL));
+	}
+
+	void cube_object::configure () {
 	}
 }

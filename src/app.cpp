@@ -6,9 +6,17 @@
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
 
-#include "../include/app.hpp"
+#include "app.hpp"
 
 namespace mini {
+	application::object_wrapper_t::object_wrapper_t (std::shared_ptr<scene_obj_t> o, const std::string & name) : object (o), name (name), selected (false) {}
+
+	void application::t_on_key_event (int key, int scancode, int action, int mods) {
+		if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
+			m_reset_selection ();
+		}
+	}
+
 	void application::t_on_scroll (double offset_x, double offset_y) {
 		if (m_viewport_focus) {
 			m_distance = m_distance - (offset_y / 2.0f);
@@ -67,8 +75,13 @@ namespace mini {
 		m_grid_shader->compile ();
 
 		// initialize the test cube
-		m_test_cube = std::make_shared<cube_object> (m_basic_shader);
 		m_grid = std::make_shared<grid_object> (m_grid_shader);
+
+		// start with a cube
+		m_add_object ("cube", std::make_shared<cube_object> (m_basic_shader));
+		m_add_object ("cube", std::make_shared<cube_object> (m_basic_shader));
+		m_add_object ("cube", std::make_shared<cube_object> (m_basic_shader));
+		m_add_object ("cube", std::make_shared<cube_object> (m_basic_shader));
 	}
 
 	void application::t_integrate (float delta_time) {
@@ -124,7 +137,9 @@ namespace mini {
 	}
 
 	void application::t_render () {
-		m_context.draw (m_test_cube, make_identity ());
+		for (const auto & object : m_objects) {
+			m_context.draw (object.object, make_identity ());
+		}
 		
 		if (m_grid_enabled) {
 			m_grid->set_spacing (m_grid_spacing);
@@ -140,6 +155,10 @@ namespace mini {
 		m_draw_viewport ();
 		m_draw_view_options ();
 		m_draw_scene_options ();
+
+		if (m_selected_object != nullptr) {
+			m_draw_object_options ();
+		}
 	}
 
 	void application::m_draw_main_menu () {
@@ -193,6 +212,7 @@ namespace mini {
 			
 			ImGui::DockBuilderDockWindow ("Viewport", dockspace_id);
 			ImGui::DockBuilderDockWindow ("View Options", dock_id_left);
+			ImGui::DockBuilderDockWindow ("Object Options", dock_id_left);
 			ImGui::DockBuilderDockWindow ("Scene Options", dock_id_left_bottom);
 
 			ImGui::DockBuilderFinish (dockspace_id);
@@ -225,17 +245,22 @@ namespace mini {
 		ImGui::SetWindowSize (ImVec2 (270, 450), ImGuiCond_Once);
 
 		// render controls
-		prefix_label ("Cam. Pitch: ", 250.0f);
-		ImGui::InputFloat ("##pitch", &m_cam_pitch);
+		if (ImGui::CollapsingHeader ("Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
+			prefix_label ("Cam. Pitch: ", 250.0f);
+			ImGui::InputFloat ("##pitch", &m_cam_pitch);
 
-		prefix_label ("Cam. Yaw: ", 250.0f);
-		ImGui::InputFloat ("##yaw", &m_cam_yaw);
+			prefix_label ("Cam. Yaw: ", 250.0f);
+			ImGui::InputFloat ("##yaw", &m_cam_yaw);
 
-		prefix_label ("Cam. Dist: ", 250.0f);
-		ImGui::InputFloat ("##distance", &m_distance);
+			prefix_label ("Cam. Dist: ", 250.0f);
+			ImGui::InputFloat ("##distance", &m_distance);
+			ImGui::NewLine ();
+		}
 
-		prefix_label ("Grid Enabled: ", 250.0f);
-		ImGui::Checkbox ("##grid_enable", &m_grid_enabled);
+		if (ImGui::CollapsingHeader ("Grid", ImGuiTreeNodeFlags_DefaultOpen)) {
+			prefix_label ("Grid Enabled: ", 250.0f);
+			ImGui::Checkbox ("##grid_enable", &m_grid_enabled);
+		}
 
 		ImGui::End ();
 		ImGui::PopStyleVar (1);
@@ -244,15 +269,52 @@ namespace mini {
 	void application::m_draw_scene_options () {
 		ImGui::PushStyleVar (ImGuiStyleVar_WindowMinSize, ImVec2 (270, 450));
 		ImGui::Begin ("Scene Options", NULL);
+		ImGui::PopStyleVar (1);
 		ImGui::SetWindowPos (ImVec2 (30, 30), ImGuiCond_Once);
 		ImGui::SetWindowSize (ImVec2 (270, 450), ImGuiCond_Once);
 
 		// render controls
-		prefix_label ("test slider: ", 250.0f);
-		ImGui::InputFloat ("##hello", &m_cam_pitch);
+		ImGui::SetNextItemWidth (-1);
+
+		if (ImGui::BeginListBox ("##objectlist")) {
+			for (auto & object : m_objects) {
+				std::string full_name;
+				bool was_selected = object.selected;
+
+				if (object.selected) {
+					full_name = "*" + object.name + " : (" + object.object->get_type_name () + ")";
+				} else {
+					full_name = object.name + " : (" + object.object->get_type_name () + ")";
+				}
+
+				if (ImGui::Selectable (full_name.c_str (), &object.selected)) {
+					for (auto & other : m_objects) {
+						if (other.object != object.object) {
+							other.selected = false;
+						}
+					}
+
+					m_selected_object = object.object;
+				}
+
+				if (was_selected && !object.selected) {
+					m_selected_object = nullptr;
+				}
+			}
+
+			ImGui::EndListBox ();
+		}
 
 		ImGui::End ();
+	}
+
+	void application::m_draw_object_options () {
+		ImGui::PushStyleVar (ImGuiStyleVar_WindowMinSize, ImVec2 (270, 450));
+		ImGui::Begin ("Object Options", NULL);
 		ImGui::PopStyleVar (1);
+		ImGui::SetWindowPos (ImVec2 (30, 30), ImGuiCond_Once);
+		ImGui::SetWindowSize (ImVec2 (270, 450), ImGuiCond_Once);
+		ImGui::End ();
 	}
 
 	void application::m_draw_viewport () {
@@ -284,5 +346,35 @@ namespace mini {
 
 		ImGui::End ();
 		ImGui::PopStyleVar (1);
+	}
+
+	void application::m_add_object (const std::string & name, std::shared_ptr<scene_obj_t> object) {
+		std::string real_name = name;
+		int i = 0;
+		bool name_free = true;
+
+		do {
+			if (!name_free) {
+				real_name = name + "_" + std::to_string (i);
+				i++;
+				name_free = true;
+			}
+
+			for (const auto & object : m_objects) {
+				if (object.name == real_name) {
+					name_free = false;
+				}
+			}
+		} while (!name_free);
+
+		m_objects.push_back ({object, real_name});
+	}
+
+	void application::m_reset_selection () {
+		m_selected_object = nullptr;
+
+		for (auto & object : m_objects) {
+			object.selected = false;
+		}
 	}
 }

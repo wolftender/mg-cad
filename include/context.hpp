@@ -2,9 +2,9 @@
 #include <glad/glad.h>
 #include <memory>
 
-#include "../include/algebra.hpp"
-#include "../include/shader.hpp"
-#include "../include/camera.hpp"
+#include "algebra.hpp"
+#include "shader.hpp"
+#include "camera.hpp"
 
 namespace mini {
 	class app_context;

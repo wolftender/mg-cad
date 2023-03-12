@@ -47,6 +47,7 @@ namespace mini {
 			static void s_on_scroll (GLFWwindow * window, double offset_x, double offset_y);
 
 			void m_setup_imgui ();
+			void m_setup_imgui_style ();
 
 		protected:
 			virtual void t_integrate (float delta_time);
