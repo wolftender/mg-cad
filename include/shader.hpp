@@ -1,0 +1,65 @@
+#pragma once
+#include <string>
+#include <stdexcept>
+#include <glad/glad.h>
+
+#include "algebra.hpp"
+
+namespace mini {
+	enum class shader_error_type_t {
+		compile_shader,
+		link_program
+	};
+
+	class shader_error_t : public std::runtime_error {
+		private:
+			shader_error_type_t m_type;
+			std::string m_log;
+
+		public:
+			const std::string & get_log () const;
+			const shader_error_type_t & get_type () const;
+
+			shader_error_t (shader_error_type_t type, const std::string & message);
+			shader_error_t (shader_error_type_t type, const std::string & message, const std::string & log);
+	};
+
+	/// <summary>
+	/// This is a simple wrapper class around a shader program.
+	/// Probably it can be expanded with geometry shader in the future.
+	/// </summary>
+	class shader_t {
+		private:
+			std::string m_vs_source, m_ps_source;
+			GLuint m_program, m_ps, m_vs;
+			bool m_is_ready;
+
+		public:
+			void set_vertex_source (const std::string & source);
+			void set_fragment_source (const std::string & source);
+			bool compile ();
+
+			bool is_ready () const;
+			
+			shader_t ();
+			shader_t (const std::string & vs_source, const std::string & ps_source);
+
+			shader_t (const shader_t & shader);
+			shader_t & operator= (const shader_t & shader);
+
+			~shader_t ();
+
+			void bind () const;
+			GLuint get_program_handle () const;
+
+			int get_uniform_location (const std::string & name);
+
+			void set_uniform (const std::string & name, const float value);
+			void set_uniform (const std::string & name, const float_vector_t & vector);
+			void set_uniform (const std::string & name, const float_matrix_t & matrix);
+
+		private:
+			bool m_try_compile (GLenum shader_type, const std::string & source, GLuint * out_shader);
+			bool m_try_link ();
+	};
+}

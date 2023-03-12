@@ -1,0 +1,7 @@
+x64/
+*.vcxproj.filters
+*.vcxproj.user
+
+libs/
+obj/
+bin/
