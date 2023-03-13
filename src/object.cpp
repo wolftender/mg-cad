@@ -24,6 +24,10 @@ namespace mini {
 		return m_scale;
 	}
 
+	bool scene_obj_t::is_selected () const {
+		return m_selected;
+	}
+
 	void scene_obj_t::set_translation (const float_vector_t & translation) {
 		m_translation = translation;
 	}
@@ -34,6 +38,10 @@ namespace mini {
 
 	void scene_obj_t::set_scale (const float_vector_t & scale) {
 		m_scale = scale;
+	}
+
+	void scene_obj_t::set_selected (bool selected) {
+		m_selected = selected;
 	}
 
 	const float_matrix_t & scene_obj_t::get_matrix () const {

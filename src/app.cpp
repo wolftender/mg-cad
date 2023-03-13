@@ -73,11 +73,13 @@ namespace mini {
 
 		m_basic_shader = m_load_shader ("shaders/vs_basic.glsl", "shaders/fs_basic.glsl");
 		m_mesh_shader = m_load_shader ("shaders/vs_meshgrid.glsl", "shaders/fs_meshgrid.glsl");
+		m_alt_mesh_shader = m_load_shader ("shaders/vs_meshgrid.glsl", "shaders/fs_meshgrid_s.glsl");
 		m_grid_xz_shader = m_load_shader ("shaders/vs_grid.glsl", "shaders/fs_grid_xz.glsl");
 		m_grid_xy_shader = m_load_shader ("shaders/vs_grid.glsl", "shaders/fs_grid_xy.glsl");
 
 		m_basic_shader->compile ();
 		m_mesh_shader->compile ();
+		m_alt_mesh_shader->compile ();
 		m_grid_xz_shader->compile ();
 		m_grid_xy_shader->compile ();
 
@@ -86,7 +88,7 @@ namespace mini {
 		m_grid_xy = std::make_shared<grid_object> (m_grid_xy_shader);
 
 		// start with a cube
-		m_add_object ("torus", std::make_shared<torus_object> (m_mesh_shader, 1.0f, 3.0f));
+		m_add_object ("torus", std::make_shared<torus_object> (m_mesh_shader, m_alt_mesh_shader, 1.0f, 3.0f));
 	}
 
 	void application::t_integrate (float delta_time) {
@@ -112,24 +114,12 @@ namespace mini {
 
 		// clamp pitch to avoid camera "going over" the center
 		// the matrices will degenerate then
-		if (m_cam_pitch > 1.56f) {
-			m_cam_pitch = 1.56f;
-		} else if (m_cam_pitch < -1.56f) {
-			m_cam_pitch = -1.56f;
-		}
+		gui::clamp (m_cam_pitch, -1.56f, 1.56f);
 
 		// clamp distance just in case
-		if (m_distance < 1.0f) {
-			m_distance = 1.0f;
-		} else if (m_distance > 20.0f) {
-			m_distance = 20.0f;
-		}
+		gui::clamp (m_distance, 1.0f, 20.0f);
 
-		if (m_grid_spacing < 0.05f) {
-			m_grid_spacing = 0.05f;
-		} else if (m_grid_spacing > 10.0f) {
-			m_grid_spacing = 10.0f;
-		}
+		gui::clamp (m_grid_spacing, 0.05f, 10.0f);
 
 		// setup camera for the scene
 		float_vector_t cam_pos = { 0.0f, 0.0f, -m_distance };
@@ -143,6 +133,7 @@ namespace mini {
 
 	void application::t_render () {
 		for (const auto & object : m_objects) {
+			object.object->set_selected (object.selected);
 			m_context.draw (object.object, object.object->get_matrix ());
 		}
 		

@@ -164,6 +164,7 @@
     <None Include="shaders\fs_grid_xy.glsl" />
     <None Include="shaders\fs_grid_xz.glsl" />
     <None Include="shaders\fs_meshgrid.glsl" />
+    <None Include="shaders\fs_meshgrid_s.glsl" />
     <None Include="shaders\vs_basic.glsl" />
     <None Include="shaders\vs_grid.glsl" />
     <None Include="shaders\vs_meshgrid.glsl" />

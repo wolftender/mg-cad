@@ -30,5 +30,5 @@ void main () {
     float xi = 1.0 - step (0.05, d_ax);
     float zi = 1.0 - step (0.05, d_az);
 
-    output_color = intensity * vec4 (0.5 + xi, 0.5 - zi - xi, 0.5 + zi, 0.8);
+    output_color = intensity * vec4 (0.4 + xi, 0.4 - zi - xi, 0.4 + zi, 0.7);
 }

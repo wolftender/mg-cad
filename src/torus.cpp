@@ -4,13 +4,17 @@
 #include <iostream>
 
 namespace mini {
-	torus_object::torus_object (std::shared_ptr<shader_t> shader, float inner_radius, float outer_radius) : scene_obj_t ("torus") {
+	torus_object::torus_object (std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> alt_shader, 
+		float inner_radius, float outer_radius) : scene_obj_t ("torus") {
+
 		m_shader = shader;
+		m_alt_shader = alt_shader;
 		m_inner_radius = inner_radius;
 		m_outer_radius = outer_radius;
 
 		m_div_u = 15;
 		m_div_v = 15;
+		m_is_wireframe = true;
 
 		m_requires_rebuild = false;
 		m_generate_geometry ();
@@ -23,7 +27,11 @@ namespace mini {
 	void torus_object::render (app_context & context, const float_matrix_t & world_matrix) const {
 		glBindVertexArray (m_vao);
 
-		m_shader->bind ();
+		if (!is_selected ()) {
+			m_shader->bind ();
+		} else {
+			m_alt_shader->bind ();
+		}
 
 		// set uniforms
 		const auto & view_matrix = context.get_view_matrix ();
@@ -33,35 +41,46 @@ namespace mini {
 		m_shader->set_uniform ("u_view", view_matrix);
 		m_shader->set_uniform ("u_projection", proj_matrix);
 
+		if (m_is_wireframe) {
+			glDisable (GL_DEPTH_TEST);
+		}
+		
 		glDrawElements (GL_TRIANGLES, m_indices.size (), GL_UNSIGNED_INT, NULL);
 		glBindVertexArray (static_cast<GLuint>(NULL));
+		glEnable (GL_DEPTH_TEST);
 	}
 
 	void torus_object::configure () {
 		scene_obj_t::configure ();
 
 		bool changed = false;
+
+		ImGui::NewLine ();
 		if (ImGui::CollapsingHeader ("Torus Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
 			gui::prefix_label ("Inner Radius: ", 100.0f);
-			changed = changed || ImGui::InputFloat ("##innerradius", &m_inner_radius);
+			changed = ImGui::InputFloat ("##innerradius", &m_inner_radius) || changed;
 
 			gui::prefix_label ("Outer Radius: ", 100.0f);
-			changed = changed || ImGui::InputFloat ("##outerradius", &m_outer_radius);
+			changed = ImGui::InputFloat ("##outerradius", &m_outer_radius) || changed;
 
 			gui::prefix_label ("u Resolution: ", 100.0f);
-			changed = changed || ImGui::InputInt ("##ures", &m_div_u);
+			changed = ImGui::InputInt ("##ures", &m_div_u) || changed;
 
 			gui::prefix_label ("v Resolution: ", 100.0f);
-			changed = changed || ImGui::InputInt ("##vres", &m_div_v);
+			changed = ImGui::InputInt ("##vres", &m_div_v) || changed;
 		}
 
 		if (changed) {
+			gui::clamp (m_outer_radius, 0.2f, 30.0f);
+			gui::clamp (m_inner_radius, 0.1f, m_outer_radius - 0.5f);
+			gui::clamp (m_div_u, 4, 100);
+			gui::clamp (m_div_v, 4, 100);
+
 			m_generate_geometry ();
 		}
 	}
 
 	void torus_object::m_generate_geometry () {
-		std::cout << "torus rebuild" << std::endl;
 		m_requires_rebuild = false;
 
 		// parametric equation of torus is

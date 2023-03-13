@@ -17,7 +17,8 @@ namespace mini {
 
 			app_context m_context;
 
-			std::shared_ptr<shader_t> m_basic_shader, m_grid_xz_shader, m_grid_xy_shader, m_mesh_shader;
+			std::shared_ptr<shader_t> m_basic_shader, m_grid_xz_shader, m_grid_xy_shader;
+			std::shared_ptr<shader_t> m_mesh_shader, m_alt_mesh_shader;
 			std::vector<object_wrapper_t> m_objects;
 			std::shared_ptr<grid_object> m_grid_xz, m_grid_xy;
 			std::shared_ptr<scene_obj_t> m_selected_object;

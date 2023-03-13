@@ -11,16 +11,20 @@ namespace mini {
 			float_vector_t m_euler_angles;
 			float_vector_t m_scale;
 
+			bool m_selected;
+
 		public:
 			const std::string & get_type_name () const;
 
 			const float_vector_t & get_translation () const;
 			const float_vector_t & get_euler_angles () const;
 			const float_vector_t & get_scale () const;
+			bool is_selected () const;
 
 			void set_translation (const float_vector_t & translation);
 			void set_euler_angles (const float_vector_t & euler_angles);
 			void set_scale (const float_vector_t & scale);
+			void set_selected (bool selected);
 
 			const float_matrix_t & get_matrix () const;
 
