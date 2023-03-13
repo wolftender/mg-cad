@@ -5,6 +5,8 @@
 #include <cmath>
 
 namespace mini {
+	constexpr const float pi_f = 3.14159265359f;
+
 	template <typename T> class vector_t {
 		static_assert (std::is_arithmetic <T>::value, "T needs to be an arithmetic value");
 

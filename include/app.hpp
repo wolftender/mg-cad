@@ -1,7 +1,6 @@
 #pragma once
 #include "window.hpp"
 #include "context.hpp"
-#include "cube.hpp"
 #include "grid.hpp"
 #include "object.hpp"
 
@@ -18,9 +17,9 @@ namespace mini {
 
 			app_context m_context;
 
-			std::shared_ptr<shader_t> m_basic_shader, m_grid_shader;
+			std::shared_ptr<shader_t> m_basic_shader, m_grid_xz_shader, m_grid_xy_shader, m_mesh_shader;
 			std::vector<object_wrapper_t> m_objects;
-			std::shared_ptr<grid_object> m_grid;
+			std::shared_ptr<grid_object> m_grid_xz, m_grid_xy;
 			std::shared_ptr<scene_obj_t> m_selected_object;
 
 			float m_cam_yaw, m_cam_pitch, m_distance;

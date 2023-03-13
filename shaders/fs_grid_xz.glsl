@@ -11,7 +11,7 @@ out vec4 output_color;
 uniform float u_grid_spacing;
 
 float grid_color (float res) {
-    vec2 coord = world_pos.xz;
+    vec2 coord = world_pos.xz * res;
     vec2 grid = abs (fract (coord - 0.5) - 0.5) / fwidth (coord);
     float line = min (grid.x, grid.y);
     
@@ -23,5 +23,12 @@ void main () {
     float intensity = min (1.0, grid_color (u_grid_spacing));
 
     intensity = min (1.0, (10.0 / distance) * intensity);
-    output_color = intensity * vec4 (0.5,0.5,0.5,0.8);
+
+    float d_ax = abs (world_pos.x);
+    float d_az = abs (world_pos.z);
+
+    float xi = 1.0 - step (0.05, d_ax);
+    float zi = 1.0 - step (0.05, d_az);
+
+    output_color = intensity * vec4 (0.5 + xi, 0.5 - zi - xi, 0.5 + zi, 0.8);
 }

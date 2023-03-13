@@ -5,6 +5,10 @@
 #include "gui.hpp"
 #include "app.hpp"
 
+// objects
+#include "cube.hpp"
+#include "torus.hpp"
+
 namespace mini {
 	application::object_wrapper_t::object_wrapper_t (std::shared_ptr<scene_obj_t> o, const std::string & name) : object (o), name (name), selected (false) {}
 
@@ -21,12 +25,14 @@ namespace mini {
 	}
 
 	void application::t_on_resize (int width, int height) {
-		video_mode_t new_vm = m_context.get_video_mode ();
+		if (width != 0 && height != 0) {
+			video_mode_t new_vm = m_context.get_video_mode ();
 
-		new_vm.set_viewport_width (width);
-		new_vm.set_viewport_width (height);
+			new_vm.set_viewport_width (width);
+			new_vm.set_viewport_width (height);
 
-		m_context.set_video_mode (new_vm);
+			m_context.set_video_mode (new_vm);
+		}
 
 		app_window::t_on_resize (width, height);
 	}
@@ -66,19 +72,21 @@ namespace mini {
 		m_last_vp_height = m_last_vp_width = 0;
 
 		m_basic_shader = m_load_shader ("shaders/vs_basic.glsl", "shaders/fs_basic.glsl");
-		m_grid_shader = m_load_shader ("shaders/vs_grid.glsl", "shaders/fs_grid.glsl");
+		m_mesh_shader = m_load_shader ("shaders/vs_meshgrid.glsl", "shaders/fs_meshgrid.glsl");
+		m_grid_xz_shader = m_load_shader ("shaders/vs_grid.glsl", "shaders/fs_grid_xz.glsl");
+		m_grid_xy_shader = m_load_shader ("shaders/vs_grid.glsl", "shaders/fs_grid_xy.glsl");
 
 		m_basic_shader->compile ();
-		m_grid_shader->compile ();
+		m_mesh_shader->compile ();
+		m_grid_xz_shader->compile ();
+		m_grid_xy_shader->compile ();
 
 		// initialize the test cube
-		m_grid = std::make_shared<grid_object> (m_grid_shader);
+		m_grid_xz = std::make_shared<grid_object> (m_grid_xz_shader);
+		m_grid_xy = std::make_shared<grid_object> (m_grid_xy_shader);
 
 		// start with a cube
-		m_add_object ("cube", std::make_shared<cube_object> (m_basic_shader));
-		m_add_object ("cube", std::make_shared<cube_object> (m_basic_shader));
-		m_add_object ("cube", std::make_shared<cube_object> (m_basic_shader));
-		m_add_object ("cube", std::make_shared<cube_object> (m_basic_shader));
+		m_add_object ("torus", std::make_shared<torus_object> (m_mesh_shader, 1.0f, 3.0f));
 	}
 
 	void application::t_integrate (float delta_time) {
@@ -139,8 +147,14 @@ namespace mini {
 		}
 		
 		if (m_grid_enabled) {
-			m_grid->set_spacing (m_grid_spacing);
-			m_context.draw (m_grid, make_identity ());
+			m_grid_xz->set_spacing (m_grid_spacing);
+			m_grid_xy->set_spacing (m_grid_spacing);
+			
+			/*if (abs (m_cam_pitch) < 0.001f) {
+				m_context.draw (m_grid_xy, make_rotation_x (pi_f / 2.0f));
+			}*/
+
+			m_context.draw (m_grid_xz, make_identity ());
 		}
 
 		m_context.display (false);
