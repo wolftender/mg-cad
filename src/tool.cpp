@@ -125,7 +125,7 @@ namespace mini {
 			case axis_t::z: t[2] += 0.1f * dx; break;
 			default:
 				t[0] += 0.1f * dx;
-				t[1] += 0.1f * dy;
+				t[1] -= 0.1f * dy;
 				break;
 		}
 
