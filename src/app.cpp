@@ -12,9 +12,66 @@
 namespace mini {
 	application::object_wrapper_t::object_wrapper_t (std::shared_ptr<scene_obj_t> o, const std::string & name) : object (o), name (name), selected (false) {}
 
+	float application::get_cam_yaw () const {
+		return m_cam_yaw;
+	}
+
+	float application::get_cam_pitch () const {
+		return m_cam_pitch;
+	}
+
+	float application::get_cam_distance () const {
+		return m_distance;
+	}
+
+	float application::get_time () const {
+		return m_time;
+	}
+
+	bool application::is_viewport_focused () const {
+		return m_viewport_focus;
+	}
+
+	app_context & application::get_context () {
+		return m_context;
+	}
+
+	std::shared_ptr<scene_obj_t> application::get_selection () {
+		return m_selected_object;
+	}
+
+	void application::set_cam_yaw (float yaw) {
+		m_cam_yaw = yaw;
+	}
+
+	void application::set_cam_pitch (float pitch) {
+		m_cam_pitch = pitch;
+	}
+
+	void application::set_cam_distance (float distance) {
+		m_distance = distance;
+	}
+
 	void application::t_on_key_event (int key, int scancode, int action, int mods) {
-		if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
-			m_reset_selection ();
+		if (m_selected_tool) {
+			if (m_selected_tool->on_key_event (key, scancode, action, mods)) {
+				return;
+			}
+		}
+
+		if (action == GLFW_RELEASE) {
+			switch (key) {
+				case KEY_TRANSLATE:
+					m_selected_tool = std::make_shared<translation_tool> (*this);
+					break;
+					
+				case GLFW_KEY_ESCAPE:
+					m_reset_selection ();
+					break;
+
+				default:
+					break;
+			}
 		}
 	}
 
@@ -35,6 +92,26 @@ namespace mini {
 		}
 
 		app_window::t_on_resize (width, height);
+	}
+
+	void application::m_handle_mouse () {
+		// mouse input etc
+		if (is_left_click () && m_viewport_focus) {
+			const offset_t & last_pos = get_last_mouse_offset ();
+			const offset_t & curr_pos = get_mouse_offset ();
+
+			int d_yaw = curr_pos.x - last_pos.x;
+			int d_pitch = curr_pos.y - last_pos.y;
+
+			float f_d_yaw = static_cast<float> (d_yaw);
+			float f_d_pitch = static_cast<float> (d_pitch);
+
+			f_d_yaw = f_d_yaw * 15.0f / static_cast<float> (get_width ());
+			f_d_pitch = f_d_pitch * 15.0f / static_cast<float> (get_height ());
+
+			m_cam_yaw = m_cam_yaw + f_d_yaw;
+			m_cam_pitch = m_cam_pitch - f_d_pitch;
+		}
 	}
 
 	std::string application::m_read_file_content (const std::string & path) const {
@@ -92,29 +169,31 @@ namespace mini {
 	}
 
 	void application::t_integrate (float delta_time) {
+		// if current tool is disposable then simply remove it
+		if (m_selected_tool) {
+			if (m_selected_tool->is_disposable ()) {
+				m_selected_tool = nullptr;
+			}
+		}
+
 		m_time = m_time + delta_time;
 
-		// mouse input etc
-		if (is_left_click () && m_viewport_focus) {			
-			const offset_t & last_pos = get_last_mouse_offset ();
-			const offset_t & curr_pos = get_mouse_offset ();
-
-			int d_yaw = curr_pos.x - last_pos.x;
-			int d_pitch = curr_pos.y - last_pos.y;
-
-			float f_d_yaw = static_cast<float> (d_yaw);
-			float f_d_pitch = static_cast<float> (d_pitch);
-
-			f_d_yaw = f_d_yaw * 15.0f / static_cast<float> (get_width ());
-			f_d_pitch = f_d_pitch * 15.0f / static_cast<float> (get_height ());
-
-			m_cam_yaw = m_cam_yaw + f_d_yaw;
-			m_cam_pitch = m_cam_pitch - f_d_pitch;
+		// if no tool selected then handle mouse events
+		// otherwise update tool and only update mouse if allowed
+		if (!m_selected_tool || !m_selected_tool->on_update (delta_time)) {
+			m_handle_mouse ();
 		}
 
 		// clamp pitch to avoid camera "going over" the center
 		// the matrices will degenerate then
 		gui::clamp (m_cam_pitch, -1.56f, 1.56f);
+
+		constexpr float pi2 = pi_f * 2.0f;
+		if (m_cam_yaw > pi2) {
+			m_cam_yaw = m_cam_yaw - pi2;
+		} else if (m_cam_yaw < -pi2) {
+			m_cam_yaw = m_cam_yaw + pi2;
+		}
 
 		// clamp distance just in case
 		gui::clamp (m_distance, 1.0f, 20.0f);
@@ -161,6 +240,36 @@ namespace mini {
 		if (m_selected_object != nullptr) {
 			m_draw_object_options ();
 		}
+	}
+
+	void application::t_on_character (unsigned int code) {
+		if (m_selected_tool) {
+			if (m_selected_tool->on_character (code)) {
+				return app_window::t_on_character (code);
+			}
+		}
+
+		app_window::t_on_character (code);
+	}
+
+	void application::t_on_cursor_pos (double posx, double posy) {
+		if (m_selected_tool) {
+			if (m_selected_tool->on_cursor_pos (posx, posy)) {
+				return app_window::t_on_cursor_pos (posx, posy);
+			}
+		}
+
+		app_window::t_on_cursor_pos (posx, posy);
+	}
+
+	void application::t_on_mouse_button (int button, int action, int mods) {
+		if (m_selected_tool) {
+			if (m_selected_tool->on_mouse_button (button, action, mods)) {
+				return app_window::t_on_mouse_button (button, action, mods);
+			}
+		}
+
+		app_window::t_on_mouse_button (button, action, mods);
 	}
 
 	void application::m_draw_main_menu () {
@@ -364,6 +473,7 @@ namespace mini {
 	}
 
 	void application::m_reset_selection () {
+		m_selected_tool = nullptr;
 		m_selected_object = nullptr;
 
 		for (auto & object : m_objects) {
