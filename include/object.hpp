@@ -3,7 +3,7 @@
 #include "algebra.hpp"
 
 namespace mini {
-	class scene_obj_t : public graphics_obj_t {
+	class scene_obj_t : public graphics_obj_t, std::enable_shared_from_this<scene_obj_t> {
 		private:
 			std::string m_type_name;
 
@@ -21,6 +21,8 @@ namespace mini {
 			void set_translation (const float_vector_t & translation);
 			void set_euler_angles (const float_vector_t & euler_angles);
 			void set_scale (const float_vector_t & scale);
+
+			const float_matrix_t & get_matrix () const;
 
 			scene_obj_t (const std::string & type_name);
 			virtual ~scene_obj_t ();

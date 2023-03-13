@@ -11,11 +11,11 @@ out vec4 output_color;
 uniform float u_grid_spacing;
 
 float grid_color (float res) {
-    float x = fract(world_pos.x * res);
-    float y = fract(world_pos.z * res);
-    float m = 0.99;
+    vec2 coord = world_pos.xz;
+    vec2 grid = abs (fract (coord - 0.5) - 0.5) / fwidth (coord);
+    float line = min (grid.x, grid.y);
     
-    return step(m,x)+step(m,y)+step(m,1.0-x)+step(m,1.0-y);
+    return 1.0 - min(line, 1.0);
 }
 
 void main () {

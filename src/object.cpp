@@ -1,3 +1,4 @@
+#include "gui.hpp"
 #include "object.hpp"
 
 namespace mini {
@@ -35,7 +36,22 @@ namespace mini {
 		m_scale = scale;
 	}
 
+	const float_matrix_t & scene_obj_t::get_matrix () const {
+		float_matrix_t world = make_identity ();
+
+		world = world * make_translation (m_translation);
+		world = world * make_rotation_z (m_euler_angles[2]);
+		world = world * make_rotation_y (m_euler_angles[1]);
+		world = world * make_rotation_x (m_euler_angles[0]);
+
+		return world;
+	}
+
 	void scene_obj_t::configure () {
-		// todo: render common properties here
+		if (ImGui::CollapsingHeader ("Basic Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
+			gui::vector_editor ("Translation", m_translation);
+			gui::vector_editor ("Rotation", m_euler_angles);
+			gui::vector_editor ("Scale", m_scale);
+		}
 	}
 }

@@ -171,5 +171,7 @@ namespace mini {
 	}
 
 	void cube_object::configure () {
+		// basic configuration properties
+		scene_obj_t::configure ();
 	}
 }

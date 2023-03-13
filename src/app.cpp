@@ -2,10 +2,7 @@
 #include <iostream>
 #include <sstream>
 
-#include <imgui.h>
-#include <imgui_internal.h>
-#include <imgui_stdlib.h>
-
+#include "gui.hpp"
 #include "app.hpp"
 
 namespace mini {
@@ -138,7 +135,7 @@ namespace mini {
 
 	void application::t_render () {
 		for (const auto & object : m_objects) {
-			m_context.draw (object.object, make_identity ());
+			m_context.draw (object.object, object.object->get_matrix ());
 		}
 		
 		if (m_grid_enabled) {
@@ -224,20 +221,6 @@ namespace mini {
 		ImGui::End ();
 	}
 
-	void prefix_label (const std::string & label, float min_width = 0.0f) {
-		float width = ImGui::CalcItemWidth ();
-
-		if (width < min_width) {
-			width = min_width;
-		}
-
-		float x = ImGui::GetCursorPosX ();
-		ImGui::Text (label.c_str ());
-		ImGui::SameLine ();
-		ImGui::SetCursorPosX (x + width * 0.5f + ImGui::GetStyle ().ItemInnerSpacing.x);
-		ImGui::SetNextItemWidth (-1);
-	}
-
 	void application::m_draw_view_options () {
 		ImGui::PushStyleVar (ImGuiStyleVar_WindowMinSize, ImVec2 (270, 450));
 		ImGui::Begin ("View Options", NULL);
@@ -246,19 +229,19 @@ namespace mini {
 
 		// render controls
 		if (ImGui::CollapsingHeader ("Camera", ImGuiTreeNodeFlags_DefaultOpen)) {
-			prefix_label ("Cam. Pitch: ", 250.0f);
+			gui::prefix_label ("Cam. Pitch: ", 250.0f);
 			ImGui::InputFloat ("##pitch", &m_cam_pitch);
 
-			prefix_label ("Cam. Yaw: ", 250.0f);
+			gui::prefix_label ("Cam. Yaw: ", 250.0f);
 			ImGui::InputFloat ("##yaw", &m_cam_yaw);
 
-			prefix_label ("Cam. Dist: ", 250.0f);
+			gui::prefix_label ("Cam. Dist: ", 250.0f);
 			ImGui::InputFloat ("##distance", &m_distance);
 			ImGui::NewLine ();
 		}
 
 		if (ImGui::CollapsingHeader ("Grid", ImGuiTreeNodeFlags_DefaultOpen)) {
-			prefix_label ("Grid Enabled: ", 250.0f);
+			gui::prefix_label ("Grid Enabled: ", 250.0f);
 			ImGui::Checkbox ("##grid_enable", &m_grid_enabled);
 		}
 
@@ -314,6 +297,11 @@ namespace mini {
 		ImGui::PopStyleVar (1);
 		ImGui::SetWindowPos (ImVec2 (30, 30), ImGuiCond_Once);
 		ImGui::SetWindowSize (ImVec2 (270, 450), ImGuiCond_Once);
+
+		if (m_selected_object) {
+			m_selected_object->configure ();
+		}
+
 		ImGui::End ();
 	}
 
