@@ -7,7 +7,7 @@ namespace mini {
 			float m_fov, m_near, m_far, m_aspect;
 
 			float_vector_t m_position, m_target;
-			float_matrix_t m_view, m_projection;
+			float_matrix_t m_view, m_projection, m_projection_inv, m_view_inv;
 
 		public:
 			float get_fov () const;
@@ -17,6 +17,8 @@ namespace mini {
 
 			const float_matrix_t & get_view_matrix () const;
 			const float_matrix_t & get_projection_matrix () const;
+			const float_matrix_t & get_view_inverse () const;
+			const float_matrix_t & get_projection_inverse () const;
 
 			const float_vector_t & get_position () const;
 			const float_vector_t & get_target () const;

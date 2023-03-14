@@ -25,6 +25,14 @@ namespace mini {
 		return m_projection;
 	}
 
+	const float_matrix_t & camera::get_view_inverse () const {
+		return m_view_inv;
+	}
+
+	const float_matrix_t & camera::get_projection_inverse () const {
+		return m_projection_inv;
+	}
+
 	const float_vector_t & camera::get_position () const {
 		return m_position;
 	}
@@ -99,6 +107,8 @@ namespace mini {
 			0.0f, 0.0f, -zp / zm, -(2.0f * m_far * m_near) / zm,
 			0.0f, 0.0f, -1.0f, 0.0f
 		};
+
+		m_projection_inv = invert (m_projection);
 	}
 
 	void camera::m_recalculate_view () {
@@ -117,5 +127,6 @@ namespace mini {
 		};
 
 		m_view = m1 * make_translation (-m_position[0], -m_position[1], -m_position[2]);
+		m_view_inv = invert (m_view);
 	}
 }

@@ -32,6 +32,18 @@ namespace mini {
 		return m_viewport_focus;
 	}
 
+	int application::get_viewport_width () const {
+		return m_last_vp_width;
+	}
+
+	int application::get_viewport_height () const {
+		return m_last_vp_height;
+	}
+
+	offset_t application::get_viewport_mouse_offset () const {
+		return m_vp_mouse_offset;
+	}
+
 	app_context & application::get_context () {
 		return m_context;
 	}
@@ -63,6 +75,10 @@ namespace mini {
 			switch (key) {
 				case KEY_TRANSLATE:
 					m_selected_tool = std::make_shared<translation_tool> (*this);
+					break;
+
+				case KEY_ROTATE:
+					m_selected_tool = std::make_shared<rotation_tool> (*this);
 					break;
 					
 				case GLFW_KEY_ESCAPE:
@@ -433,9 +449,18 @@ namespace mini {
 
 		auto min = ImGui::GetWindowContentRegionMin ();
 		auto max = ImGui::GetWindowContentRegionMax ();
+		auto window_pos = ImGui::GetWindowPos ();
 
 		int width = max.x - min.x;
 		int height = max.y - min.y;
+
+		const offset_t & mouse_offset = get_mouse_offset ();
+		m_vp_mouse_offset.x = mouse_offset.x - static_cast<int> (min.x + window_pos.x);
+		m_vp_mouse_offset.y = mouse_offset.y - static_cast<int> (min.y + window_pos.y);
+
+		// if mouse is out of viewport then pretend its at the border
+		gui::clamp (m_vp_mouse_offset.x, 0, width);
+		gui::clamp (m_vp_mouse_offset.y, 0, height);
 
 		if ((width != m_last_vp_width || height != m_last_vp_height) && width > 8 && height > 8) {
 			m_context.set_video_mode (video_mode_t (width, height));

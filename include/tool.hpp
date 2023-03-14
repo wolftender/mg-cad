@@ -47,6 +47,9 @@ namespace mini {
 			virtual bool on_mouse_button (int button, int action, int mods);
 			virtual bool on_scroll (double offset_x, double offset_y);
 			virtual bool on_update (float delta_time);
+
+		public:
+			float_vector_t calculate_mouse_dir () const;
 	};
 
 	class translation_tool : public tool_base {
@@ -61,8 +64,28 @@ namespace mini {
 			translation_tool (application & app);
 			~translation_tool ();
 
-			translation_tool (translation_tool &) = delete;
-			translation_tool & operator= (translation_tool &) = delete;
+			translation_tool (const translation_tool &) = delete;
+			translation_tool & operator= (const translation_tool &) = delete;
+
+			virtual bool on_key_event (int key, int scancode, int action, int mods) override;
+			virtual bool on_mouse_button (int button, int action, int mods) override;
+			virtual bool on_update (float delta_time) override;
+	};
+
+	class rotation_tool : public tool_base {
+		private:
+			float_vector_t m_original_rotation;
+			std::shared_ptr<scene_obj_t> m_selection;
+
+			axis_t m_axis_lock;
+			bool m_apply;
+
+		public:
+			rotation_tool (application & app);
+			~rotation_tool ();
+
+			rotation_tool (const rotation_tool &) = delete;
+			rotation_tool & operator= (const rotation_tool &) = delete;
 
 			virtual bool on_key_event (int key, int scancode, int action, int mods) override;
 			virtual bool on_mouse_button (int button, int action, int mods) override;
