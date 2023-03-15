@@ -60,6 +60,7 @@ namespace mini {
 		world[0] = world[0] * world[3];
 		world[1] = world[1] * world[3];
 		world[2] = world[2] * world[3];
+		world[3] = 1.0f;
 
 		return normalize (world - camera.get_position ());
 	}
@@ -134,7 +135,6 @@ namespace mini {
 			return false;
 		}
 
-		// get camera
 		if (m_axis_lock == axis_t::none) {
 			const auto & camera = get_app ().get_context ().get_camera ();
 
@@ -160,10 +160,7 @@ namespace mini {
 			case axis_t::x: t[0] += 0.1f * dx; break;
 			case axis_t::y: t[1] += 0.1f * dy; break;
 			case axis_t::z: t[2] += 0.1f * dx; break;
-			default:
-				t[0] += 0.1f * dx;
-				t[1] -= 0.1f * dy;
-				break;
+			default: break;
 		}
 
 		m_selection->set_translation (t);
@@ -276,6 +273,57 @@ namespace mini {
 
 		m_selection->set_euler_angles (t);
 
+		return true;
+	}
+
+
+	/**********************
+	 *  CAMERA PAN TOOL   *
+	 **********************/
+	camera_pan_tool::camera_pan_tool (application & app) : tool_base (app, "camera pan") {
+		m_original_target = app.get_cam_target ();
+		const auto & camera = get_app ().get_context ().get_camera ();
+
+		float_vector_t plane_normal = normalize (camera.get_position () - m_original_target);
+		float_vector_t direction = calculate_mouse_dir ();
+
+		float nt = float_vector_t::dot ((m_original_target - camera.get_position ()), plane_normal);
+		float dt = float_vector_t::dot (direction, plane_normal);
+
+		m_original_hit = (nt / dt) * direction + camera.get_position ();
+		m_original_normal = plane_normal;
+	}
+
+	camera_pan_tool::~camera_pan_tool () { }
+
+	bool camera_pan_tool::on_mouse_button (int button, int action, int mods) {
+		if (action == GLFW_RELEASE) {
+			t_dispose ();
+		}
+
+		return true;
+	}
+
+	bool camera_pan_tool::on_update (float delta_time) {
+		const auto & camera = get_app ().get_context ().get_camera ();
+
+		float_vector_t plane_normal = m_original_normal;
+		float_vector_t direction = calculate_mouse_dir ();
+
+		float nt = float_vector_t::dot ((m_original_target - camera.get_position ()), plane_normal);
+		float dt = float_vector_t::dot (direction, plane_normal);
+
+		float_vector_t new_pos = (nt / dt) * direction + camera.get_position ();
+		float_vector_t diff = new_pos - m_original_hit;
+
+		if (diff.length () < 0.01f) {
+			return true;
+		}
+
+		float_vector_t d_target = normalize (diff);
+
+		auto target = get_app ().get_cam_target ();
+		get_app ().set_cam_target (target + 0.1f * d_target);
 		return true;
 	}
 }

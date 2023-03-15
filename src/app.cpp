@@ -44,6 +44,14 @@ namespace mini {
 		return m_vp_mouse_offset;
 	}
 
+	const float_vector_t & application::get_cam_target () const {
+		return m_camera_target;
+	}
+
+	void application::set_cam_target (const float_vector_t & target) {
+		m_camera_target = target;
+	}
+
 	app_context & application::get_context () {
 		return m_context;
 	}
@@ -217,11 +225,13 @@ namespace mini {
 		gui::clamp (m_grid_spacing, 0.05f, 10.0f);
 
 		// setup camera for the scene
-		float_vector_t cam_pos = { 0.0f, 0.0f, -m_distance };
-		float_matrix_t cam_rotation = make_rotation_y (m_cam_yaw) * make_rotation_x (m_cam_pitch);
+		float_vector_t cam_pos = { 0.0f, 0.0f, -m_distance, 1.0f };
 
+		float_matrix_t cam_rotation = make_translation (m_camera_target) * make_rotation_y (m_cam_yaw) * make_rotation_x (m_cam_pitch);
 		cam_pos = cam_rotation * cam_pos;
+
 		m_context.get_camera ().set_position (cam_pos);
+		m_context.get_camera ().set_target (m_camera_target);
 
 		app_window::t_integrate (delta_time);
 	}
@@ -283,6 +293,8 @@ namespace mini {
 			if (m_selected_tool->on_mouse_button (button, action, mods)) {
 				return app_window::t_on_mouse_button (button, action, mods);
 			}
+		} else if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_MIDDLE) {
+			m_selected_tool = std::make_shared<camera_pan_tool> (*this);
 		}
 
 		app_window::t_on_mouse_button (button, action, mods);
@@ -367,6 +379,8 @@ namespace mini {
 
 			gui::prefix_label ("Cam. Dist: ", 250.0f);
 			ImGui::InputFloat ("##distance", &m_distance);
+
+			gui::vector_editor ("Cam. Target", m_camera_target);
 			ImGui::NewLine ();
 		}
 

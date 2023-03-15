@@ -52,6 +52,21 @@ namespace mini {
 			float_vector_t calculate_mouse_dir () const;
 	};
 
+	class camera_pan_tool : public tool_base {
+		private:
+			float_vector_t m_original_target, m_original_hit, m_original_normal;
+			
+		public:
+			camera_pan_tool (application & app);
+			~camera_pan_tool ();
+
+			camera_pan_tool (const camera_pan_tool &) = delete;
+			camera_pan_tool & operator= (const camera_pan_tool &) = delete;
+
+			virtual bool on_mouse_button (int button, int action, int mods) override;
+			virtual bool on_update (float delta_time) override;
+	};
+
 	class translation_tool : public tool_base {
 		private:
 			float_vector_t m_original_transform;

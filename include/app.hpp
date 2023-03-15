@@ -33,6 +33,7 @@ namespace mini {
 			int m_last_vp_width, m_last_vp_height;
 			bool m_viewport_focus;
 
+			float_vector_t m_camera_target;
 			offset_t m_vp_mouse_offset;
 
 		public:
@@ -46,6 +47,9 @@ namespace mini {
 			int get_viewport_width () const;
 			int get_viewport_height () const;
 			offset_t get_viewport_mouse_offset () const;
+
+			const float_vector_t & get_cam_target () const;
+			void set_cam_target (const float_vector_t & target);
 
 			app_context & get_context ();
 			std::shared_ptr<scene_obj_t> get_selection ();

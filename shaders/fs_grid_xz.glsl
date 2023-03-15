@@ -9,6 +9,7 @@ in vec4 proj_pos;
 out vec4 output_color;
 
 uniform float u_grid_spacing;
+uniform vec4 u_focus_position;
 
 float grid_color (float res) {
     vec2 coord = world_pos.xz * res;
@@ -19,7 +20,7 @@ float grid_color (float res) {
 }
 
 void main () {
-    float distance = length (world_pos);
+    float distance = length (world_pos.xz - u_focus_position.xz);
     float intensity = min (1.0, grid_color (u_grid_spacing));
 
     intensity = min (1.0, (10.0 / distance) * intensity);
