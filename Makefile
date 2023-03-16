@@ -14,7 +14,7 @@ IMGUI_SRC := $(wildcard $(IMGUI_SRC_DIR)/*.cpp)
 IMGUI_OBJ := $(patsubst $(IMGUI_SRC_DIR)/%.cpp, $(IMGUI_OBJ_DIR)/%.o, $(IMGUI_SRC))
 
 CPPFLAGS := -Iinclude `pkg-config --cflags glfw3` -Ilibs/glad/include -Ilibs/imgui --std=c++17
-CFLAGS := -Wall -O2
+CFLAGS := -Wall -g
 LDFLAGS :=
 LDLIBS := `pkg-config --libs glfw3` -ldl -lpthread
 

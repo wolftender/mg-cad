@@ -44,7 +44,7 @@ namespace mini {
 		m_selected = selected;
 	}
 
-	const float_matrix_t & scene_obj_t::get_matrix () const {
+	float_matrix_t scene_obj_t::get_matrix () const {
 		float_matrix_t world = make_identity ();
 
 		world = world * make_translation (m_translation);

@@ -26,7 +26,7 @@ namespace mini {
 			void set_scale (const float_vector_t & scale);
 			void set_selected (bool selected);
 
-			const float_matrix_t & get_matrix () const;
+			float_matrix_t get_matrix () const;
 
 			scene_obj_t (const std::string & type_name);
 			virtual ~scene_obj_t ();

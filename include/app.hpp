@@ -1,4 +1,6 @@
 #pragma once
+#include <vector>
+
 #include "window.hpp"
 #include "context.hpp"
 #include "grid.hpp"
