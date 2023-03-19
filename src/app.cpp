@@ -44,11 +44,11 @@ namespace mini {
 		return m_vp_mouse_offset;
 	}
 
-	const float_vector_t & application::get_cam_target () const {
+	const glm::vec3 & application::get_cam_target () const {
 		return m_camera_target;
 	}
 
-	void application::set_cam_target (const float_vector_t & target) {
+	void application::set_cam_target (const glm::vec3 & target) {
 		m_camera_target = target;
 	}
 
@@ -133,8 +133,8 @@ namespace mini {
 			f_d_yaw = f_d_yaw * 15.0f / static_cast<float> (get_width ());
 			f_d_pitch = f_d_pitch * 15.0f / static_cast<float> (get_height ());
 
-			m_cam_yaw = m_cam_yaw + f_d_yaw;
-			m_cam_pitch = m_cam_pitch - f_d_pitch;
+			m_cam_yaw = m_cam_yaw - f_d_yaw;
+			m_cam_pitch = m_cam_pitch + f_d_pitch;
 		}
 	}
 
@@ -212,7 +212,8 @@ namespace mini {
 		// the matrices will degenerate then
 		gui::clamp (m_cam_pitch, -1.56f, 1.56f);
 
-		constexpr float pi2 = pi_f * 2.0f;
+		constexpr float pi2 = glm::pi<float> () * 2.0f;
+
 		if (m_cam_yaw > pi2) {
 			m_cam_yaw = m_cam_yaw - pi2;
 		} else if (m_cam_yaw < -pi2) {
@@ -225,9 +226,13 @@ namespace mini {
 		gui::clamp (m_grid_spacing, 0.05f, 10.0f);
 
 		// setup camera for the scene
-		float_vector_t cam_pos = { 0.0f, 0.0f, -m_distance, 1.0f };
+		glm::vec4 cam_pos = { 0.0f, 0.0f, -m_distance, 1.0f };
+		glm::mat4x4 cam_rotation (1.0f);
 
-		float_matrix_t cam_rotation = make_translation (m_camera_target) * make_rotation_y (m_cam_yaw) * make_rotation_x (m_cam_pitch);
+		cam_rotation = glm::rotate (cam_rotation, m_cam_yaw, { 0.0f, 1.0f, 0.0f });
+		cam_rotation = glm::rotate (cam_rotation, m_cam_pitch, { 1.0f, 0.0f, 0.0f });
+		cam_rotation = glm::translate (cam_rotation, m_camera_target);
+		
 		cam_pos = cam_rotation * cam_pos;
 
 		m_context.get_camera ().set_position (cam_pos);
@@ -250,7 +255,7 @@ namespace mini {
 				m_context.draw (m_grid_xy, make_rotation_x (pi_f / 2.0f));
 			}*/
 
-			m_context.draw (m_grid_xz, make_identity ());
+			m_context.draw (m_grid_xz, glm::mat4x4 (1.0f));
 		}
 
 		m_context.display (false);

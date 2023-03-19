@@ -16,7 +16,7 @@ namespace mini {
 			ImGui::SetNextItemWidth (-1);
 		}
 
-		void vector_editor (const std::string & label, float_vector_t & vector) {
+		void vector_editor (const std::string & label, glm::vec3 & vector) {
 			const std::string label_x = "##" + label + "_x";
 			const std::string label_y = "##" + label + "_y";
 			const std::string label_z = "##" + label + "_z";

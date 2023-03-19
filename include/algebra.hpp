@@ -4,7 +4,22 @@
 #include <type_traits>
 #include <cmath>
 
+#include <glm/glm.hpp>
+#include <glm/common.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/constants.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 namespace mini {
+	// wrappers required by the task
+	glm::mat4x4 make_rotation_x (float angle);
+	glm::mat4x4 make_rotation_y (float angle);
+	glm::mat4x4 make_rotation_z (float angle);
+	glm::mat4x4 make_translation (const glm::vec3 & vector);
+	glm::mat4x4 make_scale (const glm::vec3 & vector);
+}
+
+namespace deprecated_mini {
 	constexpr const float pi_f = 3.14159265359f;
 
 	template <typename T> class vector_t {
@@ -223,6 +238,8 @@ namespace mini {
 	float_vector_t normalize (const float_vector_t & vector);
 	float_matrix_t make_identity ();
 	float_matrix_t make_scale (float s);
+	float_matrix_t make_scale (float sx, float sy, float sz);
+	float_matrix_t make_scale (const float_vector_t & vector);
 	float_matrix_t make_translation (const float_vector_t & vector);
 	float_matrix_t make_translation (float tx, float ty, float tz);
 	float_matrix_t make_rotation_x (float angle);

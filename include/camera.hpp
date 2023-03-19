@@ -6,8 +6,8 @@ namespace mini {
 		private:
 			float m_fov, m_near, m_far, m_aspect;
 
-			float_vector_t m_position, m_target;
-			float_matrix_t m_view, m_projection, m_projection_inv, m_view_inv;
+			glm::vec3 m_position, m_target;
+			glm::mat4x4 m_view, m_projection, m_projection_inv, m_view_inv;
 
 		public:
 			float get_fov () const;
@@ -15,24 +15,24 @@ namespace mini {
 			float get_far () const;
 			float get_aspect () const;
 
-			const float_matrix_t & get_view_matrix () const;
-			const float_matrix_t & get_projection_matrix () const;
-			const float_matrix_t & get_view_inverse () const;
-			const float_matrix_t & get_projection_inverse () const;
+			const glm::mat4x4 & get_view_matrix () const;
+			const glm::mat4x4 & get_projection_matrix () const;
+			const glm::mat4x4 & get_view_inverse () const;
+			const glm::mat4x4 & get_projection_inverse () const;
 
-			const float_vector_t & get_position () const;
-			const float_vector_t & get_target () const;
+			const glm::vec3 & get_position () const;
+			const glm::vec3 & get_target () const;
 
 			void set_fov (float fov);
 			void set_near (float near);
 			void set_far (float far);
 			void set_aspect (float aspect);
 
-			void set_position (const float_vector_t & position);
-			void set_target (const float_vector_t & target);
+			void set_position (const glm::vec3 & position);
+			void set_target (const glm::vec3 & target);
 
 			camera ();
-			camera (const float_vector_t & position, const float_vector_t & target);
+			camera (const glm::vec3 & position, const glm::vec3 & target);
 
 		private:
 			void m_recalculate_view ();

@@ -1,15 +1,15 @@
 #version 330
 
 in vec4 vertex_color;
-in vec4 world_pos;
-in vec4 local_pos;
-in vec4 view_pos;
-in vec4 proj_pos;
+in vec3 world_pos;
+in vec3 local_pos;
+in vec3 view_pos;
+in vec3 proj_pos;
 
 out vec4 output_color;
 
 uniform float u_grid_spacing;
-uniform vec4 u_focus_position;
+uniform vec3 u_focus_position;
 
 float grid_color (float res) {
     vec2 coord = world_pos.xz * res;

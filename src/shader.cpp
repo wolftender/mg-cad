@@ -156,19 +156,27 @@ namespace mini {
 		}
 	}
 
-	void shader_t::set_uniform (const std::string & name, const float_vector_t & vector) {
+	void shader_t::set_uniform (const std::string & name, const glm::vec3 & vector) {
 		const int location = get_uniform_location (name);
 
 		if (location >= 0) {
-			glUniform4fv (location, 1, vector.get_buffer ());
+			glUniform3fv (location, 1, glm::value_ptr (vector));
 		}
 	}
 
-	void shader_t::set_uniform (const std::string & name, const float_matrix_t & matrix) {
+	void shader_t::set_uniform (const std::string & name, const glm::vec4 & vector) {
 		const int location = get_uniform_location (name);
 
 		if (location >= 0) {
-			glUniformMatrix4fv (location, 1, GL_TRUE, matrix.get_buffer ());
+			glUniform4fv (location, 1, glm::value_ptr (vector));
+		}
+	}
+
+	void shader_t::set_uniform (const std::string & name, const glm::mat4x4 & matrix) {
+		const int location = get_uniform_location (name);
+
+		if (location >= 0) {
+			glUniformMatrix4fv (location, 1, GL_FALSE, glm::value_ptr (matrix));
 		}
 	}
 

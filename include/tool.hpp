@@ -49,12 +49,12 @@ namespace mini {
 			virtual bool on_update (float delta_time);
 
 		public:
-			float_vector_t calculate_mouse_dir () const;
+			glm::vec3 calculate_mouse_dir () const;
 	};
 
 	class camera_pan_tool : public tool_base {
 		private:
-			float_vector_t m_original_target, m_original_hit, m_original_normal;
+			glm::vec3 m_original_target, m_original_hit, m_original_normal;
 			
 		public:
 			camera_pan_tool (application & app);
@@ -69,7 +69,7 @@ namespace mini {
 
 	class translation_tool : public tool_base {
 		private:
-			float_vector_t m_original_transform;
+			glm::vec3 m_original_transform;
 			std::shared_ptr<scene_obj_t> m_selection;
 
 			axis_t m_axis_lock;
@@ -89,7 +89,7 @@ namespace mini {
 
 	class rotation_tool : public tool_base {
 		private:
-			float_vector_t m_original_rotation;
+			glm::vec3 m_original_rotation;
 			std::shared_ptr<scene_obj_t> m_selection;
 
 			axis_t m_axis_lock;

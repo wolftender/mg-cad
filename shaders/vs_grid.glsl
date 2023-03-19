@@ -8,10 +8,10 @@ uniform mat4 u_view;
 uniform mat4 u_projection;
 
 out vec4 vertex_color;
-out vec4 local_pos;
-out vec4 world_pos;
-out vec4 view_pos;
-out vec4 proj_pos;
+out vec3 local_pos;
+out vec3 world_pos;
+out vec3 view_pos;
+out vec3 proj_pos;
 
 void main () {
     vertex_color = a_color;
@@ -20,10 +20,10 @@ void main () {
     vec4 view = u_view * world;
     vec4 proj = u_projection * view;
 
-    local_pos = vec4 (a_position, 1.0);
-    world_pos = world;
-    view_pos = view;
-    proj_pos = proj;
+    local_pos = a_position;
+    world_pos = world.xyz;
+    view_pos = view.xyz;
+    proj_pos = proj.xyz;
 
     gl_Position = proj;
 }

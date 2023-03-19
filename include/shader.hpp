@@ -55,8 +55,9 @@ namespace mini {
 			int get_uniform_location (const std::string & name);
 
 			void set_uniform (const std::string & name, const float value);
-			void set_uniform (const std::string & name, const float_vector_t & vector);
-			void set_uniform (const std::string & name, const float_matrix_t & matrix);
+			void set_uniform (const std::string & name, const glm::vec3 & vector);
+			void set_uniform (const std::string & name, const glm::vec4 & vector);
+			void set_uniform (const std::string & name, const glm::mat4x4 & matrix);
 
 		private:
 			bool m_try_compile (GLenum shader_type, const std::string & source, GLuint * out_shader);

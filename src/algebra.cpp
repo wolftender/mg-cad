@@ -2,6 +2,62 @@
 #include "algebra.hpp"
 
 namespace mini {
+    glm::mat4x4 make_rotation_x (float angle) {
+        float s = sin (angle);
+        float c = cos (angle);
+
+        return {
+            1.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, c, s, 0.0f,
+            0.0f, -s, c, 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f
+        };
+    }
+
+    glm::mat4x4 make_rotation_y (float angle) {
+        float s = sin (angle);
+        float c = cos (angle);
+
+        return {
+            c, 0.0f, -s, 0.0f,
+            0.0f, 1.0f, 0.0f, 0.0f,
+            s, 0.0f, c, 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f
+        };
+    }
+
+    glm::mat4x4 make_rotation_z (float angle) {
+        float s = sin (angle);
+        float c = cos (angle);
+
+        return {
+            c, s, 0.0f, 0.0f,
+            -s, c, 0.0f, 0.0f,
+            0.0f, 0.0f, 1.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f
+        };
+    }
+
+    glm::mat4x4 make_translation (const glm::vec3 & vector) {
+        return {
+            1.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 1.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 1.0f, 0.0f,
+            vector[0], vector[1], vector[2], 1.0f
+        };
+    }
+
+    glm::mat4x4 make_scale (const glm::vec3 & vector) {
+        return {
+            vector[0], 0.0f, 0.0f, 0.0f,
+            0.0f, vector[1], 0.0f, 0.0f,
+            0.0f, 0.0f, vector[2], 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f
+        };
+    }
+}
+
+namespace deprecated_mini {
 	float_vector_t normalize (const float_vector_t & vector) {
 		float x = vector[0];
 		float y = vector[1];
@@ -33,6 +89,19 @@ namespace mini {
 			0.0f, 0.0f, 0.0f, 1.0f
 		};
 	}
+
+    float_matrix_t make_scale (float sx, float sy, float sz) {
+        return float_matrix_t{
+            sx, 0.0f, 0.0f, 0.0f,
+            0.0f, sy, 0.0f, 0.0f,
+            0.0f, 0.0f, sz, 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f
+        };
+    }
+
+    float_matrix_t make_scale (const float_vector_t & vector) {
+        return make_scale (vector[0], vector[1], vector[2]);
+    }
 
 	float_matrix_t make_translation (const float_vector_t & vector) {
 		return make_translation (vector[0], vector[1], vector[2]);

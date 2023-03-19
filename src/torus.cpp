@@ -24,7 +24,7 @@ namespace mini {
 		m_free_geometry ();
 	}
 
-	void torus_object::render (app_context & context, const float_matrix_t & world_matrix) const {
+	void torus_object::render (app_context & context, const glm::mat4x4 & world_matrix) const {
 		glBindVertexArray (m_vao);
 
 		if (!is_selected ()) {
@@ -103,8 +103,8 @@ namespace mini {
 		// u \in [0, 2pi)
 		// v \in [0, 2pi)
 
-		float du = (2.0f * pi_f) / static_cast<float>(m_div_u);
-		float dv = (2.0f * pi_f) / static_cast<float>(m_div_v);
+		float du = (2.0f * glm::pi<float> ()) / static_cast<float>(m_div_u);
+		float dv = (2.0f * glm::pi<float> ()) / static_cast<float>(m_div_v);
 
 		float A = (m_outer_radius + m_inner_radius) / 2.0f;
 		float B = (m_outer_radius - m_inner_radius) / 2.0f;

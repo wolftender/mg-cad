@@ -17,27 +17,27 @@ namespace mini {
 		return m_aspect;
 	}
 
-	const float_matrix_t & camera::get_view_matrix () const {
+	const glm::mat4x4 & camera::get_view_matrix () const {
 		return m_view;
 	}
 
-	const float_matrix_t & camera::get_projection_matrix () const {
+	const glm::mat4x4 & camera::get_projection_matrix () const {
 		return m_projection;
 	}
 
-	const float_matrix_t & camera::get_view_inverse () const {
+	const glm::mat4x4 & camera::get_view_inverse () const {
 		return m_view_inv;
 	}
 
-	const float_matrix_t & camera::get_projection_inverse () const {
+	const glm::mat4x4 & camera::get_projection_inverse () const {
 		return m_projection_inv;
 	}
 
-	const float_vector_t & camera::get_position () const {
+	const glm::vec3 & camera::get_position () const {
 		return m_position;
 	}
 
-	const float_vector_t & camera::get_target () const {
+	const glm::vec3 & camera::get_target () const {
 		return m_target;
 	}
 
@@ -61,12 +61,12 @@ namespace mini {
 		m_recalculate_projection ();
 	}
 
-	void camera::set_position (const float_vector_t & position) {
+	void camera::set_position (const glm::vec3 & position) {
 		m_position = position;
 		m_recalculate_view ();
 	}
 
-	void camera::set_target (const float_vector_t & target) {
+	void camera::set_target (const glm::vec3 & target) {
 		m_target = target;
 		m_recalculate_view ();
 	}
@@ -83,7 +83,7 @@ namespace mini {
 		m_recalculate_projection ();
 	}
 
-	camera::camera (const float_vector_t & position, const float_vector_t & target) {
+	camera::camera (const glm::vec3 & position, const glm::vec3 & target) {
 		m_aspect = 1.0f;
 		m_far = 100.0f;
 		m_near = 0.1f;
@@ -96,37 +96,42 @@ namespace mini {
 	}
 
 	void camera::m_recalculate_projection () {
-		float t = tan (m_fov / 2.0f);
+		float t = glm::tan (m_fov / 2.0f);
 		float a = m_aspect;
 		float zm = m_far - m_near;
 		float zp = m_far + m_near;
 
-		m_projection = float_matrix_t {
-			1.0f / (t * a), 0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f / t, 0.0f, 0.0f,
-			0.0f, 0.0f, -zp / zm, -(2.0f * m_far * m_near) / zm,
-			0.0f, 0.0f, -1.0f, 0.0f
+		m_projection = {
+			1.0f / (t * a), 0.0f,     0.0f,     0.0f,
+			0.0f,           1.0f / t, 0.0f,     0.0f,
+			0.0f,           0.0f,     -zp / zm, -1.0f,
+			0.0f,           0.0f,     -(2.0f * m_far * m_near) / zm,    0.0f
 		};
 
-		m_projection_inv = invert (m_projection);
+		m_projection_inv = glm::inverse (m_projection);
+
+		/*m_projection = glm::perspective (m_fov, m_aspect, m_near, m_far);
+		m_projection_inv = glm::inverse (m_projection);*/
 	}
 
 	void camera::m_recalculate_view () {
-		float_vector_t dir = m_position - m_target;
-		float_vector_t up { 0.0f, 1.0f, 0.0f };
+		glm::vec3 dir = m_position - m_target;
+		glm::vec3 up = { 0.0f, 1.0f, 0.0f };
 
-		float_vector_t f = normalize (dir);
-		float_vector_t r = normalize (float_vector_t::cross (f, up));
-		float_vector_t u = normalize (float_vector_t::cross (f, r));
+		glm::vec3 f = glm::normalize (dir);
+		glm::vec3 r = glm::normalize (glm::cross (up, f));
+		glm::vec3 u = glm::normalize (glm::cross (f, r));
 
-		float_matrix_t m1{
-			r[0], r[1], r[2], 0.0f,
-			u[0], u[1], u[2], 0.0f,
-			f[0], f[1], f[2], 0.0f,
-			0.0f, 0.0f, 0.0f, 1.0f
+		m_view = {
+			r[0], u[0], f[0], 0.0f,
+			r[1], u[1], f[1], 0.0f,
+			r[2], u[2], f[2], 0.0f,
+			-glm::dot (r, m_position), -glm::dot (u, m_position), -glm::dot (f, m_position), 1.0f
 		};
 
-		m_view = m1 * make_translation (-m_position[0], -m_position[1], -m_position[2]);
-		m_view_inv = invert (m_view);
+		m_view_inv = glm::inverse (m_view);
+
+		/*m_view = glm::lookAt (m_position, m_target, {0.0f, 1.0f, 0.0f});
+		m_view_inv = glm::inverse (m_view);*/
 	}
 }

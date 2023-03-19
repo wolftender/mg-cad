@@ -4,6 +4,10 @@
 namespace mini {
 	scene_obj_t::scene_obj_t (const std::string & type_name) {
 		m_type_name = type_name;
+
+		m_euler_angles = { 0.0f, 0.0f, 0.0f };
+		m_translation = { 0.0f, 0.0f, 0.0f };
+		m_scale = { 1.0f, 1.0f, 1.0f };
 	}
 
 	scene_obj_t::~scene_obj_t () { }
@@ -12,15 +16,15 @@ namespace mini {
 		return m_type_name;
 	}
 
-	const float_vector_t & scene_obj_t::get_translation () const {
+	const glm::vec3 & scene_obj_t::get_translation () const {
 		return m_translation;
 	}
 
-	const float_vector_t & scene_obj_t::get_euler_angles () const {
+	const glm::vec3 & scene_obj_t::get_euler_angles () const {
 		return m_euler_angles;
 	}
 
-	const float_vector_t & scene_obj_t::get_scale () const {
+	const glm::vec3 & scene_obj_t::get_scale () const {
 		return m_scale;
 	}
 
@@ -28,15 +32,15 @@ namespace mini {
 		return m_selected;
 	}
 
-	void scene_obj_t::set_translation (const float_vector_t & translation) {
+	void scene_obj_t::set_translation (const glm::vec3 & translation) {
 		m_translation = translation;
 	}
 
-	void scene_obj_t::set_euler_angles (const float_vector_t & euler_angles) {
+	void scene_obj_t::set_euler_angles (const glm::vec3 & euler_angles) {
 		m_euler_angles = euler_angles;
 	}
 
-	void scene_obj_t::set_scale (const float_vector_t & scale) {
+	void scene_obj_t::set_scale (const glm::vec3 & scale) {
 		m_scale = scale;
 	}
 
@@ -44,13 +48,14 @@ namespace mini {
 		m_selected = selected;
 	}
 
-	float_matrix_t scene_obj_t::get_matrix () const {
-		float_matrix_t world = make_identity ();
+	glm::mat4x4 scene_obj_t::get_matrix () const {
+		glm::mat4x4 world (1.0f);
 
-		world = world * make_translation (m_translation);
-		world = world * make_rotation_z (m_euler_angles[2]);
-		world = world * make_rotation_y (m_euler_angles[1]);
-		world = world * make_rotation_x (m_euler_angles[0]);
+		world = glm::scale (world, m_scale);
+		world = glm::rotate (world, m_euler_angles[0], { 1.0f, 0.0f, 0.0f });
+		world = glm::rotate (world, m_euler_angles[1], { 0.0f, 1.0f, 0.0f });
+		world = glm::rotate (world, m_euler_angles[2], { 0.0f, 0.0f, 1.0f });
+		world = glm::translate (world, m_translation);
 
 		return world;
 	}

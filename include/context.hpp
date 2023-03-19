@@ -37,7 +37,7 @@ namespace mini {
 	class graphics_obj_t {
 		public:
 			virtual ~graphics_obj_t () { }
-			virtual void render (app_context & context, const float_matrix_t & world_matrix) const = 0;
+			virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const = 0;
 	};
 
 	/// <summary>
@@ -78,17 +78,17 @@ namespace mini {
 		private:
 			struct enqueued_renderable_t {
 				std::weak_ptr<graphics_obj_t> object;
-				float_matrix_t world_matrix;
+				glm::mat4x4 world_matrix;
 			};
 
 			std::array<enqueued_renderable_t, RENDER_QUEUE_SIZE> m_queue;
 			uint64_t m_last_queue_index;
 
-			float_vector_t m_camera_pos;
-			float_vector_t m_camera_target;
+			glm::vec3 m_camera_pos;
+			glm::vec3 m_camera_target;
 
-			float_matrix_t m_view_matrix;
-			float_matrix_t m_projection_matrix;
+			glm::mat4x4 m_view_matrix;
+			glm::mat4x4 m_projection_matrix;
 
 			// opengl framebuffer objects
 			GLuint m_framebuffer[2], m_colorbuffer[2];
@@ -110,8 +110,8 @@ namespace mini {
 			app_context (const app_context &) = delete;
 			app_context & operator= (const app_context &) = delete;
 
-			void set_camera_pos (const float_vector_t & position);
-			void set_camera_target (const float_vector_t & target);
+			void set_camera_pos (const glm::vec3 & position);
+			void set_camera_target (const glm::vec3 & target);
 
 			void set_video_mode (const video_mode_t & video_mode);
 
@@ -121,10 +121,10 @@ namespace mini {
 			camera & get_camera ();
 			const camera & get_camera () const;
 
-			const float_matrix_t & get_view_matrix () const;
-			const float_matrix_t & get_projection_matrix () const;
+			const glm::mat4x4 & get_view_matrix () const;
+			const glm::mat4x4 & get_projection_matrix () const;
 
-			void draw (std::weak_ptr<graphics_obj_t> object, float_matrix_t world_matrix);
+			void draw (std::weak_ptr<graphics_obj_t> object, glm::mat4x4 world_matrix);
 			void render ();
 			void display (bool present);
 			void display_scene ();

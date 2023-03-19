@@ -116,11 +116,11 @@ namespace mini {
 		m_destroy_frame_buffer ();
 	}
 
-	void app_context::set_camera_pos (const float_vector_t & position) {
+	void app_context::set_camera_pos (const glm::vec3 & position) {
 		m_camera_pos = position;
 	}
 
-	void app_context::set_camera_target (const float_vector_t & target) {
+	void app_context::set_camera_target (const glm::vec3 & target) {
 		m_camera_target = target;
 	}
 
@@ -150,15 +150,15 @@ namespace mini {
 		return m_camera;
 	}
 
-	const float_matrix_t & app_context::get_view_matrix () const {
+	const glm::mat4x4 & app_context::get_view_matrix () const {
 		return m_camera.get_view_matrix ();
 	}
 
-	const float_matrix_t & app_context::get_projection_matrix () const {
+	const glm::mat4x4 & app_context::get_projection_matrix () const {
 		return m_camera.get_projection_matrix ();
 	}
 
-	void app_context::draw (std::weak_ptr<graphics_obj_t> object, float_matrix_t world_matrix) {
+	void app_context::draw (std::weak_ptr<graphics_obj_t> object, glm::mat4x4 world_matrix) {
 		if (m_last_queue_index < RENDER_QUEUE_SIZE - 1) {
 			m_queue[m_last_queue_index].object = object;
 			m_queue[m_last_queue_index].world_matrix = world_matrix;

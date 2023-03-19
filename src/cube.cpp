@@ -150,7 +150,7 @@ namespace mini {
 		glDeleteBuffers (1, &m_index_buffer);
 	}
 
-	void cube_object::render (app_context & context, const float_matrix_t & world_matrix) const {
+	void cube_object::render (app_context & context, const glm::mat4x4 & world_matrix) const {
 		glBindVertexArray (m_vao);
 
 		m_shader->bind ();

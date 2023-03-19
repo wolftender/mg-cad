@@ -40,7 +40,7 @@ namespace mini {
 	bool tool_base::on_scroll (double offset_x, double offset_y) { return false; }
 	bool tool_base::on_update (float delta_time) { return false; }
 
-	float_vector_t tool_base::calculate_mouse_dir () const {
+	glm::vec3 tool_base::calculate_mouse_dir () const {
 		const auto & camera = get_app ().get_context ().get_camera ();
 		const auto & mouse_offset = get_app ().get_viewport_mouse_offset ();
 
@@ -52,9 +52,9 @@ namespace mini {
 		const float screen_x = (2.0f * (mouse_x / vp_width)) - 1.0f;
 		const float screen_y = (2.0f * (mouse_y / vp_height)) - 1.0f;
 
-		float_vector_t screen = { screen_x, screen_y, 1.0f, 1.0f };
-		float_matrix_t view_proj_inv = camera.get_view_inverse () * camera.get_projection_inverse ();
-		float_vector_t world = view_proj_inv * screen;
+		glm::vec4 screen = { screen_x, screen_y, 1.0f, 1.0f };
+		glm::mat4x4 view_proj_inv = camera.get_view_inverse () * camera.get_projection_inverse ();
+		glm::vec4 world = view_proj_inv * screen;
 
 		world[3] = 1.0f / world[3];
 		world[0] = world[0] * world[3];
@@ -62,7 +62,8 @@ namespace mini {
 		world[2] = world[2] * world[3];
 		world[3] = 1.0f;
 
-		return normalize (world - camera.get_position ());
+		glm::vec3 world_pos = world;
+		return glm::normalize (world_pos - camera.get_position ());
 	}
 
 	/**********************
@@ -138,11 +139,11 @@ namespace mini {
 		if (m_axis_lock == axis_t::none) {
 			const auto & camera = get_app ().get_context ().get_camera ();
 
-			float_vector_t plane_normal = normalize (camera.get_position () - m_original_transform);
-			float_vector_t direction = calculate_mouse_dir ();
+			glm::vec3 plane_normal = normalize (camera.get_position () - m_original_transform);
+			glm::vec3 direction = calculate_mouse_dir ();
 
-			float nt = float_vector_t::dot ((m_original_transform - camera.get_position ()), plane_normal);
-			float dt = float_vector_t::dot (direction, plane_normal);
+			float nt = glm::dot ((m_original_transform - camera.get_position ()), plane_normal);
+			float dt = glm::dot (direction, plane_normal);
 
 			m_selection->set_translation ((nt / dt) * direction + camera.get_position ());
 			return true;
@@ -234,7 +235,7 @@ namespace mini {
 	}
 
 	inline void loop_angle (float & angle) {
-		const float pi2 = 2.0f * pi_f;
+		const float pi2 = 2.0f * glm::pi<float> ();
 		if (angle > pi2) {
 			angle = angle - pi2;
 		} else if (angle < -pi2) {
@@ -255,7 +256,7 @@ namespace mini {
 		float dy = static_cast<float>(curr_pos.y) - static_cast<float>(last_pos.y);
 
 		auto t = m_selection->get_euler_angles ();
-		const float ang_speed = (1 / 360.0f) * pi_f;
+		const float ang_speed = (1 / 360.0f) * glm::pi<float> ();
 
 		switch (m_axis_lock) {
 			case axis_t::x: t[0] += ang_speed * dx; break;
@@ -284,11 +285,11 @@ namespace mini {
 		m_original_target = app.get_cam_target ();
 		const auto & camera = get_app ().get_context ().get_camera ();
 
-		float_vector_t plane_normal = normalize (camera.get_position () - m_original_target);
-		float_vector_t direction = calculate_mouse_dir ();
+		glm::vec3 plane_normal = glm::normalize (camera.get_position () - m_original_target);
+		glm::vec3 direction = calculate_mouse_dir ();
 
-		float nt = float_vector_t::dot ((m_original_target - camera.get_position ()), plane_normal);
-		float dt = float_vector_t::dot (direction, plane_normal);
+		float nt = glm::dot ((m_original_target - camera.get_position ()), plane_normal);
+		float dt = glm::dot (direction, plane_normal);
 
 		m_original_hit = (nt / dt) * direction + camera.get_position ();
 		m_original_normal = plane_normal;
@@ -307,23 +308,24 @@ namespace mini {
 	bool camera_pan_tool::on_update (float delta_time) {
 		const auto & camera = get_app ().get_context ().get_camera ();
 
-		float_vector_t plane_normal = m_original_normal;
-		float_vector_t direction = calculate_mouse_dir ();
+		glm::vec3 plane_normal = m_original_normal;
+		glm::vec3 direction = calculate_mouse_dir ();
 
-		float nt = float_vector_t::dot ((m_original_target - camera.get_position ()), plane_normal);
-		float dt = float_vector_t::dot (direction, plane_normal);
+		float nt = glm::dot ((m_original_target - camera.get_position ()), plane_normal);
+		float dt = glm::dot (direction, plane_normal);
 
-		float_vector_t new_pos = (nt / dt) * direction + camera.get_position ();
-		float_vector_t diff = new_pos - m_original_hit;
+		glm::vec3 new_pos = (nt / dt) * direction + camera.get_position ();
+		glm::vec3 diff = new_pos - m_original_hit;
 
-		if (diff.length () < 0.01f) {
+		if (glm::length (diff) < 0.01f) {
 			return true;
 		}
 
-		float_vector_t d_target = normalize (diff);
+		glm::vec3 d_target = glm::normalize (diff);
 
 		auto target = get_app ().get_cam_target ();
 		get_app ().set_cam_target (target + 0.1f * d_target);
+
 		return true;
 	}
 }

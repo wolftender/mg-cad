@@ -18,6 +18,6 @@ namespace mini {
 			grid_object (const grid_object &) = delete;
 			grid_object & operator= (const grid_object &) = delete;
 
-			virtual void render (app_context & context, const float_matrix_t & world_matrix) const override;
+			virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override;
 	};
 }
