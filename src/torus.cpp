@@ -14,7 +14,7 @@ namespace mini {
 
 		m_div_u = 15;
 		m_div_v = 15;
-		m_is_wireframe = true;
+		m_is_wireframe = false;
 
 		m_requires_rebuild = false;
 		m_generate_geometry ();

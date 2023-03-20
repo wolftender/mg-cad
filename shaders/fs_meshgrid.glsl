@@ -18,7 +18,11 @@ float grid_color () {
 
 void main () {
     float intensity = max (0.0, min (1.0, grid_color ()));
-    vec4 color = intensity * vec4 (1.0, 1.0, 1.0, 1.0);
 
+    if (intensity < 0.01) {
+        discard;
+    }
+
+    vec4 color = intensity * vec4 (1.0, 1.0, 1.0, 1.0);
     output_color = color;
 }

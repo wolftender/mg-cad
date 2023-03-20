@@ -25,6 +25,10 @@ void main () {
 
     intensity = min (1.0, (10.0 / distance) * intensity);
 
+    if (intensity < 0.01) {
+        discard;
+    }
+
     float d_ax = abs (world_pos.x);
     float d_az = abs (world_pos.z);
 
