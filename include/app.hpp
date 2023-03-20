@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <functional>
 
 #include "window.hpp"
 #include "context.hpp"
@@ -7,13 +8,15 @@
 #include "object.hpp"
 #include "billboard.hpp"
 #include "tool.hpp"
+#include "factory.hpp"
+#include "store.hpp"
 
 namespace mini {
 	class application : public app_window {
 		private:
 			struct object_wrapper_t {
 				std::shared_ptr<scene_obj_t> object;
-				std::string name;
+				std::string name, tmp_name;
 				bool selected;
 
 				object_wrapper_t (std::shared_ptr<scene_obj_t> o, const std::string & name);
@@ -21,10 +24,10 @@ namespace mini {
 
 			app_context m_context;
 
-			std::shared_ptr<shader_t> m_basic_shader, m_grid_xz_shader, m_grid_xy_shader;
-			std::shared_ptr<shader_t> m_billboard_shader, m_billboard_shader_s;
-			std::shared_ptr<shader_t> m_mesh_shader, m_alt_mesh_shader;
-			std::vector<object_wrapper_t> m_objects;
+			std::shared_ptr<resource_store> m_store;
+			std::shared_ptr<object_factory> m_factory;
+
+			std::vector<std::shared_ptr<object_wrapper_t>> m_objects;
 
 			// gizmos etc
 			std::shared_ptr<billboard_object> m_cursor_object;
@@ -33,7 +36,7 @@ namespace mini {
 			// textures
 			std::shared_ptr<texture_t> m_test_texture;
 
-			std::shared_ptr<scene_obj_t> m_selected_object;
+			std::shared_ptr<object_wrapper_t> m_selected_object;
 			std::shared_ptr<tool_base> m_selected_tool;
 
 			// cursor
@@ -44,11 +47,16 @@ namespace mini {
 			float m_grid_spacing;
 			bool m_grid_enabled;
 
+			// object creation tool
+			bool m_show_creator;
+
 			int m_last_vp_width, m_last_vp_height;
-			bool m_viewport_focus;
+			bool m_viewport_focus, m_mouse_in_viewport;
 
 			glm::vec3 m_camera_target;
 			offset_t m_vp_mouse_offset;
+
+			// object factories
 
 		public:
 			// api for tools
@@ -57,6 +65,7 @@ namespace mini {
 			float get_cam_distance () const;
 			float get_time () const;
 			bool is_viewport_focused () const;
+			bool is_mouse_in_viewport () const;
 
 			const glm::vec3 & get_cursor_pos () const;
 			const glm::vec2 & get_cursor_screen_pos () const;
@@ -103,8 +112,7 @@ namespace mini {
 			void m_handle_mouse ();
 			void m_snap_cursor_to_mouse ();
 
-			std::string m_read_file_content (const std::string & path) const;
-			std::shared_ptr<shader_t> m_load_shader (const std::string & vs_file, const std::string & ps_file) const;
+			void m_show_object_creator (bool enable);
 
 			// render for different ui elements
 			void m_draw_main_menu ();
@@ -112,10 +120,13 @@ namespace mini {
 			void m_draw_view_options ();
 			void m_draw_scene_options ();
 			void m_draw_object_options ();
+			void m_draw_group_options ();
+			void m_draw_object_creator ();
 			void m_draw_viewport ();
 
 			// object management
-			void m_add_object (const std::string & name, std::shared_ptr<scene_obj_t> object);
+			std::string m_get_free_name (const std::string & name, const std::string & self = std::string ()) const;
+			void m_add_object (const std::string & name, std::shared_ptr<scene_obj_t> object, bool select);
 			void m_reset_selection ();
 	};
 }

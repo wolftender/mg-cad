@@ -5,12 +5,10 @@
 #include "gui.hpp"
 #include "app.hpp"
 
-// objects
-#include "cube.hpp"
-#include "torus.hpp"
-
 namespace mini {
-	application::object_wrapper_t::object_wrapper_t (std::shared_ptr<scene_obj_t> o, const std::string & name) : object (o), name (name), selected (false) {}
+	application::object_wrapper_t::object_wrapper_t (std::shared_ptr<scene_obj_t> o, const std::string & name) : object (o), name (name), selected (false) {
+		tmp_name = name;
+	}
 
 	float application::get_cam_yaw () const {
 		return m_cam_yaw;
@@ -30,6 +28,10 @@ namespace mini {
 
 	bool application::is_viewport_focused () const {
 		return m_viewport_focus;
+	}
+
+	bool application::is_mouse_in_viewport () const {
+		return m_mouse_in_viewport;
 	}
 
 	const glm::vec3 & application::get_cursor_pos () const {
@@ -152,7 +154,11 @@ namespace mini {
 	}
 
 	std::shared_ptr<scene_obj_t> application::get_selection () {
-		return m_selected_object;
+		if (m_selected_object) {
+			return m_selected_object->object;
+		}
+
+		return nullptr;
 	}
 
 	void application::set_cam_yaw (float yaw) {
@@ -174,7 +180,7 @@ namespace mini {
 			}
 		}
 
-		if (action == GLFW_RELEASE) {
+		if (action == GLFW_RELEASE && !ImGui::GetIO ().WantCaptureKeyboard) {
 			switch (key) {
 				case KEY_TRANSLATE:
 					m_selected_tool = std::make_shared<translation_tool> (*this);
@@ -234,6 +240,10 @@ namespace mini {
 	}
 
 	void application::m_snap_cursor_to_mouse () {
+		if (!m_mouse_in_viewport) {
+			return;
+		}
+
 		const auto & mouse_offset = get_viewport_mouse_offset ();
 
 		const float mouse_x = static_cast<float> (mouse_offset.x);
@@ -244,24 +254,8 @@ namespace mini {
 		set_cursor_screen_pos (screen_pos);
 	}
 
-	std::string application::m_read_file_content (const std::string & path) const {
-		std::ifstream stream (path);
-
-		if (stream) {
-			std::stringstream ss;
-			ss << stream.rdbuf ();
-
-			return ss.str ();
-		}
-
-		return std::string ();
-	}
-
-	std::shared_ptr<shader_t> application::m_load_shader (const std::string & vs_file, const std::string & ps_file) const {
-		const std::string vs_source = m_read_file_content (vs_file);
-		const std::string ps_source = m_read_file_content (ps_file);
-
-		return std::make_shared<shader_t> (vs_source, ps_source);
+	void application::m_show_object_creator (bool enable) {
+		m_show_creator = enable;
 	}
 
 	application::application () : 
@@ -275,36 +269,22 @@ namespace mini {
 		m_grid_spacing = 1.0f;
 		m_grid_enabled = true;
 		m_viewport_focus = false;
+		m_mouse_in_viewport = false;
 
 		m_last_vp_height = m_last_vp_width = 0;
-
-		m_basic_shader = m_load_shader ("shaders/vs_basic.glsl", "shaders/fs_basic.glsl");
-		m_mesh_shader = m_load_shader ("shaders/vs_meshgrid.glsl", "shaders/fs_meshgrid.glsl");
-		m_alt_mesh_shader = m_load_shader ("shaders/vs_meshgrid.glsl", "shaders/fs_meshgrid_s.glsl");
-		m_grid_xz_shader = m_load_shader ("shaders/vs_grid.glsl", "shaders/fs_grid_xz.glsl");
-		m_grid_xy_shader = m_load_shader ("shaders/vs_grid.glsl", "shaders/fs_grid_xy.glsl");
-		m_billboard_shader = m_load_shader ("shaders/vs_billboard.glsl", "shaders/fs_billboard.glsl");
-		m_billboard_shader_s = m_load_shader ("shaders/vs_billboard_s.glsl", "shaders/fs_billboard.glsl");
-
-		m_basic_shader->compile ();
-		m_mesh_shader->compile ();
-		m_alt_mesh_shader->compile ();
-		m_grid_xz_shader->compile ();
-		m_grid_xy_shader->compile ();
-		m_billboard_shader->compile ();
-		m_billboard_shader_s->compile ();
-
 		m_test_texture = texture_t::load_from_file ("assets/test.png");
 
+		m_store = std::make_shared<resource_store> ();
+		m_factory = std::make_shared<object_factory> (m_store);
+
 		// initialize gizmos
-		m_cursor_object = std::make_shared<billboard_object> (m_billboard_shader_s, m_test_texture);
+		m_cursor_object = std::make_shared<billboard_object> (m_store->get_billboard_s_shader (), m_test_texture);
 		m_cursor_object->set_size ({50.0f, 50.0f});
 
-		m_grid_xz = std::make_shared<grid_object> (m_grid_xz_shader);
-		m_grid_xy = std::make_shared<grid_object> (m_grid_xy_shader);
+		m_grid_xz = std::make_shared<grid_object> (m_store->get_grid_xz_shader ());
+		m_grid_xy = std::make_shared<grid_object> (m_store->get_grid_xy_shader ());
 
-		// start with a cube
-		m_add_object ("torus", std::make_shared<torus_object> (m_mesh_shader, m_alt_mesh_shader, 1.0f, 3.0f));
+		// m_add_object ("torus", std::make_shared<torus_object> (m_mesh_shader, m_alt_mesh_shader, 1.0f, 3.0f));
 	}
 
 	void application::t_integrate (float delta_time) {
@@ -344,9 +324,9 @@ namespace mini {
 		glm::vec4 cam_pos = { 0.0f, 0.0f, -m_distance, 1.0f };
 		glm::mat4x4 cam_rotation (1.0f);
 
+		cam_rotation = glm::translate (cam_rotation, m_camera_target);
 		cam_rotation = glm::rotate (cam_rotation, m_cam_yaw, { 0.0f, 1.0f, 0.0f });
 		cam_rotation = glm::rotate (cam_rotation, m_cam_pitch, { 1.0f, 0.0f, 0.0f });
-		cam_rotation = glm::translate (cam_rotation, m_camera_target);
 		
 		cam_pos = cam_rotation * cam_pos;
 
@@ -358,8 +338,8 @@ namespace mini {
 
 	void application::t_render () {
 		for (const auto & object : m_objects) {
-			object.object->set_selected (object.selected);
-			m_context.draw (object.object, object.object->get_matrix ());
+			object->object->set_selected (object->selected);
+			m_context.draw (object->object, object->object->get_matrix ());
 		}
 		
 		if (m_grid_enabled) {
@@ -386,6 +366,10 @@ namespace mini {
 
 		if (m_selected_object != nullptr) {
 			m_draw_object_options ();
+		}
+
+		if (m_show_creator) {
+			m_draw_object_creator ();
 		}
 	}
 
@@ -477,7 +461,9 @@ namespace mini {
 			ImGui::DockBuilderDockWindow ("Viewport", dockspace_id);
 			ImGui::DockBuilderDockWindow ("View Options", dock_id_left);
 			ImGui::DockBuilderDockWindow ("Object Options", dock_id_left);
+			ImGui::DockBuilderDockWindow ("Group Options", dock_id_left);
 			ImGui::DockBuilderDockWindow ("Scene Options", dock_id_left_bottom);
+			ImGui::DockBuilderDockWindow ("Object Creator", dock_id_left_bottom);
 
 			ImGui::DockBuilderFinish (dockspace_id);
 		}
@@ -512,6 +498,7 @@ namespace mini {
 		if (ImGui::CollapsingHeader ("Grid", ImGuiTreeNodeFlags_DefaultOpen)) {
 			gui::prefix_label ("Grid Enabled: ", 250.0f);
 			ImGui::Checkbox ("##grid_enable", &m_grid_enabled);
+			ImGui::NewLine ();
 		}
 
 		if (ImGui::CollapsingHeader ("Cursor", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -525,14 +512,20 @@ namespace mini {
 
 			ImGui::NewLine ();
 
-			if (ImGui::Button ("Center camera")) {
+			if (ImGui::Button ("Center camera", ImVec2 (0.0f, 24.0f))) {
 				set_cam_target (get_cursor_pos ());
 			}
 
 			ImGui::SameLine ();
 
-			if (ImGui::Button ("Center cursor")) {
+			if (ImGui::Button ("Center cursor", ImVec2 (0.0f, 24.0f))) {
 				set_cursor_pos (get_cam_target ());
+			}
+
+			ImGui::SameLine ();
+
+			if (ImGui::Button ("Reset cursor", ImVec2 (-1.0f, 24.0f))) {
+				set_cursor_pos ({ 0.0f, 0.0f, 0.0f });
 			}
 		}
 
@@ -548,36 +541,43 @@ namespace mini {
 		ImGui::SetWindowSize (ImVec2 (270, 450), ImGuiCond_Once);
 
 		// render controls
-		ImGui::SetNextItemWidth (-1);
-
-		if (ImGui::BeginListBox ("##objectlist")) {
+		if (ImGui::BeginListBox ("##objectlist", ImVec2 (-1.0f, ImGui::GetWindowHeight () - 110.0f))) {
 			for (auto & object : m_objects) {
 				std::string full_name;
-				bool was_selected = object.selected;
+				bool was_selected = object->selected;
 
-				if (object.selected) {
-					full_name = "*" + object.name + " : (" + object.object->get_type_name () + ")";
+				if (object->selected) {
+					full_name = "*" + object->name + " : (" + object->object->get_type_name () + ")";
 				} else {
-					full_name = object.name + " : (" + object.object->get_type_name () + ")";
+					full_name = object->name + " : (" + object->object->get_type_name () + ")";
 				}
 
-				if (ImGui::Selectable (full_name.c_str (), &object.selected)) {
+				if (ImGui::Selectable (full_name.c_str (), &object->selected)) {
 					for (auto & other : m_objects) {
-						if (other.object != object.object) {
-							other.selected = false;
+						if (other->object != object->object) {
+							other->selected = false;
 						}
 					}
 
-					m_selected_object = object.object;
+					m_selected_object = object;
 				}
 
-				if (was_selected && !object.selected) {
+				if (was_selected && !object->selected) {
 					m_selected_object = nullptr;
 				}
 			}
 
 			ImGui::EndListBox ();
 		}
+
+		ImGui::NewLine ();
+
+		if (ImGui::Button ("Add Object", ImVec2 (ImGui::GetWindowWidth () * 0.45f, 24.0f))) {
+			m_show_object_creator (true);
+		}
+
+		ImGui::SameLine ();
+		ImGui::Button ("Delete Object", ImVec2 (-1.0f, 24.0f));
 
 		ImGui::End ();
 	}
@@ -590,7 +590,46 @@ namespace mini {
 		ImGui::SetWindowSize (ImVec2 (270, 450), ImGuiCond_Once);
 
 		if (m_selected_object) {
-			m_selected_object->configure ();
+			if (ImGui::CollapsingHeader ("Object Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
+				gui::prefix_label ("Name", 250.0f);
+				ImGui::InputText ("##obj_name", &m_selected_object->tmp_name);
+
+				if (ImGui::IsItemDeactivatedAfterEdit ()) {
+					if (m_selected_object->tmp_name.length () > 0) {
+						auto real_name = m_get_free_name (m_selected_object->tmp_name, m_selected_object->name);
+						m_selected_object->name = real_name;
+						m_selected_object->tmp_name = real_name;
+					} else {
+						m_selected_object->tmp_name = m_selected_object->name;
+					}
+				}
+				
+				ImGui::NewLine ();
+			}
+
+			m_selected_object->object->configure ();
+		}
+
+		ImGui::End ();
+	}
+
+	void application::m_draw_group_options () {
+		// TODO: implement this
+	}
+
+	void application::m_draw_object_creator () {
+		ImGui::Begin ("Object Creator", NULL);
+		
+		auto ptr = m_factory->configure ();
+
+		if (ptr) {
+			// an object was created, so stop showing the ui
+			m_show_object_creator (false);
+
+			// insert the created object into the object tree
+			// at the position of the cursor
+			ptr->set_translation (get_cursor_pos ());
+			m_add_object (ptr->get_type_name (), ptr, true);
 		}
 
 		ImGui::End ();
@@ -619,6 +658,12 @@ namespace mini {
 		m_vp_mouse_offset.x = mouse_offset.x - static_cast<int> (min.x + window_pos.x);
 		m_vp_mouse_offset.y = mouse_offset.y - static_cast<int> (min.y + window_pos.y);
 
+		if (m_vp_mouse_offset.x < 0 || m_vp_mouse_offset.x > width || m_vp_mouse_offset.y < 0 || m_vp_mouse_offset.y > height) {
+			m_mouse_in_viewport = false;
+		} else {
+			m_mouse_in_viewport = true;
+		}
+
 		// if mouse is out of viewport then pretend its at the border
 		gui::clamp (m_vp_mouse_offset.x, 0, width);
 		gui::clamp (m_vp_mouse_offset.y, 0, height);
@@ -636,7 +681,7 @@ namespace mini {
 		ImGui::PopStyleVar (1);
 	}
 
-	void application::m_add_object (const std::string & name, std::shared_ptr<scene_obj_t> object) {
+	std::string application::m_get_free_name (const std::string & name, const std::string & self) const {
 		std::string real_name = name;
 		int i = 0;
 		bool name_free = true;
@@ -647,15 +692,33 @@ namespace mini {
 				i++;
 				name_free = true;
 			}
+			
+			if (real_name == self) {
+				return self;
+			}
 
 			for (const auto & object : m_objects) {
-				if (object.name == real_name) {
+				if (object->name == real_name) {
 					name_free = false;
 				}
 			}
 		} while (!name_free);
 
-		m_objects.push_back ({object, real_name});
+		return real_name;
+	}
+
+	void application::m_add_object (const std::string & name, std::shared_ptr<scene_obj_t> object, bool select) {
+		auto real_name = m_get_free_name (name);
+
+		std::shared_ptr<object_wrapper_t> wrapper = std::shared_ptr<object_wrapper_t> (new object_wrapper_t (object, real_name));
+		m_objects.push_back (wrapper);
+
+		if (select) {
+			m_reset_selection ();
+
+			m_selected_object = wrapper;
+			m_selected_object->selected = true;
+		}
 	}
 
 	void application::m_reset_selection () {
@@ -663,7 +726,7 @@ namespace mini {
 		m_selected_object = nullptr;
 
 		for (auto & object : m_objects) {
-			object.selected = false;
+			object->selected = false;
 		}
 	}
 }

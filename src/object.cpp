@@ -51,11 +51,11 @@ namespace mini {
 	glm::mat4x4 scene_obj_t::get_matrix () const {
 		glm::mat4x4 world (1.0f);
 
-		world = glm::scale (world, m_scale);
+		world = glm::translate (world, m_translation);
 		world = glm::rotate (world, m_euler_angles[0], { 1.0f, 0.0f, 0.0f });
 		world = glm::rotate (world, m_euler_angles[1], { 0.0f, 1.0f, 0.0f });
 		world = glm::rotate (world, m_euler_angles[2], { 0.0f, 0.0f, 1.0f });
-		world = glm::translate (world, m_translation);
+		world = glm::scale (world, m_scale);
 
 		return world;
 	}

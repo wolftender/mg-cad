@@ -77,6 +77,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -92,6 +93,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -107,6 +109,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -122,6 +125,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -137,10 +141,12 @@
     <ClInclude Include="include\context.hpp" />
     <ClInclude Include="include\cube.hpp" />
     <ClInclude Include="include\billboard.hpp" />
+    <ClInclude Include="include\factory.hpp" />
     <ClInclude Include="include\grid.hpp" />
     <ClInclude Include="include\gui.hpp" />
     <ClInclude Include="include\object.hpp" />
     <ClInclude Include="include\shader.hpp" />
+    <ClInclude Include="include\store.hpp" />
     <ClInclude Include="include\texture.hpp" />
     <ClInclude Include="include\tool.hpp" />
     <ClInclude Include="include\torus.hpp" />
@@ -148,6 +154,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\billboard.cpp" />
+    <ClCompile Include="src\factory.cpp" />
     <ClCompile Include="src\gui.cpp" />
     <ClCompile Include="src\object.cpp" />
     <ClCompile Include="src\algebra.cpp" />
@@ -158,6 +165,7 @@
     <ClCompile Include="src\grid.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\shader.cpp" />
+    <ClCompile Include="src\store.cpp" />
     <ClCompile Include="src\texture.cpp" />
     <ClCompile Include="src\tool.cpp" />
     <ClCompile Include="src\torus.cpp" />
