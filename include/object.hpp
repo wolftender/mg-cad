@@ -11,6 +11,7 @@ namespace mini {
 			glm::vec3 m_euler_angles;
 			glm::vec3 m_scale;
 
+			bool m_rotatable, m_movable, m_scalable;
 			bool m_selected;
 
 		public:
@@ -19,7 +20,11 @@ namespace mini {
 			const glm::vec3 & get_translation () const;
 			const glm::vec3 & get_euler_angles () const;
 			const glm::vec3 & get_scale () const;
+
 			bool is_selected () const;
+			bool is_rotatable () const;
+			bool is_scalable () const;
+			bool is_movable () const;
 
 			void set_translation (const glm::vec3 & translation);
 			void set_euler_angles (const glm::vec3 & euler_angles);
@@ -28,7 +33,7 @@ namespace mini {
 
 			glm::mat4x4 get_matrix () const;
 
-			scene_obj_t (const std::string & type_name);
+			scene_obj_t (const std::string & type_name, bool movable = true, bool rotatable = true, bool scalable = true);
 			virtual ~scene_obj_t ();
 
 			// virtual methods

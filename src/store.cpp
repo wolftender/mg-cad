@@ -65,6 +65,10 @@ namespace mini {
 		return m_alt_mesh_shader;
 	}
 
+	std::shared_ptr<texture_t> resource_store::get_cursor_texture () const {
+		return m_cursor_texture;
+	}
+
 	resource_store::resource_store () {
 		m_basic_shader = m_load_shader ("shaders/vs_basic.glsl", "shaders/fs_basic.glsl");
 		m_mesh_shader = m_load_shader ("shaders/vs_meshgrid.glsl", "shaders/fs_meshgrid.glsl");
@@ -73,5 +77,8 @@ namespace mini {
 		m_grid_xy_shader = m_load_shader ("shaders/vs_grid.glsl", "shaders/fs_grid_xy.glsl");
 		m_billboard_shader = m_load_shader ("shaders/vs_billboard.glsl", "shaders/fs_billboard.glsl");
 		m_billboard_shader_s = m_load_shader ("shaders/vs_billboard_s.glsl", "shaders/fs_billboard.glsl");
+
+		// textures
+		m_cursor_texture = texture_t::load_from_file ("assets/cursor.png");
 	}
 }

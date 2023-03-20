@@ -278,8 +278,8 @@ namespace mini {
 		m_factory = std::make_shared<object_factory> (m_store);
 
 		// initialize gizmos
-		m_cursor_object = std::make_shared<billboard_object> (m_store->get_billboard_s_shader (), m_test_texture);
-		m_cursor_object->set_size ({50.0f, 50.0f});
+		m_cursor_object = std::make_shared<billboard_object> (m_store->get_billboard_s_shader (), m_store->get_cursor_texture ());
+		m_cursor_object->set_size ({35.0f, 35.0f});
 
 		m_grid_xz = std::make_shared<grid_object> (m_store->get_grid_xz_shader ());
 		m_grid_xy = std::make_shared<grid_object> (m_store->get_grid_xy_shader ());
