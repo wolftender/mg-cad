@@ -8,6 +8,7 @@
 namespace mini {
 	application::object_wrapper_t::object_wrapper_t (std::shared_ptr<scene_obj_t> o, const std::string & name) : object (o), name (name), selected (false) {
 		tmp_name = name;
+		destroy = false;
 	}
 
 	float application::get_cam_yaw () const {
@@ -194,6 +195,10 @@ namespace mini {
 					m_reset_selection ();
 					break;
 
+				case GLFW_KEY_DELETE:
+					m_destroy_object ();
+					break;
+
 				default:
 					break;
 			}
@@ -254,6 +259,12 @@ namespace mini {
 		set_cursor_screen_pos (screen_pos);
 	}
 
+	void application::m_destroy_object () {
+		if (m_selected_object) {
+			m_selected_object->destroy = true;
+		}
+	}
+
 	void application::m_show_object_creator (bool enable) {
 		m_show_creator = enable;
 	}
@@ -296,6 +307,21 @@ namespace mini {
 		}
 
 		m_time = m_time + delta_time;
+
+		// delete objects
+		for (auto iter = m_objects.begin (); iter != m_objects.end (); ) {
+			if ((*iter)->destroy) {
+				if (m_selected_object && m_selected_object == *iter) {
+					m_selected_object = nullptr;
+				}
+
+				iter = m_objects.erase (iter);
+			}
+
+			if (iter != m_objects.end ()) {
+				++iter;
+			}
+		}
 
 		// if no tool selected then handle mouse events
 		// otherwise update tool and only update mouse if allowed

@@ -18,6 +18,7 @@ namespace mini {
 				std::shared_ptr<scene_obj_t> object;
 				std::string name, tmp_name;
 				bool selected;
+				bool destroy;
 
 				object_wrapper_t (std::shared_ptr<scene_obj_t> o, const std::string & name);
 			};
@@ -55,8 +56,6 @@ namespace mini {
 
 			glm::vec3 m_camera_target;
 			offset_t m_vp_mouse_offset;
-
-			// object factories
 
 		public:
 			// api for tools
@@ -111,6 +110,7 @@ namespace mini {
 		private:
 			void m_handle_mouse ();
 			void m_snap_cursor_to_mouse ();
+			void m_destroy_object ();
 
 			void m_show_object_creator (bool enable);
 
