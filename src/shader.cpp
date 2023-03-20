@@ -156,6 +156,14 @@ namespace mini {
 		}
 	}
 
+	void shader_t::set_uniform (const std::string & name, const glm::vec2 & vector) {
+		const int location = get_uniform_location (name);
+
+		if (location >= 0) {
+			glUniform2fv (location, 1, glm::value_ptr (vector));
+		}
+	}
+
 	void shader_t::set_uniform (const std::string & name, const glm::vec3 & vector) {
 		const int location = get_uniform_location (name);
 

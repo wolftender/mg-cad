@@ -136,15 +136,18 @@
     <ClInclude Include="include\camera.hpp" />
     <ClInclude Include="include\context.hpp" />
     <ClInclude Include="include\cube.hpp" />
+    <ClInclude Include="include\billboard.hpp" />
     <ClInclude Include="include\grid.hpp" />
     <ClInclude Include="include\gui.hpp" />
     <ClInclude Include="include\object.hpp" />
     <ClInclude Include="include\shader.hpp" />
+    <ClInclude Include="include\texture.hpp" />
     <ClInclude Include="include\tool.hpp" />
     <ClInclude Include="include\torus.hpp" />
     <ClInclude Include="include\window.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\billboard.cpp" />
     <ClCompile Include="src\gui.cpp" />
     <ClCompile Include="src\object.cpp" />
     <ClCompile Include="src\algebra.cpp" />
@@ -155,6 +158,7 @@
     <ClCompile Include="src\grid.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\shader.cpp" />
+    <ClCompile Include="src\texture.cpp" />
     <ClCompile Include="src\tool.cpp" />
     <ClCompile Include="src\torus.cpp" />
     <ClCompile Include="src\window.cpp" />
@@ -163,11 +167,13 @@
     <None Include=".gitignore" />
     <None Include="Makefile" />
     <None Include="shaders\fs_basic.glsl" />
+    <None Include="shaders\fs_billboard.glsl" />
     <None Include="shaders\fs_grid_xy.glsl" />
     <None Include="shaders\fs_grid_xz.glsl" />
     <None Include="shaders\fs_meshgrid.glsl" />
     <None Include="shaders\fs_meshgrid_s.glsl" />
     <None Include="shaders\vs_basic.glsl" />
+    <None Include="shaders\vs_billboard.glsl" />
     <None Include="shaders\vs_grid.glsl" />
     <None Include="shaders\vs_meshgrid.glsl" />
   </ItemGroup>

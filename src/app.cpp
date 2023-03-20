@@ -177,14 +177,19 @@ namespace mini {
 		m_alt_mesh_shader = m_load_shader ("shaders/vs_meshgrid.glsl", "shaders/fs_meshgrid_s.glsl");
 		m_grid_xz_shader = m_load_shader ("shaders/vs_grid.glsl", "shaders/fs_grid_xz.glsl");
 		m_grid_xy_shader = m_load_shader ("shaders/vs_grid.glsl", "shaders/fs_grid_xy.glsl");
+		m_billboard_shader = m_load_shader ("shaders/vs_billboard.glsl", "shaders/fs_billboard.glsl");
 
 		m_basic_shader->compile ();
 		m_mesh_shader->compile ();
 		m_alt_mesh_shader->compile ();
 		m_grid_xz_shader->compile ();
 		m_grid_xy_shader->compile ();
+		m_billboard_shader->compile ();
 
-		// initialize the test cube
+		m_test_texture = texture_t::load_from_file ("assets/test.png");
+
+		// initialize gizmos
+		m_cursor_object = std::make_shared<billboard_object> (m_billboard_shader, m_test_texture);
 		m_grid_xz = std::make_shared<grid_object> (m_grid_xz_shader);
 		m_grid_xy = std::make_shared<grid_object> (m_grid_xy_shader);
 
@@ -258,6 +263,7 @@ namespace mini {
 			m_context.draw (m_grid_xz, glm::mat4x4 (1.0f));
 		}
 
+		m_context.draw (m_cursor_object, glm::mat4x4 (1.0f));
 		m_context.display (false);
 
 		// rendering above is done to a buffer
