@@ -32,6 +32,101 @@ namespace mini {
 		return m_viewport_focus;
 	}
 
+	const glm::vec3 & application::get_cursor_pos () const {
+		return m_cursor_position;
+	}
+
+	const glm::vec2 & application::get_cursor_screen_pos () const {
+		const auto & camera = m_context.get_camera ();
+
+		glm::vec4 cursor_pos = { m_cursor_position, 1.0f };
+		glm::vec4 screen_pos = camera.get_projection_matrix () * camera.get_view_matrix () * cursor_pos;
+
+		screen_pos /= screen_pos.w;
+
+		return static_cast<glm::vec2> (screen_pos);
+	}
+
+	glm::vec3 application::get_mouse_direction () const {
+		const auto & mouse_offset = get_viewport_mouse_offset ();
+
+		const float mouse_x = static_cast<float> (mouse_offset.x);
+		const float mouse_y = static_cast<float> (mouse_offset.y);
+
+		const auto screen_pos = pixels_to_screen ({ mouse_x, mouse_y });
+
+		return get_screen_direction (screen_pos.x, screen_pos.y);
+	}
+
+	glm::vec3 application::get_screen_direction (float screen_x, float screen_y) const {
+		const auto & camera = m_context.get_camera ();
+		
+		glm::vec4 screen = { screen_x, screen_y, 1.0f, 1.0f };
+		glm::mat4x4 view_proj_inv = camera.get_view_inverse () * camera.get_projection_inverse ();
+		glm::vec4 world = view_proj_inv * screen;
+
+		world[3] = 1.0f / world[3];
+		world[0] = world[0] * world[3];
+		world[1] = world[1] * world[3];
+		world[2] = world[2] * world[3];
+		world[3] = 1.0f;
+
+		glm::vec3 world_pos = world;
+		return glm::normalize (world_pos - camera.get_position ());
+	}
+
+	glm::vec2 application::pixels_to_screen (const glm::vec2 & pos) const {
+		const auto & camera = m_context.get_camera ();
+		const auto & mouse_offset = get_viewport_mouse_offset ();
+
+		const float vp_width = static_cast<float> (get_viewport_width ());
+		const float vp_height = static_cast<float> (get_viewport_height ());
+
+		const float screen_x = (2.0f * (pos.x / vp_width)) - 1.0f;
+		const float screen_y = (2.0f * (pos.y / vp_height)) - 1.0f;
+
+		return { screen_x, screen_y };
+	}
+
+	glm::vec2 application::screen_to_pixels (const glm::vec2 & pos) const {
+		const auto & camera = m_context.get_camera ();
+		const auto & mouse_offset = get_viewport_mouse_offset ();
+
+		const float vp_width = static_cast<float> (get_viewport_width ());
+		const float vp_height = static_cast<float> (get_viewport_height ());
+
+		const float pixel_x = ((pos.x + 1.0f) / 2.0f) * vp_width;
+		const float pixel_y = ((pos.y + 1.0f) / 2.0f) * vp_height;
+
+		return { pixel_x, pixel_y };
+	}
+
+	void application::set_cursor_pos (const glm::vec3 & position) {
+		m_cursor_position = position;
+	}
+
+	void application::set_cursor_screen_pos (const glm::vec2 & screen_pos) {
+		const auto & camera = m_context.get_camera ();
+		const auto & cam_pos = camera.get_position ();
+		
+		glm::vec2 cur_screen_pos = get_cursor_screen_pos ();
+		glm::vec3 plane_center = get_cursor_pos ();
+
+		glm::vec2 new_pos = glm::clamp (screen_pos, {-1.0f, -1.0f}, {1.0f, 1.0f});
+
+		if (cur_screen_pos.x > 1.0f || cur_screen_pos.y > 1.0f || cur_screen_pos.x < -1.0f || cur_screen_pos.y < -1.0f) {
+			plane_center = m_camera_target;
+		}
+
+		glm::vec3 plane_normal = glm::normalize (plane_center - cam_pos);
+		glm::vec3 direction = get_screen_direction (new_pos.x, new_pos.y);
+
+		float nt = glm::dot ((plane_center - camera.get_position ()), plane_normal);
+		float dt = glm::dot (direction, plane_normal);
+
+		set_cursor_pos ((nt / dt) * direction + camera.get_position ());
+	}
+
 	int application::get_viewport_width () const {
 		return m_last_vp_width;
 	}
@@ -138,6 +233,17 @@ namespace mini {
 		}
 	}
 
+	void application::m_snap_cursor_to_mouse () {
+		const auto & mouse_offset = get_viewport_mouse_offset ();
+
+		const float mouse_x = static_cast<float> (mouse_offset.x);
+		const float mouse_y = static_cast<float> (mouse_offset.y);
+
+		const auto screen_pos = pixels_to_screen ({ mouse_x, mouse_y });
+
+		set_cursor_screen_pos (screen_pos);
+	}
+
 	std::string application::m_read_file_content (const std::string & path) const {
 		std::ifstream stream (path);
 
@@ -178,6 +284,7 @@ namespace mini {
 		m_grid_xz_shader = m_load_shader ("shaders/vs_grid.glsl", "shaders/fs_grid_xz.glsl");
 		m_grid_xy_shader = m_load_shader ("shaders/vs_grid.glsl", "shaders/fs_grid_xy.glsl");
 		m_billboard_shader = m_load_shader ("shaders/vs_billboard.glsl", "shaders/fs_billboard.glsl");
+		m_billboard_shader_s = m_load_shader ("shaders/vs_billboard_s.glsl", "shaders/fs_billboard.glsl");
 
 		m_basic_shader->compile ();
 		m_mesh_shader->compile ();
@@ -185,11 +292,14 @@ namespace mini {
 		m_grid_xz_shader->compile ();
 		m_grid_xy_shader->compile ();
 		m_billboard_shader->compile ();
+		m_billboard_shader_s->compile ();
 
 		m_test_texture = texture_t::load_from_file ("assets/test.png");
 
 		// initialize gizmos
-		m_cursor_object = std::make_shared<billboard_object> (m_billboard_shader, m_test_texture);
+		m_cursor_object = std::make_shared<billboard_object> (m_billboard_shader_s, m_test_texture);
+		m_cursor_object->set_size ({50.0f, 50.0f});
+
 		m_grid_xz = std::make_shared<grid_object> (m_grid_xz_shader);
 		m_grid_xy = std::make_shared<grid_object> (m_grid_xy_shader);
 
@@ -263,7 +373,7 @@ namespace mini {
 			m_context.draw (m_grid_xz, glm::mat4x4 (1.0f));
 		}
 
-		m_context.draw (m_cursor_object, glm::mat4x4 (1.0f));
+		m_context.draw (m_cursor_object, make_translation (m_cursor_position));
 		m_context.display (false);
 
 		// rendering above is done to a buffer
@@ -304,8 +414,12 @@ namespace mini {
 			if (m_selected_tool->on_mouse_button (button, action, mods)) {
 				return app_window::t_on_mouse_button (button, action, mods);
 			}
-		} else if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_MIDDLE) {
-			m_selected_tool = std::make_shared<camera_pan_tool> (*this);
+		} else if (action == GLFW_PRESS) {
+			if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
+				m_selected_tool = std::make_shared<camera_pan_tool> (*this);
+			} else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+				m_snap_cursor_to_mouse ();
+			}
 		}
 
 		app_window::t_on_mouse_button (button, action, mods);
@@ -398,6 +512,28 @@ namespace mini {
 		if (ImGui::CollapsingHeader ("Grid", ImGuiTreeNodeFlags_DefaultOpen)) {
 			gui::prefix_label ("Grid Enabled: ", 250.0f);
 			ImGui::Checkbox ("##grid_enable", &m_grid_enabled);
+		}
+
+		if (ImGui::CollapsingHeader ("Cursor", ImGuiTreeNodeFlags_DefaultOpen)) {
+			glm::vec2 cursor_screen_pos = get_cursor_screen_pos ();
+
+			gui::vector_editor ("World Pos. :", m_cursor_position);
+
+			if (gui::vector_editor ("Screen Pos. :", cursor_screen_pos)) {
+				set_cursor_screen_pos (cursor_screen_pos);
+			}
+
+			ImGui::NewLine ();
+
+			if (ImGui::Button ("Center camera")) {
+				set_cam_target (get_cursor_pos ());
+			}
+
+			ImGui::SameLine ();
+
+			if (ImGui::Button ("Center cursor")) {
+				set_cursor_pos (get_cam_target ());
+			}
 		}
 
 		ImGui::End ();

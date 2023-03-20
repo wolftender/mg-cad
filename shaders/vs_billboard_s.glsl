@@ -14,14 +14,19 @@ out vec4 vertex_color;
 out vec2 uv;
 
 void main () {
-    vec3 cam_right = vec3 (u_view[0][0], u_view[1][0], u_view[2][0]);
-    vec3 cam_up = vec3 (u_view[0][1], u_view[1][1], u_view[2][1]);
+    vec3 scaled_pos = vec3 (
+        u_size.x * a_position.x / u_resolution.x, 
+        u_size.y * a_position.y / u_resolution.y, 
+        a_position.z
+    );
 
-    vec3 scaled_pos = vec3 (u_size.x * a_position.x, u_size.y * a_position.y, a_position.z);
-    vec3 world_pos = u_center + cam_right * scaled_pos.x + cam_up * scaled_pos.y;
+    vec3 world_pos = u_center;
 
     vertex_color = a_color;
     uv = a_uv;
 
     gl_Position = u_projection * u_view * vec4 (world_pos, 1.0);
+    gl_Position = gl_Position / gl_Position.w;
+
+    gl_Position.xy += scaled_pos.xy;
 }

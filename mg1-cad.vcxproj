@@ -174,8 +174,12 @@
     <None Include="shaders\fs_meshgrid_s.glsl" />
     <None Include="shaders\vs_basic.glsl" />
     <None Include="shaders\vs_billboard.glsl" />
+    <None Include="shaders\vs_billboard_s.glsl" />
     <None Include="shaders\vs_grid.glsl" />
     <None Include="shaders\vs_meshgrid.glsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="assets\test.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

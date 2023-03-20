@@ -21,7 +21,8 @@ namespace mini {
 
 			app_context m_context;
 
-			std::shared_ptr<shader_t> m_basic_shader, m_grid_xz_shader, m_grid_xy_shader, m_billboard_shader;
+			std::shared_ptr<shader_t> m_basic_shader, m_grid_xz_shader, m_grid_xy_shader;
+			std::shared_ptr<shader_t> m_billboard_shader, m_billboard_shader_s;
 			std::shared_ptr<shader_t> m_mesh_shader, m_alt_mesh_shader;
 			std::vector<object_wrapper_t> m_objects;
 
@@ -34,6 +35,9 @@ namespace mini {
 
 			std::shared_ptr<scene_obj_t> m_selected_object;
 			std::shared_ptr<tool_base> m_selected_tool;
+
+			// cursor
+			glm::vec3 m_cursor_position;
 
 			float m_cam_yaw, m_cam_pitch, m_distance;
 			float m_time;
@@ -53,6 +57,17 @@ namespace mini {
 			float get_cam_distance () const;
 			float get_time () const;
 			bool is_viewport_focused () const;
+
+			const glm::vec3 & get_cursor_pos () const;
+			const glm::vec2 & get_cursor_screen_pos () const;
+
+			glm::vec3 get_mouse_direction () const;
+			glm::vec3 get_screen_direction (float screen_x, float screen_y) const;
+			glm::vec2 pixels_to_screen (const glm::vec2 & pos) const;
+			glm::vec2 screen_to_pixels (const glm::vec2 & pos) const;
+			
+			void set_cursor_pos (const glm::vec3 & position);
+			void set_cursor_screen_pos (const glm::vec2 & screen_pos);
 
 			int get_viewport_width () const;
 			int get_viewport_height () const;
@@ -86,6 +101,7 @@ namespace mini {
 
 		private:
 			void m_handle_mouse ();
+			void m_snap_cursor_to_mouse ();
 
 			std::string m_read_file_content (const std::string & path) const;
 			std::shared_ptr<shader_t> m_load_shader (const std::string & vs_file, const std::string & ps_file) const;

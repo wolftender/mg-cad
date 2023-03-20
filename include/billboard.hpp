@@ -10,10 +10,15 @@ namespace mini {
 		private:
 			GLuint m_pos_buffer, m_color_buffer, m_index_buffer, m_uv_buffer, m_vao;
 
+			glm::vec2 m_size;
+
 			std::shared_ptr<texture_t> m_texture;
 			std::shared_ptr<shader_t> m_shader;
 
 		public:
+			const glm::vec2 & get_size () const;
+			void set_size (const glm::vec2 & size);
+
 			billboard_object (std::shared_ptr<shader_t> shader, std::shared_ptr<texture_t> texture);
 			~billboard_object ();
 

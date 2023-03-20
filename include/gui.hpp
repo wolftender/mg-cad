@@ -9,7 +9,9 @@
 namespace mini {
 	namespace gui {
 		void prefix_label (const std::string & label, float min_width = 0.0f);
-		void vector_editor (const std::string & label, glm::vec3 & vector);
+
+		bool vector_editor (const std::string & label, glm::vec2 & vector);
+		bool vector_editor (const std::string & label, glm::vec3 & vector);
 		
 		template<typename T> void clamp (T & value, T min, T max) {
 			if (value < min) {

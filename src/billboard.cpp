@@ -29,6 +29,14 @@ namespace mini {
 		1, 2, 3
 	};
 
+	const glm::vec2 & billboard_object::get_size () const {
+		return m_size;
+	}
+
+	void billboard_object::set_size (const glm::vec2 & size) {
+		m_size = size;
+	}
+
 	billboard_object::billboard_object (std::shared_ptr<shader_t> shader, std::shared_ptr<texture_t> texture) {
 		m_shader = shader;
 		m_texture = texture;
@@ -38,6 +46,7 @@ namespace mini {
 		constexpr GLuint a_color = 1;
 		constexpr GLuint a_uv = 2;
 
+		m_size = { 1.0f, 1.0f };
 		m_shader = shader;
 		m_pos_buffer = m_color_buffer = m_index_buffer = m_uv_buffer = m_vao = 0;
 
@@ -88,10 +97,17 @@ namespace mini {
 		const auto & view_matrix = context.get_view_matrix ();
 		const auto & proj_matrix = context.get_projection_matrix ();
 
-		m_shader->set_uniform ("u_size", glm::vec2 (1.0f));
-		m_shader->set_uniform ("u_center", glm::vec3 (1.0f));
+		float screen_width = context.get_video_mode ().get_buffer_width ();
+		float screen_height = context.get_video_mode ().get_buffer_height ();
+
+		glm::vec4 center = { 0.0f, 0.0f, 0.0f, 1.0f };
+		center = world_matrix * center;
+
+		m_shader->set_uniform ("u_size", m_size);
+		m_shader->set_uniform ("u_center", static_cast<glm::vec3> (center));
 		m_shader->set_uniform ("u_view", view_matrix);
 		m_shader->set_uniform ("u_projection", proj_matrix);
+		m_shader->set_uniform ("u_resolution", glm::vec2 (screen_width, screen_height));
 
 		glDrawElements (GL_TRIANGLES, quad_indices.size (), GL_UNSIGNED_INT, NULL);
 		glBindVertexArray (static_cast<GLuint>(NULL));

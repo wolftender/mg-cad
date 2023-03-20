@@ -8,5 +8,5 @@ out vec4 output_color;
 uniform sampler2D u_sampler;
 
 void main () {
-    output_color = texture(u_sampler, uv);
+    output_color = vertex_color * texture(u_sampler, uv);
 }

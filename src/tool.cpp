@@ -41,29 +41,7 @@ namespace mini {
 	bool tool_base::on_update (float delta_time) { return false; }
 
 	glm::vec3 tool_base::calculate_mouse_dir () const {
-		const auto & camera = get_app ().get_context ().get_camera ();
-		const auto & mouse_offset = get_app ().get_viewport_mouse_offset ();
-
-		const float mouse_x = static_cast<float> (mouse_offset.x);
-		const float mouse_y = static_cast<float> (mouse_offset.y);
-		const float vp_width = static_cast<float> (get_app ().get_viewport_width ());
-		const float vp_height = static_cast<float> (get_app ().get_viewport_height ());
-
-		const float screen_x = (2.0f * (mouse_x / vp_width)) - 1.0f;
-		const float screen_y = (2.0f * (mouse_y / vp_height)) - 1.0f;
-
-		glm::vec4 screen = { screen_x, screen_y, 1.0f, 1.0f };
-		glm::mat4x4 view_proj_inv = camera.get_view_inverse () * camera.get_projection_inverse ();
-		glm::vec4 world = view_proj_inv * screen;
-
-		world[3] = 1.0f / world[3];
-		world[0] = world[0] * world[3];
-		world[1] = world[1] * world[3];
-		world[2] = world[2] * world[3];
-		world[3] = 1.0f;
-
-		glm::vec3 world_pos = world;
-		return glm::normalize (world_pos - camera.get_position ());
+		return get_app ().get_mouse_direction ();
 	}
 
 	/**********************
