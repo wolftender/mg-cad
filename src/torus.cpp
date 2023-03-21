@@ -13,7 +13,7 @@ namespace mini {
 		m_outer_radius = outer_radius;
 
 		m_div_u = 15;
-		m_div_v = 15;
+		m_div_v = 25;
 		m_is_wireframe = false;
 
 		m_requires_rebuild = false;
