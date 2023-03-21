@@ -211,6 +211,8 @@ namespace mini {
 					break;
 			}
 		}
+
+		app_window::t_on_key_event (key, scancode, action, mods);
 	}
 
 	void application::t_on_scroll (double offset_x, double offset_y) {
@@ -598,7 +600,7 @@ namespace mini {
 				}
 
 				if (ImGui::Selectable (full_name.c_str (), &selected)) {
-					m_select_object (object);
+					m_mark_object (object);
 				}
 			}
 
@@ -650,6 +652,7 @@ namespace mini {
 
 	void application::m_draw_group_options () {
 		ImGui::Begin ("Group Options", NULL);
+		m_selected_group->configure ();
 		ImGui::End ();
 	}
 
@@ -755,6 +758,20 @@ namespace mini {
 		}
 	}
 
+	// this function should be the main entry point for the selection
+	// say you were to make a new selection mechanism e.g. based on keyboard
+	// and want it to be consistent with the others
+	// then use this method
+	void application::m_mark_object (std::shared_ptr<object_wrapper_t> object_wrapper) {
+		bool is_control_down = is_key_down (GLFW_KEY_RIGHT_CONTROL) || is_key_down (GLFW_KEY_LEFT_CONTROL);
+
+		if (is_control_down) {
+			m_group_select_add (object_wrapper);
+		} else {
+			m_select_object (object_wrapper);
+		}
+	}
+
 	void application::m_select_object (std::shared_ptr<object_wrapper_t> object) {
 		if (object->selected) {
 			if (m_selected_group->group_size () > 1) {
@@ -767,6 +784,8 @@ namespace mini {
 				m_reset_selection ();
 			}
 		} else {
+			// if the object is not selected then just clear selection of the current object and select another one
+			m_reset_selection ();
 			m_group_select_add (object);
 		}
 	}
@@ -858,6 +877,6 @@ namespace mini {
 	void application::group_logic_object::render (app_context & context, const glm::mat4x4 & world_matrix) const { }
 
 	void application::group_logic_object::configure () {
-		
+		return scene_obj_t::configure ();
 	}
 }

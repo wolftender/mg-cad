@@ -161,6 +161,7 @@ namespace mini {
 			void m_add_object (const std::string & name, std::shared_ptr<scene_obj_t> object, bool select);
 
 			// selection methods
+			void m_mark_object (std::shared_ptr<object_wrapper_t> object_wrapper);
 			void m_select_object (std::shared_ptr<object_wrapper_t> object_wrapper);
 			void m_group_select_add (std::shared_ptr<object_wrapper_t> object_wrapper);
 			void m_reset_selection ();
