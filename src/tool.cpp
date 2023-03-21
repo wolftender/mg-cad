@@ -48,7 +48,7 @@ namespace mini {
 	 *  TRANSLATION TOOL  *
 	 **********************/
 	translation_tool::translation_tool (application & app) : tool_base (app, "translate") {
-		auto selection = get_app ().get_selection ();
+		auto selection = get_app ().get_group_selection ();
 
 		if (selection) {
 			m_original_transform = selection->get_translation ();
@@ -152,7 +152,7 @@ namespace mini {
 	 *   ROTATION TOOL    *
 	 **********************/
 	rotation_tool::rotation_tool (application & app) : tool_base (app, "rotate") {
-		auto selection = get_app ().get_selection ();
+		auto selection = get_app ().get_group_selection ();
 
 		if (selection) {
 			m_original_rotation = selection->get_euler_angles ();

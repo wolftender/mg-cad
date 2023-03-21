@@ -162,6 +162,14 @@ namespace mini {
 		return nullptr;
 	}
 
+	std::shared_ptr<scene_obj_t> application::get_group_selection () {
+		if (m_selected_group->group_size () >= 2) {
+			return m_selected_group;
+		}
+
+		return get_selection ();
+	}
+
 	void application::set_cam_yaw (float yaw) {
 		m_cam_yaw = yaw;
 	}
@@ -295,6 +303,10 @@ namespace mini {
 		m_grid_xz = std::make_shared<grid_object> (m_store->get_grid_xz_shader ());
 		m_grid_xy = std::make_shared<grid_object> (m_store->get_grid_xy_shader ());
 
+		// selection
+		m_selected_object = nullptr;
+		m_selected_group = std::make_shared<group_logic_object> ();
+
 		// m_add_object ("torus", std::make_shared<torus_object> (m_mesh_shader, m_alt_mesh_shader, 1.0f, 3.0f));
 	}
 
@@ -308,11 +320,14 @@ namespace mini {
 
 		m_time = m_time + delta_time;
 
+		// update the current group
+		m_selected_group->update ();
+
 		// delete objects
 		for (auto iter = m_objects.begin (); iter != m_objects.end (); ) {
 			if ((*iter)->destroy) {
 				if (m_selected_object && m_selected_object == *iter) {
-					m_selected_object = nullptr;
+					m_selected_object = m_selected_group->group_pop ();
 				}
 
 				iter = m_objects.erase (iter);
@@ -392,6 +407,10 @@ namespace mini {
 
 		if (m_selected_object != nullptr) {
 			m_draw_object_options ();
+		}
+
+		if (m_selected_group->group_size () > 1) {
+			m_draw_group_options ();
 		}
 
 		if (m_show_creator) {
@@ -570,26 +589,16 @@ namespace mini {
 		if (ImGui::BeginListBox ("##objectlist", ImVec2 (-1.0f, ImGui::GetWindowHeight () - 110.0f))) {
 			for (auto & object : m_objects) {
 				std::string full_name;
-				bool was_selected = object->selected;
+				bool selected = object->selected;
 
-				if (object->selected) {
+				if (selected) {
 					full_name = "*" + object->name + " : (" + object->object->get_type_name () + ")";
 				} else {
 					full_name = object->name + " : (" + object->object->get_type_name () + ")";
 				}
 
-				if (ImGui::Selectable (full_name.c_str (), &object->selected)) {
-					for (auto & other : m_objects) {
-						if (other->object != object->object) {
-							other->selected = false;
-						}
-					}
-
-					m_selected_object = object;
-				}
-
-				if (was_selected && !object->selected) {
-					m_selected_object = nullptr;
+				if (ImGui::Selectable (full_name.c_str (), &selected)) {
+					m_select_object (object);
 				}
 			}
 
@@ -640,7 +649,8 @@ namespace mini {
 	}
 
 	void application::m_draw_group_options () {
-		// TODO: implement this
+		ImGui::Begin ("Group Options", NULL);
+		ImGui::End ();
 	}
 
 	void application::m_draw_object_creator () {
@@ -741,9 +751,42 @@ namespace mini {
 
 		if (select) {
 			m_reset_selection ();
+			m_select_object (wrapper);
+		}
+	}
 
-			m_selected_object = wrapper;
+	void application::m_select_object (std::shared_ptr<object_wrapper_t> object) {
+		if (object->selected) {
+			if (m_selected_group->group_size () > 1) {
+				// if object was selected as a part of a group then clear selection from all of the group
+				// and select only the object
+				m_reset_selection ();
+				m_group_select_add (object);
+			} else {
+				// if object was selected by itself then just clear the selection
+				m_reset_selection ();
+			}
+		} else {
+			m_group_select_add (object);
+		}
+	}
+
+	void application::m_group_select_add (std::shared_ptr<object_wrapper_t> object) {
+		if (object->selected) {
+			if (m_selected_group->group_size () > 1) {
+				if (object == m_selected_object) {
+					m_selected_object = m_selected_group->group_pop ();
+				} else {
+					m_selected_group->group_remove (object);
+				}
+			} else {
+				m_reset_selection ();
+			}
+		} else {
+			m_selected_object = object;
 			m_selected_object->selected = true;
+
+			m_selected_group->group_add (object);
 		}
 	}
 
@@ -751,8 +794,70 @@ namespace mini {
 		m_selected_tool = nullptr;
 		m_selected_object = nullptr;
 
+		// clear selection group
+		m_selected_group->group_clear ();
+
 		for (auto & object : m_objects) {
 			object->selected = false;
 		}
+	}
+
+	application::group_logic_object::group_logic_object () : scene_obj_t ("group") { }
+
+	void application::group_logic_object::group_add (std::shared_ptr<object_wrapper_t> object) {
+		m_group.push_back (object);
+	}
+
+	void application::group_logic_object::group_remove (std::shared_ptr<object_wrapper_t> object) {
+		for (auto iter = m_group.begin (); iter != m_group.end (); ++iter) {
+			if (*iter == object) {
+				(*iter)->selected = false;
+				iter = m_group.erase (iter);
+			}
+
+			if (iter == m_group.end ()) {
+				break;
+			}
+		}
+	}
+
+	void application::group_logic_object::group_clear () {
+		for (auto & el : m_group) {
+			el->selected = false;
+		}
+
+		m_group.clear ();
+	}
+
+	uint32_t application::group_logic_object::group_size () const {
+		return m_group.size ();
+	}
+
+	std::shared_ptr<application::object_wrapper_t> application::group_logic_object::group_pop () {
+		if (m_group.size () > 0) {
+			auto back = m_group.back ();
+			return back;
+		}
+
+		return nullptr;
+	}
+
+	void application::group_logic_object::update () {
+		for (auto iter = m_group.begin (); iter != m_group.end (); ++iter) {
+			if (!(*iter)->selected || (*iter)->destroy) {
+				iter = m_group.erase (iter);
+			}
+
+			if (iter == m_group.end ()) {
+				break;
+			}
+		}
+	}
+
+	// does nothing
+	void application::group_logic_object::render (app_context & context, const glm::mat4x4 & world_matrix) const { }
+
+	void application::group_logic_object::configure () {
+		
 	}
 }

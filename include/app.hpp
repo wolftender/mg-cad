@@ -23,6 +23,34 @@ namespace mini {
 				object_wrapper_t (std::shared_ptr<scene_obj_t> o, const std::string & name);
 			};
 
+			// the way that group transforms are implemented is as follows:
+			//  1) multiple objects can be selected
+			//  2) if 1 object is selected then simply this object is the selection
+			//  3) if more objects are selected the selection is a "fake" object that can only be transformed
+			class group_logic_object : public scene_obj_t {
+				private:
+					std::list<std::shared_ptr<object_wrapper_t>> m_group; 
+
+				public:
+					group_logic_object ();
+					~group_logic_object () = default;
+
+					group_logic_object (const group_logic_object &) = delete;
+					group_logic_object& operator= (const group_logic_object &) = delete;
+
+					void group_add (std::shared_ptr<object_wrapper_t> object);
+					void group_remove (std::shared_ptr<object_wrapper_t> object);
+					void group_clear ();
+					uint32_t group_size () const;
+
+					std::shared_ptr<object_wrapper_t> group_pop ();
+
+					void update ();
+
+					virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override;
+					virtual void configure () override;
+			};
+
 			app_context m_context;
 
 			std::shared_ptr<resource_store> m_store;
@@ -39,6 +67,9 @@ namespace mini {
 
 			std::shared_ptr<object_wrapper_t> m_selected_object;
 			std::shared_ptr<tool_base> m_selected_tool;
+
+			// group select
+			std::shared_ptr<group_logic_object> m_selected_group;
 
 			// cursor
 			glm::vec3 m_cursor_position;
@@ -86,6 +117,7 @@ namespace mini {
 
 			app_context & get_context ();
 			std::shared_ptr<scene_obj_t> get_selection ();
+			std::shared_ptr<scene_obj_t> get_group_selection ();
 
 			void set_cam_yaw (float yaw);
 			void set_cam_pitch (float pitch);
@@ -127,6 +159,10 @@ namespace mini {
 			// object management
 			std::string m_get_free_name (const std::string & name, const std::string & self = std::string ()) const;
 			void m_add_object (const std::string & name, std::shared_ptr<scene_obj_t> object, bool select);
+
+			// selection methods
+			void m_select_object (std::shared_ptr<object_wrapper_t> object_wrapper);
+			void m_group_select_add (std::shared_ptr<object_wrapper_t> object_wrapper);
 			void m_reset_selection ();
 	};
 }
