@@ -33,8 +33,16 @@ namespace mini {
 		return m_size;
 	}
 
+	const glm::vec4 & billboard_object::get_color_tint () const {
+		return m_color_tint;
+	}
+
 	void billboard_object::set_size (const glm::vec2 & size) {
 		m_size = size;
+	}
+
+	void billboard_object::set_color_tint (const glm::vec4 & color_tint) {
+		m_color_tint = color_tint;
 	}
 
 	billboard_object::billboard_object (std::shared_ptr<shader_t> shader, std::shared_ptr<texture_t> texture) {
@@ -46,6 +54,7 @@ namespace mini {
 		constexpr GLuint a_color = 1;
 		constexpr GLuint a_uv = 2;
 
+		m_color_tint = { 1.0f, 1.0f, 1.0f, 1.0f };
 		m_size = { 1.0f, 1.0f };
 		m_shader = shader;
 		m_pos_buffer = m_color_buffer = m_index_buffer = m_uv_buffer = m_vao = 0;
@@ -104,6 +113,7 @@ namespace mini {
 		center = world_matrix * center;
 
 		m_shader->set_uniform ("u_size", m_size);
+		m_shader->set_uniform ("u_color", m_color_tint);
 		m_shader->set_uniform ("u_center", static_cast<glm::vec3> (center));
 		m_shader->set_uniform ("u_view", view_matrix);
 		m_shader->set_uniform ("u_projection", proj_matrix);

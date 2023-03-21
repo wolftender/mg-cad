@@ -69,6 +69,10 @@ namespace mini {
 		return m_cursor_texture;
 	}
 
+	std::shared_ptr<texture_t> resource_store::get_point_texture () const {
+		return m_point_texture;
+	}
+
 	resource_store::resource_store () {
 		m_basic_shader = m_load_shader ("shaders/vs_basic.glsl", "shaders/fs_basic.glsl");
 		m_mesh_shader = m_load_shader ("shaders/vs_meshgrid.glsl", "shaders/fs_meshgrid.glsl");
@@ -80,5 +84,6 @@ namespace mini {
 
 		// textures
 		m_cursor_texture = texture_t::load_from_file ("assets/cursor.png");
+		m_point_texture = texture_t::load_from_file ("assets/point.png");
 	}
 }

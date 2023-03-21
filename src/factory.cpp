@@ -4,6 +4,7 @@
 // objects
 #include "cube.hpp"
 #include "torus.hpp"
+#include "point.hpp"
 
 namespace mini {
 	object_factory::object_factory_impl_t::object_factory_impl_t (object_ctor_t c, const std::string & n, const std::string & d) :
@@ -20,6 +21,10 @@ namespace mini {
 
 		m_factories.push_back ({
 			&object_factory::make_torus, "torus", "a parametric torus with adjustable resolution"
+		});
+
+		m_factories.push_back ({
+			&object_factory::make_point, "point", "a point in three-dimensional space"
 		});
 	}
 
@@ -58,5 +63,9 @@ namespace mini {
 		);
 
 		return torus;
+	}
+
+	std::shared_ptr<scene_obj_t> object_factory::make_point (std::shared_ptr<const resource_store> store) {
+		return std::make_shared<point_object> (store->get_billboard_s_shader (), store->get_point_texture ());
 	}
 }

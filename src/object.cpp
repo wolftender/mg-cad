@@ -57,7 +57,10 @@ namespace mini {
 	}
 
 	void scene_obj_t::set_selected (bool selected) {
-		m_selected = selected;
+		if (selected != m_selected) {
+			m_selected = selected;
+			t_on_selection (selected);
+		}		
 	}
 
 	glm::mat4x4 scene_obj_t::compose_matrix (const glm::vec3 & translation, const glm::vec3 & euler_angles, const glm::vec3 & scale) const {

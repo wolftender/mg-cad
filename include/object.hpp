@@ -39,5 +39,8 @@ namespace mini {
 
 			// virtual methods
 			virtual void configure ();
+
+		protected:
+			virtual void t_on_selection (bool select) { };
 	};
 }

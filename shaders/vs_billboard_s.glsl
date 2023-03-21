@@ -7,6 +7,7 @@ layout (location = 2) in vec2 a_uv;
 uniform mat4 u_view;
 uniform mat4 u_projection;
 uniform vec3 u_center;
+uniform vec4 u_color;
 uniform vec2 u_size;
 uniform vec2 u_resolution;
 
@@ -22,7 +23,7 @@ void main () {
 
     vec3 world_pos = u_center;
 
-    vertex_color = a_color;
+    vertex_color = a_color * u_color;
     uv = a_uv;
 
     gl_Position = u_projection * u_view * vec4 (world_pos, 1.0);

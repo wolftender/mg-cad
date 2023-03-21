@@ -35,5 +35,6 @@ namespace mini {
 		private:
 			static std::shared_ptr<scene_obj_t> make_test_cube (std::shared_ptr<const resource_store> store);
 			static std::shared_ptr<scene_obj_t> make_torus (std::shared_ptr<const resource_store> store);
+			static std::shared_ptr<scene_obj_t> make_point (std::shared_ptr<const resource_store> store);
 	};
 }
