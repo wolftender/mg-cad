@@ -31,6 +31,7 @@ namespace mini {
 			void set_scale (const glm::vec3 & scale);
 			void set_selected (bool selected);
 
+			glm::mat4x4 compose_matrix (const glm::vec3 & translation, const glm::vec3 & euler_angles, const glm::vec3 & scale) const;
 			glm::mat4x4 get_matrix () const;
 
 			scene_obj_t (const std::string & type_name, bool movable = true, bool rotatable = true, bool scalable = true);

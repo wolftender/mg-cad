@@ -60,24 +60,28 @@ namespace mini {
 		m_selected = selected;
 	}
 
-	glm::mat4x4 scene_obj_t::get_matrix () const {
+	glm::mat4x4 scene_obj_t::compose_matrix (const glm::vec3 & translation, const glm::vec3 & euler_angles, const glm::vec3 & scale) const {
 		glm::mat4x4 world (1.0f);
 
 		if (m_movable) {
-			world = glm::translate (world, m_translation);
+			world = glm::translate (world, translation);
 		}
-		
+
 		if (m_rotatable) {
-			world = glm::rotate (world, m_euler_angles[0], { 1.0f, 0.0f, 0.0f });
-			world = glm::rotate (world, m_euler_angles[1], { 0.0f, 1.0f, 0.0f });
-			world = glm::rotate (world, m_euler_angles[2], { 0.0f, 0.0f, 1.0f });
+			world = glm::rotate (world, euler_angles[2], { 0.0f, 0.0f, 1.0f });
+			world = glm::rotate (world, euler_angles[1], { 0.0f, 1.0f, 0.0f });
+			world = glm::rotate (world, euler_angles[0], { 1.0f, 0.0f, 0.0f });
 		}
 
 		if (m_scalable) {
-			world = glm::scale (world, m_scale);
+			world = glm::scale (world, scale);
 		}
 
 		return world;
+	}
+
+	glm::mat4x4 scene_obj_t::get_matrix () const {
+		return compose_matrix (m_translation, m_euler_angles, m_scale);
 	}
 
 	void scene_obj_t::configure () {

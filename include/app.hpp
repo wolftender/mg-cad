@@ -29,7 +29,15 @@ namespace mini {
 			//  3) if more objects are selected the selection is a "fake" object that can only be transformed
 			class group_logic_object : public scene_obj_t {
 				private:
-					std::list<std::shared_ptr<object_wrapper_t>> m_group; 
+					struct grouped_object_wrapper {
+						std::shared_ptr<object_wrapper_t> ptr;
+						glm::mat4x4 os_transform;
+
+						grouped_object_wrapper (std::shared_ptr<object_wrapper_t> _ptr);
+					};
+
+					std::list<grouped_object_wrapper> m_group;
+					glm::vec3 m_origin;
 
 				public:
 					group_logic_object ();
@@ -41,14 +49,22 @@ namespace mini {
 					void group_add (std::shared_ptr<object_wrapper_t> object);
 					void group_remove (std::shared_ptr<object_wrapper_t> object);
 					void group_clear ();
+
 					uint32_t group_size () const;
 
+					const glm::vec3 & get_origin () const;
 					std::shared_ptr<object_wrapper_t> group_pop ();
 
 					void update ();
 
 					virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override;
 					virtual void configure () override;
+
+				private:
+					void m_reset_group_transforms ();
+					void m_apply_all ();
+					void m_calc_origin ();
+					void m_apply_group_transform (grouped_object_wrapper & item, const glm::mat4x4 & group_transform);
 			};
 
 			app_context m_context;
@@ -59,7 +75,7 @@ namespace mini {
 			std::vector<std::shared_ptr<object_wrapper_t>> m_objects;
 
 			// gizmos etc
-			std::shared_ptr<billboard_object> m_cursor_object;
+			std::shared_ptr<billboard_object> m_cursor_object, m_origin_object;
 			std::shared_ptr<grid_object> m_grid_xz, m_grid_xy;
 
 			// textures

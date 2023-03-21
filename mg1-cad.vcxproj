@@ -156,6 +156,7 @@
   <ItemGroup>
     <ClCompile Include="src\billboard.cpp" />
     <ClCompile Include="src\factory.cpp" />
+    <ClCompile Include="src\group.cpp" />
     <ClCompile Include="src\gui.cpp" />
     <ClCompile Include="src\object.cpp" />
     <ClCompile Include="src\algebra.cpp" />

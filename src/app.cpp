@@ -300,7 +300,9 @@ namespace mini {
 
 		// initialize gizmos
 		m_cursor_object = std::make_shared<billboard_object> (m_store->get_billboard_s_shader (), m_store->get_cursor_texture ());
-		m_cursor_object->set_size ({35.0f, 35.0f});
+		m_origin_object = std::make_shared<billboard_object> (m_store->get_billboard_s_shader (), m_store->get_cursor_texture ());
+		m_cursor_object->set_size ({ 35.0f, 35.0f });
+		m_origin_object->set_size ({45.0f, 45.0f});
 
 		m_grid_xz = std::make_shared<grid_object> (m_store->get_grid_xz_shader ());
 		m_grid_xy = std::make_shared<grid_object> (m_store->get_grid_xy_shader ());
@@ -397,6 +399,8 @@ namespace mini {
 		}
 
 		m_context.draw (m_cursor_object, make_translation (m_cursor_position));
+		m_context.draw (m_origin_object, make_translation (m_selected_group->get_origin ()));
+
 		m_context.display (false);
 
 		// rendering above is done to a buffer
@@ -794,6 +798,7 @@ namespace mini {
 		if (object->selected) {
 			if (m_selected_group->group_size () > 1) {
 				if (object == m_selected_object) {
+					m_selected_group->group_remove (object);
 					m_selected_object = m_selected_group->group_pop ();
 				} else {
 					m_selected_group->group_remove (object);
@@ -819,64 +824,5 @@ namespace mini {
 		for (auto & object : m_objects) {
 			object->selected = false;
 		}
-	}
-
-	application::group_logic_object::group_logic_object () : scene_obj_t ("group") { }
-
-	void application::group_logic_object::group_add (std::shared_ptr<object_wrapper_t> object) {
-		m_group.push_back (object);
-	}
-
-	void application::group_logic_object::group_remove (std::shared_ptr<object_wrapper_t> object) {
-		for (auto iter = m_group.begin (); iter != m_group.end (); ++iter) {
-			if (*iter == object) {
-				(*iter)->selected = false;
-				iter = m_group.erase (iter);
-			}
-
-			if (iter == m_group.end ()) {
-				break;
-			}
-		}
-	}
-
-	void application::group_logic_object::group_clear () {
-		for (auto & el : m_group) {
-			el->selected = false;
-		}
-
-		m_group.clear ();
-	}
-
-	uint32_t application::group_logic_object::group_size () const {
-		return m_group.size ();
-	}
-
-	std::shared_ptr<application::object_wrapper_t> application::group_logic_object::group_pop () {
-		if (m_group.size () > 0) {
-			auto back = m_group.back ();
-			return back;
-		}
-
-		return nullptr;
-	}
-
-	void application::group_logic_object::update () {
-		for (auto iter = m_group.begin (); iter != m_group.end (); ++iter) {
-			if (!(*iter)->selected || (*iter)->destroy) {
-				iter = m_group.erase (iter);
-			}
-
-			if (iter == m_group.end ()) {
-				break;
-			}
-		}
-	}
-
-	// does nothing
-	void application::group_logic_object::render (app_context & context, const glm::mat4x4 & world_matrix) const { }
-
-	void application::group_logic_object::configure () {
-		return scene_obj_t::configure ();
 	}
 }
