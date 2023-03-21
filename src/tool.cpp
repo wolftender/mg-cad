@@ -44,6 +44,10 @@ namespace mini {
 		return get_app ().get_mouse_direction ();
 	}
 
+	glm::vec3 tool_base::calculate_mouse_dir (int offset_x, int offset_y) const {
+		return get_app ().get_mouse_direction (offset_x, offset_y);
+	}
+
 	/**********************
 	 *  TRANSLATION TOOL  *
 	 **********************/
@@ -53,6 +57,15 @@ namespace mini {
 		if (selection) {
 			m_original_transform = selection->get_translation ();
 			m_selection = selection;
+
+			glm::vec2 screen_pos = get_app ().world_to_screen (m_original_transform);
+			screen_pos = glm::clamp (screen_pos, { -1.0f, -1.0f }, { 1.0f, 1.0f });
+
+			glm::vec2 pixel_pos = get_app ().screen_to_pixels (screen_pos);
+			offset_t mouse_offset = get_app ().get_viewport_mouse_offset ();
+
+			m_offset_x = static_cast<int> (pixel_pos.x) - mouse_offset.x;
+			m_offset_y = static_cast<int> (pixel_pos.y) - mouse_offset.y;
 		} else {
 			t_dispose ();
 		}
@@ -118,7 +131,7 @@ namespace mini {
 			const auto & camera = get_app ().get_context ().get_camera ();
 
 			glm::vec3 plane_normal = normalize (camera.get_position () - m_original_transform);
-			glm::vec3 direction = calculate_mouse_dir ();
+			glm::vec3 direction = calculate_mouse_dir (m_offset_x, m_offset_y);
 
 			float nt = glm::dot ((m_original_transform - camera.get_position ()), plane_normal);
 			float dt = glm::dot (direction, plane_normal);
@@ -213,7 +226,8 @@ namespace mini {
 	}
 
 	inline void loop_angle (float & angle) {
-		const float pi2 = 2.0f * glm::pi<float> ();
+		constexpr float pi2 = 2.0f * glm::pi<float> ();
+
 		if (angle > pi2) {
 			angle = angle - pi2;
 		} else if (angle < -pi2) {

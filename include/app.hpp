@@ -117,9 +117,11 @@ namespace mini {
 			const glm::vec2 & get_cursor_screen_pos () const;
 
 			glm::vec3 get_mouse_direction () const;
+			glm::vec3 get_mouse_direction (int offset_x, int offset_y) const;
 			glm::vec3 get_screen_direction (float screen_x, float screen_y) const;
 			glm::vec2 pixels_to_screen (const glm::vec2 & pos) const;
 			glm::vec2 screen_to_pixels (const glm::vec2 & pos) const;
+			glm::vec2 world_to_screen (const glm::vec3 & world_pos) const;
 			
 			void set_cursor_pos (const glm::vec3 & position);
 			void set_cursor_screen_pos (const glm::vec2 & screen_pos);

@@ -51,10 +51,14 @@ namespace mini {
 	}
 
 	glm::vec3 application::get_mouse_direction () const {
+		return get_mouse_direction (0, 0);
+	}
+
+	glm::vec3 application::get_mouse_direction (int offset_x, int offset_y) const {
 		const auto & mouse_offset = get_viewport_mouse_offset ();
 
-		const float mouse_x = static_cast<float> (mouse_offset.x);
-		const float mouse_y = static_cast<float> (mouse_offset.y);
+		const float mouse_x = static_cast<float> (mouse_offset.x + offset_x);
+		const float mouse_y = static_cast<float> (mouse_offset.y + offset_y);
 
 		const auto screen_pos = pixels_to_screen ({ mouse_x, mouse_y });
 
@@ -102,6 +106,17 @@ namespace mini {
 		const float pixel_y = ((pos.y + 1.0f) / 2.0f) * vp_height;
 
 		return { pixel_x, pixel_y };
+	}
+
+	glm::vec2 application::world_to_screen (const glm::vec3 & world_pos) const {
+		const auto & camera = m_context.get_camera ();
+
+		glm::vec4 world_pos_affine = { world_pos, 1.0f };
+		glm::vec4 screen_pos = camera.get_projection_matrix () * camera.get_view_matrix () * world_pos_affine;
+
+		screen_pos /= screen_pos.w;
+
+		return glm::vec2 (screen_pos.x, screen_pos.y);
 	}
 
 	void application::set_cursor_pos (const glm::vec3 & position) {

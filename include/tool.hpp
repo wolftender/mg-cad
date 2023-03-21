@@ -50,6 +50,7 @@ namespace mini {
 
 		public:
 			glm::vec3 calculate_mouse_dir () const;
+			glm::vec3 calculate_mouse_dir (int offset_x, int offset_y) const;
 	};
 
 	class camera_pan_tool : public tool_base {
@@ -70,6 +71,8 @@ namespace mini {
 	class translation_tool : public tool_base {
 		private:
 			glm::vec3 m_original_transform;
+			int m_offset_x, m_offset_y;
+
 			std::shared_ptr<scene_obj_t> m_selection;
 
 			axis_t m_axis_lock;
