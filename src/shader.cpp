@@ -245,7 +245,7 @@ namespace mini {
 			memset (link_log_buffer, 0, 4096);
 
 			// make a log and throw an error
-			glGetShaderInfoLog (m_program, 4096, &link_log_len, link_log_buffer);
+			glGetProgramInfoLog (m_program, 4096, &link_log_len, link_log_buffer);
 
 			// clean up and throw
 			glDeleteProgram (m_program);

@@ -1,11 +1,8 @@
 #include "store.hpp"
 
-#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <ios>
-
-namespace fs = std::filesystem;
 
 namespace mini {
 	std::shared_ptr<shader_t> resource_store::m_load_shader (const std::string & vs_file, const std::string & ps_file) const {
@@ -17,7 +14,7 @@ namespace mini {
 		try {
 			shader->compile ();
 		} catch (const shader_error_t & error) {
-			std::cerr << "failed to build shader! log: " << std::endl << error.get_log () << std::endl;
+			std::cerr << error.what() << " log: " << std::endl << error.get_log () << std::endl;
 			return nullptr;
 		}
 

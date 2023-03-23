@@ -8,6 +8,10 @@ namespace mini {
 		m_euler_angles = { 0.0f, 0.0f, 0.0f };
 		m_translation = { 0.0f, 0.0f, 0.0f };
 		m_scale = { 1.0f, 1.0f, 1.0f };
+
+		m_movable = movable;
+		m_rotatable = rotatable;
+		m_scalable = scalable;
 	}
 
 	scene_obj_t::~scene_obj_t () { }

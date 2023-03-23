@@ -39,7 +39,7 @@ namespace mini {
 		return m_cursor_position;
 	}
 
-	const glm::vec2 & application::get_cursor_screen_pos () const {
+	glm::vec2 application::get_cursor_screen_pos () const {
 		const auto & camera = m_context.get_camera ();
 
 		glm::vec4 cursor_pos = { m_cursor_position, 1.0f };
@@ -414,7 +414,10 @@ namespace mini {
 		}
 
 		m_context.draw (m_cursor_object, make_translation (m_cursor_position));
-		m_context.draw (m_origin_object, make_translation (m_selected_group->get_origin ()));
+		
+		if (m_selected_group) {
+			m_context.draw (m_origin_object, make_translation (m_selected_group->get_origin ()));
+		}
 
 		m_context.display (false);
 

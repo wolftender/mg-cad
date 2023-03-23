@@ -59,7 +59,7 @@ namespace mini {
 		return m_group.size ();
 	}
 
-	const glm::vec3 & application::group_logic_object::get_origin () const {
+	glm::vec3 application::group_logic_object::get_origin () const {
 		return glm::vec3 (make_translation (m_origin) * get_matrix () * glm::vec4 (0.0f, 0.0f, 0.0f, 1.0f));
 	}
 

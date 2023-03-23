@@ -8,12 +8,12 @@ IMGUI_SRC_DIR := libs/imgui
 IMGUI_OBJ_DIR := obj/imgui
 
 SRC := $(wildcard $(SRC_DIR)/*.cpp)
-OBJ := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRC)) $(OBJ_DIR)/glad.o
+OBJ := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRC)) $(OBJ_DIR)/glad.o $(OBJ_DIR)/lodepng.o
 
 IMGUI_SRC := $(wildcard $(IMGUI_SRC_DIR)/*.cpp)
 IMGUI_OBJ := $(patsubst $(IMGUI_SRC_DIR)/%.cpp, $(IMGUI_OBJ_DIR)/%.o, $(IMGUI_SRC))
 
-CPPFLAGS := -Iinclude `pkg-config --cflags glfw3` -Ilibs/glad/include -Ilibs/imgui --std=c++17
+CPPFLAGS := -Iinclude -Ilibs/lodepng `pkg-config --cflags glfw3` -Ilibs/glad/include -Ilibs/imgui --std=c++17
 CFLAGS := -Wall -g
 LDFLAGS :=
 LDLIBS := `pkg-config --libs glfw3` -ldl -lpthread
@@ -38,6 +38,9 @@ $(IMGUI_OBJ_DIR):
 	mkdir -p $@
 
 $(OBJ_DIR)/glad.o: libs/glad/src/glad.c | $(OBJ_DIR)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+$(OBJ_DIR)/lodepng.o: libs/lodepng/lodepng.cpp | $(OBJ_DIR)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 $(IMGUI_OBJ_DIR)/%.o: $(IMGUI_SRC_DIR)/%.cpp | $(IMGUI_OBJ_DIR)

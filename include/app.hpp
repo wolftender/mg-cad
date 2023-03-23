@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <functional>
+#include <list>
 
 #include "window.hpp"
 #include "context.hpp"
@@ -52,7 +53,7 @@ namespace mini {
 
 					uint32_t group_size () const;
 
-					const glm::vec3 & get_origin () const;
+					glm::vec3 get_origin () const;
 					std::shared_ptr<object_wrapper_t> group_pop ();
 
 					void update ();
@@ -114,7 +115,7 @@ namespace mini {
 			bool is_mouse_in_viewport () const;
 
 			const glm::vec3 & get_cursor_pos () const;
-			const glm::vec2 & get_cursor_screen_pos () const;
+			glm::vec2 get_cursor_screen_pos () const;
 
 			glm::vec3 get_mouse_direction () const;
 			glm::vec3 get_mouse_direction (int offset_x, int offset_y) const;
