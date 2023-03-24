@@ -55,6 +55,12 @@ namespace mini {
 		m_calc_origin ();
 	}
 
+	void application::group_logic_object::group_destroy_all () {
+		for (auto & object : m_group) {
+			object.ptr->destroy = true;
+		}
+	}
+
 	uint32_t application::group_logic_object::group_size () const {
 		return m_group.size ();
 	}

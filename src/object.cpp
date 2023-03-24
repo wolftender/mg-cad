@@ -71,17 +71,22 @@ namespace mini {
 		glm::mat4x4 world (1.0f);
 
 		if (m_movable) {
-			world = glm::translate (world, translation);
+			//world = glm::translate (world, translation);
+			world = world * make_translation (translation);
 		}
 
 		if (m_rotatable) {
-			world = glm::rotate (world, euler_angles[2], { 0.0f, 0.0f, 1.0f });
-			world = glm::rotate (world, euler_angles[1], { 0.0f, 1.0f, 0.0f });
-			world = glm::rotate (world, euler_angles[0], { 1.0f, 0.0f, 0.0f });
+			//world = glm::rotate (world, euler_angles[2], { 0.0f, 0.0f, 1.0f });
+			//world = glm::rotate (world, euler_angles[1], { 0.0f, 1.0f, 0.0f });
+			//world = glm::rotate (world, euler_angles[0], { 1.0f, 0.0f, 0.0f });
+			world = world * make_rotation_z (euler_angles[2]);
+			world = world * make_rotation_y (euler_angles[1]);
+			world = world * make_rotation_x (euler_angles[0]);
 		}
 
 		if (m_scalable) {
-			world = glm::scale (world, scale);
+			//world = glm::scale (world, scale);
+			world = world * make_scale (scale);
 		}
 
 		return world;
@@ -105,5 +110,20 @@ namespace mini {
 				gui::vector_editor ("Scale", m_scale);
 			}
 		}
+	}
+
+	bool scene_obj_t::hit_test (const hit_test_data_t & data, glm::vec3 & hit_pos) const {
+		// 1. project point onto the screen
+
+
+		return false;
+	}
+
+	hit_test_data_t::hit_test_data_t (mini::camera & cam, const glm::vec2 & mouse_screen, 
+		const glm::vec2 & screen_res, const glm::vec3 & mouse_ray) :
+		camera (cam), 
+		mouse_screen (mouse_screen),
+		screen_res (screen_res),
+		mouse_ray (mouse_ray) {
 	}
 }

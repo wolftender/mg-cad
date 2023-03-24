@@ -249,6 +249,56 @@ namespace mini {
 		app_window::t_on_resize (width, height);
 	}
 
+	void application::m_handle_mouse_select () {
+		// todo: probably rework this code
+
+		if (!is_mouse_in_viewport ()) {
+			return;
+		}
+
+		//std::cout << "try selecting object" << std::endl;
+		auto & camera = m_context.get_camera ();
+
+		glm::vec2 mouse_screen = glm::vec2 (
+			static_cast<float> (m_vp_mouse_offset.x),
+			static_cast<float> (m_vp_mouse_offset.y)
+		);
+
+		glm::vec2 screen_res = glm::vec2 (
+			static_cast<float> (m_last_vp_width),
+			static_cast<float> (m_last_vp_height)
+		);
+
+		hit_test_data_t hit_data (
+			camera,
+			mouse_screen,
+			screen_res,
+			get_mouse_direction ()
+		);
+
+		// pass all of this to the hit detect functions
+		std::shared_ptr<object_wrapper_t> selection = nullptr;
+		glm::vec3 pos;
+		float best_dist = 1000000.0f, dist;
+
+		for (auto & object : m_objects) {
+			if (object->object->hit_test (hit_data, pos)) {
+				// hit was detected, compare hit vector with "best" hit vector
+				// i.e. select the object closer to the camera
+
+				dist = glm::distance (camera.get_position (), pos);
+				if (dist < best_dist) {
+					selection = object;
+					best_dist = dist;
+				}
+			}
+		}
+
+		if (selection) {
+			m_mark_object (selection);
+		}
+	}
+
 	void application::m_handle_mouse () {
 		// mouse input etc
 		if (is_left_click () && m_viewport_focus) {
@@ -286,7 +336,11 @@ namespace mini {
 
 	void application::m_destroy_object () {
 		if (m_selected_object) {
-			m_selected_object->destroy = true;
+			if (m_selected_group->group_size () > 1) {
+				m_selected_group->group_destroy_all ();
+			} else {
+				m_selected_object->destroy = true;
+			}
 		}
 	}
 
@@ -384,9 +438,12 @@ namespace mini {
 		glm::vec4 cam_pos = { 0.0f, 0.0f, -m_distance, 1.0f };
 		glm::mat4x4 cam_rotation (1.0f);
 
-		cam_rotation = glm::translate (cam_rotation, m_camera_target);
-		cam_rotation = glm::rotate (cam_rotation, m_cam_yaw, { 0.0f, 1.0f, 0.0f });
-		cam_rotation = glm::rotate (cam_rotation, m_cam_pitch, { 1.0f, 0.0f, 0.0f });
+		//cam_rotation = glm::translate (cam_rotation, m_camera_target);
+		//cam_rotation = glm::rotate (cam_rotation, m_cam_yaw, { 0.0f, 1.0f, 0.0f });
+		//cam_rotation = glm::rotate (cam_rotation, m_cam_pitch, { 1.0f, 0.0f, 0.0f });
+		cam_rotation = cam_rotation * make_translation (m_camera_target);
+		cam_rotation = cam_rotation * make_rotation_y (m_cam_yaw);
+		cam_rotation = cam_rotation * make_rotation_x (m_cam_pitch);
 		
 		cam_pos = cam_rotation * cam_pos;
 
@@ -472,6 +529,9 @@ namespace mini {
 				m_selected_tool = std::make_shared<camera_pan_tool> (*this);
 			} else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
 				m_snap_cursor_to_mouse ();
+			} else if (button == GLFW_MOUSE_BUTTON_LEFT) {
+				// selection code
+				m_handle_mouse_select ();
 			}
 		}
 
@@ -636,7 +696,10 @@ namespace mini {
 		}
 
 		ImGui::SameLine ();
-		ImGui::Button ("Delete Object", ImVec2 (-1.0f, 24.0f));
+		
+		if (ImGui::Button ("Delete Object", ImVec2 (-1.0f, 24.0f))) {
+			m_destroy_object ();
+		}
 
 		ImGui::End ();
 	}

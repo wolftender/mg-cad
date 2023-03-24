@@ -50,6 +50,7 @@ namespace mini {
 					void group_add (std::shared_ptr<object_wrapper_t> object);
 					void group_remove (std::shared_ptr<object_wrapper_t> object);
 					void group_clear ();
+					void group_destroy_all ();
 
 					uint32_t group_size () const;
 
@@ -159,6 +160,7 @@ namespace mini {
 			virtual void t_on_resize (int width, int height) override;
 
 		private:
+			void m_handle_mouse_select ();
 			void m_handle_mouse ();
 			void m_snap_cursor_to_mouse ();
 			void m_destroy_object ();

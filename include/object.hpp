@@ -3,6 +3,16 @@
 #include "algebra.hpp"
 
 namespace mini {
+	struct hit_test_data_t {
+		camera & camera;
+		glm::vec2 mouse_screen;
+		glm::vec2 screen_res;
+		glm::vec3 mouse_ray;
+
+		hit_test_data_t (mini::camera & cam, const glm::vec2 & mouse_screen, 
+			const glm::vec2 & screen_res, const glm::vec3 & mouse_ray);
+	};
+
 	class scene_obj_t : public graphics_obj_t, std::enable_shared_from_this<scene_obj_t> {
 		private:
 			std::string m_type_name;
@@ -39,6 +49,7 @@ namespace mini {
 
 			// virtual methods
 			virtual void configure ();
+			virtual bool hit_test (const hit_test_data_t & data, glm::vec3 & hit_pos) const;
 
 		protected:
 			virtual void t_on_selection (bool select) { };
