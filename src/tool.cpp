@@ -320,4 +320,143 @@ namespace mini {
 
 		return true;
 	}
+
+	/**********************
+	 *     SCALE TOOL     *
+	 **********************/
+	scale_tool::scale_tool (application & app) : tool_base (app, "scale tool") {
+		auto selection = get_app ().get_group_selection ();
+
+		if (selection) {
+			m_original_transform = selection->get_scale ();
+			m_selection = selection;
+
+			glm::vec2 screen_pos = get_app ().world_to_screen (m_selection->get_translation ());
+			screen_pos = glm::clamp (screen_pos, { -1.0f, -1.0f }, { 1.0f, 1.0f });
+
+			glm::vec2 pixel_pos = get_app ().screen_to_pixels (screen_pos);
+			offset_t mouse_offset = get_app ().get_viewport_mouse_offset ();
+
+			m_start_x = static_cast<float> (mouse_offset.x);
+			m_start_y = static_cast<float> (mouse_offset.y);
+
+			m_object_x = pixel_pos.x;
+			m_object_y = pixel_pos.y;
+		} else {
+			t_dispose ();
+		}
+
+		m_axis_lock = axis_t::none;
+		m_apply = false;
+	}
+
+	scale_tool::~scale_tool () {
+		if (m_selection && !m_apply) {
+			m_selection->set_scale (m_original_transform);
+		}
+	}
+
+	bool scale_tool::on_key_event (int key, int scancode, int action, int mods) {
+		if (!m_selection) {
+			return false;
+		}
+
+		if (action == GLFW_RELEASE) {
+			switch (key) {
+			case KEY_AXIS_X:
+				m_selection->set_scale (m_original_transform);
+				m_axis_lock = axis_t::x;
+				break;
+
+			case KEY_AXIS_Y:
+				m_selection->set_scale (m_original_transform);
+				m_axis_lock = axis_t::y;
+				break;
+
+			case KEY_AXIS_Z:
+				m_selection->set_scale (m_original_transform);
+				m_axis_lock = axis_t::z;
+				break;
+
+			case KEY_CANCEL:
+				t_dispose ();
+			}
+		}
+
+		return true;
+	}
+
+	bool scale_tool::on_mouse_button (int button, int action, int mods) {
+		if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT) {
+			if (m_selection) {
+				m_apply = true;
+				t_dispose ();
+			}
+		}
+
+		return true;
+	}
+
+	bool scale_tool::on_update (float delta_time) {
+		if (!m_selection) {
+			t_dispose ();
+			return false;
+		}
+
+		offset_t mouse_offset = get_app ().get_viewport_mouse_offset ();
+
+		float mouse_x = static_cast<float> (mouse_offset.x);
+		float mouse_y = static_cast<float> (mouse_offset.y);
+
+		float dx = mouse_x - m_object_x;
+		float dy = mouse_y - m_object_y;
+
+		float dsx = m_object_x - m_start_x;
+		float dsy = m_object_y - m_start_y;
+
+		float d = glm::sqrt (dx * dx + dy * dy);
+		float ds = glm::sqrt (dsx * dsx + dsy * dsy);
+
+		float scale_factor = d / ds;
+		if (scale_factor < 0.1f) {
+			scale_factor = 0.1f;
+		}
+
+		if (scale_factor > 1.0f) {
+			scale_factor = scale_factor * scale_factor;
+		} else if (scale_factor < 1.0f) {
+			scale_factor = glm::sqrt (scale_factor);
+		}
+
+		glm::vec3 scale = {
+			m_original_transform.x,
+			m_original_transform.y,
+			m_original_transform.z
+		};
+
+		scale_factor = scale_factor - 1.0f;
+
+		switch (m_axis_lock) {
+			case axis_t::none:
+				scale.x = scale.x + scale_factor;
+				scale.y = scale.y + scale_factor;
+				scale.z = scale.z + scale_factor;
+				break;
+
+			case axis_t::x:
+				scale.x = scale.x + scale_factor;
+				break;
+			
+			case axis_t::y:
+				scale.y = scale.y + scale_factor;
+				break;
+
+			case axis_t::z:
+				scale.z = scale.z + scale_factor;
+				break;
+		}
+
+		m_selection->set_scale (scale);
+		return true;
+	}
 }

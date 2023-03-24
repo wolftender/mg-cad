@@ -109,4 +109,26 @@ namespace mini {
 			virtual bool on_mouse_button (int button, int action, int mods) override;
 			virtual bool on_update (float delta_time) override;
 	};
+
+	class scale_tool : public tool_base {
+		private:
+			glm::vec3 m_original_transform;
+			float m_start_x, m_start_y, m_object_x, m_object_y;
+
+			std::shared_ptr<scene_obj_t> m_selection;
+
+			axis_t m_axis_lock;
+			bool m_apply;
+
+		public:
+			scale_tool (application & app);
+			~scale_tool ();
+
+			scale_tool (const scale_tool &) = delete;
+			scale_tool & operator= (const scale_tool &) = delete;
+
+			virtual bool on_key_event (int key, int scancode, int action, int mods) override;
+			virtual bool on_mouse_button (int button, int action, int mods) override;
+			virtual bool on_update (float delta_time) override;
+	};
 }

@@ -213,6 +213,10 @@ namespace mini {
 				case KEY_ROTATE:
 					m_selected_tool = std::make_shared<rotation_tool> (*this);
 					break;
+
+				case KEY_SCALE:
+					m_selected_tool = std::make_shared<scale_tool> (*this);
+					break;
 					
 				case GLFW_KEY_ESCAPE:
 					m_reset_selection ();
@@ -472,7 +476,7 @@ namespace mini {
 
 		m_context.draw (m_cursor_object, make_translation (m_cursor_position));
 		
-		if (m_selected_group) {
+		if (m_selected_group && m_selected_group->group_size () >= 1) {
 			m_context.draw (m_origin_object, make_translation (m_selected_group->get_origin ()));
 		}
 
