@@ -419,6 +419,10 @@ namespace mini {
 					m_selected_object = m_selected_group->group_pop ();
 				}
 
+				for (auto & listener : m_objects) {
+					listener->object->notify_object_deleted ((*iter)->object);
+				}
+
 				iter = m_objects.erase (iter);
 			}
 

@@ -28,6 +28,10 @@ namespace mini {
 		t_on_object_selected (object);
 	}
 
+	void scene_obj_t::notify_object_deleted (std::shared_ptr<scene_obj_t> object) {
+		t_on_object_deleted (object);
+	}
+
 	const std::string & scene_obj_t::get_type_name () const {
 		return m_type_name;
 	}

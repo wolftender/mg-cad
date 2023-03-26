@@ -85,6 +85,7 @@ namespace mini {
 			// notify methods
 			void notify_object_created (std::shared_ptr<scene_obj_t> object);
 			void notify_object_selected (std::shared_ptr<scene_obj_t> object);
+			void notify_object_deleted (std::shared_ptr<scene_obj_t> object);
 
 			// virtual methods
 			virtual void integrate (float delta_time);
@@ -94,6 +95,7 @@ namespace mini {
 		protected:
 			virtual void t_on_selection (bool select) { }
 			virtual void t_on_object_created (std::shared_ptr<scene_obj_t> object) { }
-			virtual void t_on_object_selected (std::shared_ptr<scene_obj_t> object) { }
+			virtual void t_on_object_selected (std::shared_ptr<scene_obj_t> object) {}
+			virtual void t_on_object_deleted (std::shared_ptr<scene_obj_t> object) { }
 	};
 }

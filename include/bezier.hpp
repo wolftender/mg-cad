@@ -1,5 +1,5 @@
 #pragma once
-#include <vector>
+#include <list>
 
 #include "object.hpp"
 #include "point.hpp"
@@ -8,7 +8,9 @@ namespace mini {
 	class bezier_curve_c0 : public scene_obj_t {
 		private:
 			std::shared_ptr<shader_t> m_shader;
-			std::vector<std::weak_ptr<point_object>> m_points;
+			std::list<std::weak_ptr<point_object>> m_points;
+			bool m_queue_curve_rebuild;
+			bool m_auto_extend;
 			
 		public:
 			bezier_curve_c0 (scene_controller_base & scene, std::shared_ptr<shader_t> shader);
@@ -23,5 +25,9 @@ namespace mini {
 
 		protected:
 			virtual void t_on_object_created (std::shared_ptr<scene_obj_t> object) override;
+			virtual void t_on_object_deleted (std::shared_ptr<scene_obj_t> object) override;
+
+		private:
+			void m_rebuild_curve ();
 	};
 }
