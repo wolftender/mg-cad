@@ -3,7 +3,6 @@
 namespace mini {
 	bezier_curve_c0::bezier_curve_c0 (scene_controller_base & scene, std::shared_ptr<shader_t> shader) : 
 		scene_obj_t (scene, "bezier c0", false, false, false) {
-		
 	}
 
 	bezier_curve_c0::~bezier_curve_c0 () {

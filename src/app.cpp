@@ -119,6 +119,14 @@ namespace mini {
 		return glm::vec2 (screen_pos.x, screen_pos.y);
 	}
 
+	scene_controller_base::selected_object_iter_ptr application::get_selected_objects () {
+		if (!m_selected_group) {
+			throw std::runtime_error ("selection group was not initialized");
+		}
+
+		return m_selected_group->get_iterator ();
+	}
+
 	void application::set_cursor_pos (const glm::vec3 & position) {
 		m_cursor_position = position;
 	}

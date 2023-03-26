@@ -62,6 +62,10 @@ namespace mini {
 		}
 	}
 
+	scene_controller_base::selected_object_iter_ptr application::group_logic_object::get_iterator () {
+		return std::unique_ptr<object_collection> (new object_collection (m_group));
+	}
+
 	uint32_t application::group_logic_object::group_size () const {
 		return static_cast<uint32_t> (m_group.size ());
 	}
@@ -177,5 +181,31 @@ namespace mini {
 	application::group_logic_object::grouped_object_wrapper::grouped_object_wrapper (std::shared_ptr<object_wrapper_t> _ptr) {
 		ptr = _ptr;
 		os_transform = glm::mat4x4 (1.0f);
+	}
+
+	// collection
+	application::group_logic_object::object_collection::object_collection (std::list<grouped_object_wrapper> & list) : 
+		m_list (list),
+		m_iter (list.begin ()) {
+	}
+
+	bool application::group_logic_object::object_collection::next () {
+		if (m_iter != m_list.end ()) {
+			m_iter++;
+		}
+
+		return (m_iter != m_list.end ());
+	}
+
+	bool application::group_logic_object::object_collection::has () {
+		return (m_iter != m_list.end ());
+	}
+
+	std::shared_ptr<scene_obj_t> application::group_logic_object::object_collection::get_object () {
+		if (m_iter != m_list.end ()) {
+			return m_iter->ptr->object;
+		}
+
+		return nullptr;
 	}
 }

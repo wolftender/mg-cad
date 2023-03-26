@@ -17,6 +17,19 @@ namespace mini {
 
 	class scene_controller_base {
 		public:
+			class selected_object_collection {
+				public:
+					selected_object_collection () { }
+					virtual ~selected_object_collection () { }
+
+					virtual bool has () = 0;
+					virtual bool next () = 0;
+					virtual std::shared_ptr<scene_obj_t> get_object () = 0;
+			};
+
+			using selected_object_iter_ptr = std::unique_ptr<selected_object_collection>;
+
+		public:
 			virtual ~scene_controller_base () { };
 
 			// virtual methods that a "scene" has
@@ -25,6 +38,8 @@ namespace mini {
 
 			virtual const glm::vec3 & get_cursor_pos () const = 0;
 			virtual const glm::vec3 & get_cam_target () const = 0;
+
+			virtual selected_object_iter_ptr get_selected_objects () = 0;
 	};
 
 	class scene_obj_t : public graphics_obj_t, std::enable_shared_from_this<scene_obj_t> {

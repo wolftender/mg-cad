@@ -5,6 +5,7 @@
 #include "cube.hpp"
 #include "torus.hpp"
 #include "point.hpp"
+#include "bezier.hpp"
 
 namespace mini {
 	object_factory::object_factory_impl_t::object_factory_impl_t (object_ctor_t c, const std::string & n, const std::string & d) :
@@ -25,6 +26,10 @@ namespace mini {
 
 		m_factories.push_back ({
 			&object_factory::make_point, "point", "a point in three-dimensional space"
+		});
+
+		m_factories.push_back ({
+			&object_factory::make_bezier_c0, "bezier c0", "a bezier curve with c0 continuity"
 		});
 	}
 
@@ -72,6 +77,13 @@ namespace mini {
 			scene,
 			store->get_billboard_s_shader (), 
 			store->get_point_texture ()
+		);
+	}
+
+	std::shared_ptr<scene_obj_t> object_factory::make_bezier_c0 (scene_controller_base & scene, std::shared_ptr<const resource_store> store) {
+		return std::make_shared<bezier_curve_c0> (
+			scene,
+			store->get_billboard_s_shader ()
 		);
 	}
 }

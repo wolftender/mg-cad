@@ -37,6 +37,21 @@ namespace mini {
 						grouped_object_wrapper (std::shared_ptr<object_wrapper_t> _ptr);
 					};
 
+				public:
+					class object_collection : public selected_object_collection {
+						private:
+							std::list<grouped_object_wrapper> & m_list;
+							std::list<grouped_object_wrapper>::iterator m_iter;
+
+						public:
+							object_collection (std::list<grouped_object_wrapper> & list);
+
+							virtual bool next () override;
+							virtual bool has () override;
+							virtual std::shared_ptr<scene_obj_t> get_object () override;
+					};
+
+				private:
 					std::list<grouped_object_wrapper> m_group;
 					glm::vec3 m_origin;
 
@@ -51,6 +66,8 @@ namespace mini {
 					void group_remove (std::shared_ptr<object_wrapper_t> object);
 					void group_clear ();
 					void group_destroy_all ();
+
+					selected_object_iter_ptr get_iterator ();
 
 					uint32_t group_size () const;
 
@@ -126,6 +143,8 @@ namespace mini {
 			glm::vec2 pixels_to_screen (const glm::vec2 & pos) const;
 			glm::vec2 screen_to_pixels (const glm::vec2 & pos) const;
 			glm::vec2 world_to_screen (const glm::vec3 & world_pos) const;
+
+			virtual selected_object_iter_ptr get_selected_objects () override;
 			
 			virtual void set_cursor_pos (const glm::vec3 & position) override;
 			void set_cursor_screen_pos (const glm::vec2 & screen_pos);

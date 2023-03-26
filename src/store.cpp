@@ -21,6 +21,24 @@ namespace mini {
 		return shader;
 	}
 
+	std::shared_ptr<shader_t> resource_store::m_load_shader (const std::string & vs_file, const std::string & ps_file, const std::string & gs_file) const {
+		const std::string vs_source = m_read_file_content (vs_file);
+		const std::string ps_source = m_read_file_content (ps_file);
+		const std::string gs_source = m_read_file_content (gs_file);
+
+		auto shader = std::make_shared<shader_t> (vs_source, ps_source);
+		shader->set_geometry_source (gs_source);
+
+		try {
+			shader->compile ();
+		} catch (const shader_error_t & error) {
+			std::cerr << error.what () << " log: " << std::endl << error.get_log () << std::endl;
+			return nullptr;
+		}
+
+		return shader;
+	}
+
 	std::string resource_store::m_read_file_content (const std::string & path) const {
 		std::ifstream stream (path);
 
@@ -60,6 +78,10 @@ namespace mini {
 
 	std::shared_ptr<shader_t> resource_store::get_alt_mesh_shader () const {
 		return m_alt_mesh_shader;
+	}
+
+	std::shared_ptr<shader_t> resource_store::get_bezier_shader () const {
+		return m_bezier_shader;
 	}
 
 	std::shared_ptr<texture_t> resource_store::get_cursor_texture () const {
