@@ -68,6 +68,8 @@ namespace mini {
 			m_offset_y = static_cast<int> (pixel_pos.y) - mouse_offset.y;
 		} else {
 			t_dispose ();
+			m_original_transform = glm::vec3 (0.0f);
+			m_offset_x = m_offset_y = 0;
 		}
 
 		m_axis_lock = axis_t::none;
@@ -171,6 +173,7 @@ namespace mini {
 			m_original_rotation = selection->get_euler_angles ();
 			m_selection = selection;
 		} else {
+			m_original_rotation = { 0.0f, 0.0f, 0.0f };
 			t_dispose ();
 		}
 
@@ -248,7 +251,7 @@ namespace mini {
 		float dy = static_cast<float>(curr_pos.y) - static_cast<float>(last_pos.y);
 
 		auto t = m_selection->get_euler_angles ();
-		const float ang_speed = (1 / 360.0f) * glm::pi<float> ();
+		constexpr float ang_speed = (1.0f / 360.0f) * glm::pi<float> ();
 
 		switch (m_axis_lock) {
 			case axis_t::x: t[0] += ang_speed * dx; break;
@@ -343,6 +346,9 @@ namespace mini {
 			m_object_x = pixel_pos.x;
 			m_object_y = pixel_pos.y;
 		} else {
+			m_object_x = m_object_y = m_start_x = m_start_y = 0.0f;
+			m_original_transform = { 0.0f, 0.0f, 0.0f };
+
 			t_dispose ();
 		}
 

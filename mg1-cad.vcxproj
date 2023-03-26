@@ -137,6 +137,7 @@
   <ItemGroup>
     <ClInclude Include="include\algebra.hpp" />
     <ClInclude Include="include\app.hpp" />
+    <ClInclude Include="include\bezier.hpp" />
     <ClInclude Include="include\camera.hpp" />
     <ClInclude Include="include\context.hpp" />
     <ClInclude Include="include\cube.hpp" />
@@ -154,6 +155,7 @@
     <ClInclude Include="include\window.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\bezier.cpp" />
     <ClCompile Include="src\billboard.cpp" />
     <ClCompile Include="src\factory.cpp" />
     <ClCompile Include="src\group.cpp" />

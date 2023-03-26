@@ -4,8 +4,8 @@
 #include <iostream>
 
 namespace mini {
-	torus_object::torus_object (std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> alt_shader, 
-		float inner_radius, float outer_radius) : scene_obj_t ("torus") {
+	torus_object::torus_object (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> alt_shader,
+		float inner_radius, float outer_radius) : scene_obj_t (scene, "torus") {
 
 		m_shader = shader;
 		m_alt_shader = alt_shader;

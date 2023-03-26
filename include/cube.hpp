@@ -11,7 +11,7 @@ namespace mini {
 			std::shared_ptr<shader_t> m_shader;
 
 		public:
-			cube_object (std::shared_ptr<shader_t> shader);
+			cube_object (scene_controller_base & scene, std::shared_ptr<shader_t> shader);
 			~cube_object ();
 
 			cube_object (const cube_object &) = delete;

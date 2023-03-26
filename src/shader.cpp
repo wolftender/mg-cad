@@ -31,15 +31,27 @@ namespace mini {
 		}
 	}
 
+	void shader_t::set_geometry_source (const std::string & source) {
+		if (!m_is_ready) {
+			m_gs_source = source;
+		}
+	}
+
 	bool shader_t::compile () {
 		// compile and link
 		GLuint vs = 0;
 		GLuint ps = 0;
+		GLuint gs = 0;
 
 		// theese will throw exceptions if any fails
 		try {
 			m_try_compile (GL_VERTEX_SHADER, m_vs_source, &vs);
 			m_try_compile (GL_FRAGMENT_SHADER, m_ps_source, &ps);
+
+			if (m_gs_source.size () > 0) {
+				m_has_geometry = true;
+				m_try_compile (GL_GEOMETRY_SHADER, m_gs_source, &gs);
+			}
 		} catch (const std::exception & e) {
 			if (vs) {
 				glDeleteShader (vs);
@@ -55,6 +67,7 @@ namespace mini {
 
 		m_ps = ps;
 		m_vs = vs;
+		m_gs = gs;
 
 		const GLuint program_object = glCreateProgram ();
 
@@ -66,13 +79,21 @@ namespace mini {
 		glAttachShader (m_program, m_vs);
 		glAttachShader (m_program, m_ps);
 
+		if (m_has_geometry) {
+			glAttachShader (m_program, m_gs);
+		}
+
 		m_try_link ();
 
 		// linker success, delete shaders as they are no longer needed
 		glDeleteShader (m_vs);
 		glDeleteShader (m_ps);
 
-		m_vs = m_ps = 0;
+		if (m_has_geometry) {
+			glDeleteShader (m_gs);
+		}
+
+		m_vs = m_ps = m_gs = 0;
 		return true;
 	}
 
@@ -82,12 +103,14 @@ namespace mini {
 
 	shader_t::shader_t () {
 		m_is_ready = false;
-		m_program = m_ps = m_vs = 0;
+		m_has_geometry = false;
+		m_program = m_ps = m_vs = m_gs = 0;
 	}
 
 	shader_t::shader_t (const std::string & vs_source, const std::string & ps_source) {
 		m_is_ready = false;
-		m_program = m_ps = m_vs = 0;
+		m_has_geometry = false;
+		m_program = m_ps = m_vs = m_gs = 0;
 
 		set_vertex_source (vs_source);
 		set_fragment_source (ps_source);
@@ -95,7 +118,8 @@ namespace mini {
 
 	shader_t::shader_t (const shader_t & shader) {
 		m_is_ready = false;
-		m_program = m_ps = m_vs = 0;
+		m_has_geometry = false;
+		m_program = m_ps = m_vs = m_gs = 0;
 
 		m_vs_source = shader.m_vs_source;
 		m_ps_source = shader.m_ps_source;
@@ -126,6 +150,10 @@ namespace mini {
 
 		if (m_ps) {
 			glDeleteShader (m_ps);
+		}
+
+		if (m_gs) {
+			glDeleteShader (m_gs);
 		}
 	}
 

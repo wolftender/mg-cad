@@ -2,7 +2,8 @@
 
 // this implementation is split to a different file from app.cpp to reduce amount of code in one file
 namespace mini {
-	application::group_logic_object::group_logic_object () : scene_obj_t ("group") {
+	application::group_logic_object::group_logic_object (scene_controller_base & scene) : 
+		scene_obj_t (scene, "group") {
 		m_origin = glm::vec3 (0.0f);
 	}
 
@@ -62,7 +63,7 @@ namespace mini {
 	}
 
 	uint32_t application::group_logic_object::group_size () const {
-		return m_group.size ();
+		return static_cast<uint32_t> (m_group.size ());
 	}
 
 	glm::vec3 application::group_logic_object::get_origin () const {

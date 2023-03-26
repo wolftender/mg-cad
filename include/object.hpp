@@ -13,8 +13,23 @@ namespace mini {
 			const glm::vec2 & screen_res, const glm::vec3 & mouse_ray);
 	};
 
+	class scene_obj_t;
+
+	class scene_controller_base {
+		public:
+			virtual ~scene_controller_base () { };
+
+			// virtual methods that a "scene" has
+			virtual void add_object (const std::string & name, std::shared_ptr<scene_obj_t> object) = 0;
+			virtual void set_cursor_pos (const glm::vec3 & position) = 0;
+
+			virtual const glm::vec3 & get_cursor_pos () const = 0;
+			virtual const glm::vec3 & get_cam_target () const = 0;
+	};
+
 	class scene_obj_t : public graphics_obj_t, std::enable_shared_from_this<scene_obj_t> {
 		private:
+			scene_controller_base & m_scene;
 			std::string m_type_name;
 
 			glm::vec3 m_translation;
@@ -22,7 +37,7 @@ namespace mini {
 			glm::vec3 m_scale;
 
 			bool m_rotatable, m_movable, m_scalable;
-			bool m_selected;
+			bool m_selected, m_disposed;
 
 		public:
 			const std::string & get_type_name () const;
@@ -35,6 +50,11 @@ namespace mini {
 			bool is_rotatable () const;
 			bool is_scalable () const;
 			bool is_movable () const;
+			bool is_disposed () const;
+
+			scene_controller_base & get_scene () const;
+
+			void dispose ();
 
 			void set_translation (const glm::vec3 & translation);
 			void set_euler_angles (const glm::vec3 & euler_angles);
@@ -44,14 +64,21 @@ namespace mini {
 			glm::mat4x4 compose_matrix (const glm::vec3 & translation, const glm::vec3 & euler_angles, const glm::vec3 & scale) const;
 			glm::mat4x4 get_matrix () const;
 
-			scene_obj_t (const std::string & type_name, bool movable = true, bool rotatable = true, bool scalable = true);
+			scene_obj_t (scene_controller_base & scene, const std::string & type_name, bool movable = true, bool rotatable = true, bool scalable = true);
 			virtual ~scene_obj_t ();
 
+			// notify methods
+			void notify_object_created (std::shared_ptr<scene_obj_t> object);
+			void notify_object_selected (std::shared_ptr<scene_obj_t> object);
+
 			// virtual methods
+			virtual void integrate (float delta_time);
 			virtual void configure ();
 			virtual bool hit_test (const hit_test_data_t & data, glm::vec3 & hit_pos) const;
 
 		protected:
-			virtual void t_on_selection (bool select) { };
+			virtual void t_on_selection (bool select) { }
+			virtual void t_on_object_created (std::shared_ptr<scene_obj_t> object) { }
+			virtual void t_on_object_selected (std::shared_ptr<scene_obj_t> object) { }
 	};
 }

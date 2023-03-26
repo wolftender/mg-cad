@@ -8,7 +8,7 @@ namespace mini {
 			billboard_object m_billboard;
 
 		public:
-			point_object (std::shared_ptr<shader_t> shader, std::shared_ptr<texture_t> texture);
+			point_object (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<texture_t> texture);
 			~point_object () = default;
 
 			virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override;

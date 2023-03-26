@@ -236,7 +236,7 @@ namespace mini {
 
 	void application::t_on_scroll (double offset_x, double offset_y) {
 		if (m_viewport_focus) {
-			m_distance = m_distance - (offset_y / 2.0f);
+			m_distance = m_distance - (static_cast<float> (offset_y) / 2.0f);
 		}
 	}
 
@@ -382,7 +382,7 @@ namespace mini {
 
 		// selection
 		m_selected_object = nullptr;
-		m_selected_group = std::make_shared<group_logic_object> ();
+		m_selected_group = std::make_shared<group_logic_object> (*this);
 
 		// m_add_object ("torus", std::make_shared<torus_object> (m_mesh_shader, m_alt_mesh_shader, 1.0f, 3.0f));
 	}
@@ -402,6 +402,10 @@ namespace mini {
 
 		// delete objects
 		for (auto iter = m_objects.begin (); iter != m_objects.end (); ) {
+			if ((*iter)->object->is_disposed ()) {
+				(*iter)->destroy = true;
+			}
+
 			if ((*iter)->destroy) {
 				if (m_selected_object && m_selected_object == *iter) {
 					m_selected_object = m_selected_group->group_pop ();
@@ -413,6 +417,10 @@ namespace mini {
 			if (iter != m_objects.end ()) {
 				++iter;
 			}
+		}
+
+		for (auto & obj : m_objects) {
+			obj->object->integrate (delta_time);
 		}
 
 		// if no tool selected then handle mouse events
@@ -748,7 +756,7 @@ namespace mini {
 	void application::m_draw_object_creator () {
 		ImGui::Begin ("Object Creator", NULL);
 		
-		auto ptr = m_factory->configure ();
+		auto ptr = m_factory->configure (*this);
 
 		if (ptr) {
 			// an object was created, so stop showing the ui
@@ -779,8 +787,8 @@ namespace mini {
 		auto max = ImGui::GetWindowContentRegionMax ();
 		auto window_pos = ImGui::GetWindowPos ();
 
-		int width = max.x - min.x;
-		int height = max.y - min.y;
+		int width = static_cast<int> (max.x - min.x);
+		int height = static_cast<int> (max.y - min.y);
 
 		const offset_t & mouse_offset = get_mouse_offset ();
 		m_vp_mouse_offset.x = mouse_offset.x - static_cast<int> (min.x + window_pos.x);
@@ -845,6 +853,10 @@ namespace mini {
 			m_reset_selection ();
 			m_select_object (wrapper);
 		}
+
+		for (auto & o : m_objects) {
+			o->object->notify_object_created (object);
+		}
 	}
 
 	// this function should be the main entry point for the selection
@@ -880,6 +892,8 @@ namespace mini {
 	}
 
 	void application::m_group_select_add (std::shared_ptr<object_wrapper_t> object) {
+		auto prev_select = m_selected_object;
+
 		if (object->selected) {
 			if (m_selected_group->group_size () > 1) {
 				if (object == m_selected_object) {
@@ -897,6 +911,12 @@ namespace mini {
 
 			m_selected_group->group_add (object);
 		}
+
+		if (prev_select != m_selected_object && m_selected_object) {
+			for (auto & o : m_objects) {
+				o->object->notify_object_selected (m_selected_object->object);
+			}
+		}
 	}
 
 	void application::m_reset_selection () {
@@ -909,5 +929,9 @@ namespace mini {
 		for (auto & object : m_objects) {
 			object->selected = false;
 		}
+	}
+
+	void application::add_object (const std::string & name, std::shared_ptr<scene_obj_t> object) {
+		m_add_object (name, object, true);
 	}
 }

@@ -1,8 +1,8 @@
 #include "point.hpp"
 
 namespace mini {
-	point_object::point_object (std::shared_ptr<shader_t> shader, std::shared_ptr<texture_t> texture) : 
-		scene_obj_t ("point", true, false, false),
+	point_object::point_object (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<texture_t> texture) :
+		scene_obj_t (scene, "point", true, false, false),
 		m_billboard (shader, texture) { 
 
 		m_billboard.set_size ({ 16.0f, 16.0f });

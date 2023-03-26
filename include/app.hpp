@@ -13,7 +13,7 @@
 #include "store.hpp"
 
 namespace mini {
-	class application : public app_window {
+	class application : public app_window, public scene_controller_base {
 		private:
 			struct object_wrapper_t {
 				std::shared_ptr<scene_obj_t> object;
@@ -41,7 +41,7 @@ namespace mini {
 					glm::vec3 m_origin;
 
 				public:
-					group_logic_object ();
+					group_logic_object (scene_controller_base & scene);
 					~group_logic_object () = default;
 
 					group_logic_object (const group_logic_object &) = delete;
@@ -115,7 +115,9 @@ namespace mini {
 			bool is_viewport_focused () const;
 			bool is_mouse_in_viewport () const;
 
-			const glm::vec3 & get_cursor_pos () const;
+			virtual void add_object (const std::string & name, std::shared_ptr<scene_obj_t> object) override;
+
+			virtual const glm::vec3 & get_cursor_pos () const override;
 			glm::vec2 get_cursor_screen_pos () const;
 
 			glm::vec3 get_mouse_direction () const;
@@ -125,14 +127,14 @@ namespace mini {
 			glm::vec2 screen_to_pixels (const glm::vec2 & pos) const;
 			glm::vec2 world_to_screen (const glm::vec3 & world_pos) const;
 			
-			void set_cursor_pos (const glm::vec3 & position);
+			virtual void set_cursor_pos (const glm::vec3 & position) override;
 			void set_cursor_screen_pos (const glm::vec2 & screen_pos);
 
 			int get_viewport_width () const;
 			int get_viewport_height () const;
 			offset_t get_viewport_mouse_offset () const;
 
-			const glm::vec3 & get_cam_target () const;
+			virtual const glm::vec3 & get_cam_target () const override;
 			void set_cam_target (const glm::vec3 & target);
 
 			app_context & get_context ();
@@ -186,5 +188,6 @@ namespace mini {
 			void m_select_object (std::shared_ptr<object_wrapper_t> object_wrapper);
 			void m_group_select_add (std::shared_ptr<object_wrapper_t> object_wrapper);
 			void m_reset_selection ();
-	};
+
+};
 }

@@ -23,7 +23,7 @@ namespace mini {
 			std::shared_ptr<shader_t> m_alt_shader;
 
 		public:
-			torus_object (std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> alt_shader, float inner_radius, float outer_radius);
+			torus_object (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> alt_shader, float inner_radius, float outer_radius);
 			~torus_object ();
 
 			torus_object (const torus_object &) = delete;

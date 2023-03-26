@@ -2,7 +2,8 @@
 #include "object.hpp"
 
 namespace mini {
-	scene_obj_t::scene_obj_t (const std::string & type_name, bool movable, bool rotatable, bool scalable) {
+	scene_obj_t::scene_obj_t (scene_controller_base & scene, const std::string & type_name, bool movable, bool rotatable, bool scalable) :
+		m_scene (scene) {
 		m_type_name = type_name;
 
 		m_euler_angles = { 0.0f, 0.0f, 0.0f };
@@ -12,9 +13,20 @@ namespace mini {
 		m_movable = movable;
 		m_rotatable = rotatable;
 		m_scalable = scalable;
+
+		m_selected = false;
+		m_disposed = false;
 	}
 
 	scene_obj_t::~scene_obj_t () { }
+
+	void scene_obj_t::notify_object_created (std::shared_ptr<scene_obj_t> object) {
+		t_on_object_created (object);
+	}
+
+	void scene_obj_t::notify_object_selected (std::shared_ptr<scene_obj_t> object) {
+		t_on_object_selected (object);
+	}
 
 	const std::string & scene_obj_t::get_type_name () const {
 		return m_type_name;
@@ -46,6 +58,18 @@ namespace mini {
 
 	bool scene_obj_t::is_movable () const {
 		return m_movable;
+	}
+
+	bool scene_obj_t::is_disposed () const {
+		return m_disposed;
+	}
+
+	scene_controller_base & scene_obj_t::get_scene () const {
+		return m_scene;
+	}
+
+	void scene_obj_t::dispose () {
+		m_disposed = true;
 	}
 
 	void scene_obj_t::set_translation (const glm::vec3 & translation) {
@@ -96,6 +120,8 @@ namespace mini {
 		return compose_matrix (m_translation, m_euler_angles, m_scale);
 	}
 
+	void scene_obj_t::integrate (float delta_time) { }
+
 	void scene_obj_t::configure () {
 		if (ImGui::CollapsingHeader ("Basic Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
 			if (m_movable) {
@@ -113,9 +139,6 @@ namespace mini {
 	}
 
 	bool scene_obj_t::hit_test (const hit_test_data_t & data, glm::vec3 & hit_pos) const {
-		// 1. project point onto the screen
-
-
 		return false;
 	}
 

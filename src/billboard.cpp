@@ -49,7 +49,7 @@ namespace mini {
 		m_shader = shader;
 		m_texture = texture;
 
-		constexpr int num_vertices = billboard_vertices.size () / 3;
+		constexpr int num_vertices = static_cast<int> (billboard_vertices.size ()) / 3;
 		constexpr GLuint a_position = 0;
 		constexpr GLuint a_color = 1;
 		constexpr GLuint a_uv = 2;
@@ -106,8 +106,8 @@ namespace mini {
 		const auto & view_matrix = context.get_view_matrix ();
 		const auto & proj_matrix = context.get_projection_matrix ();
 
-		float screen_width = context.get_video_mode ().get_buffer_width ();
-		float screen_height = context.get_video_mode ().get_buffer_height ();
+		float screen_width = static_cast<float> (context.get_video_mode ().get_buffer_width ());
+		float screen_height = static_cast<float> (context.get_video_mode ().get_buffer_height ());
 
 		glm::vec4 center = { 0.0f, 0.0f, 0.0f, 1.0f };
 		center = world_matrix * center;
@@ -119,7 +119,7 @@ namespace mini {
 		m_shader->set_uniform ("u_projection", proj_matrix);
 		m_shader->set_uniform ("u_resolution", glm::vec2 (screen_width, screen_height));
 
-		glDrawElements (GL_TRIANGLES, quad_indices.size (), GL_UNSIGNED_INT, NULL);
+		glDrawElements (GL_TRIANGLES, static_cast<GLsizei> (quad_indices.size ()), GL_UNSIGNED_INT, NULL);
 		glBindVertexArray (static_cast<GLuint>(NULL));
 		glEnable (GL_DEPTH_TEST);
 	}
