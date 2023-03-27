@@ -44,19 +44,23 @@ vec2 line_add (vec4 p1, vec4 p2, vec2 prev_offset) {
     vec2 n = normalize (n1 + n2);
 
     float avg_length = u_line_width / dot (n1, n);
-    if (avg_length > u_line_width * 10.0) {
-        avg_length = u_line_width * 10.0;
+    if (avg_length > u_line_width * 2.0) {
+        avg_length = u_line_width * 2.0;
     }
 
     vec2 avg_offset = n * avg_length / u_resolution;
+    vec2 persp_offset = avg_offset * p1.w;
 
     // this is not the end of the line, so we just emit two first vertices
     // the next two are expected to be emitted by next calls
-    gl_Position = vec4(p1.xy + avg_offset * p1.w, p1.zw);
-    EmitVertex();
 
-    gl_Position = vec4(p1.xy - avg_offset * p1.w, p1.zw);
-    EmitVertex();
+    if (length (persp_offset) < 1.0) {
+        gl_Position = vec4(p1.xy + persp_offset, p1.zw);
+        EmitVertex();
+
+        gl_Position = vec4(p1.xy - persp_offset, p1.zw);
+        EmitVertex();
+    }    
 
     return line_offset;
 }
@@ -104,11 +108,21 @@ void main () {
     vec4 b2 = gl_in[2].gl_Position;
     vec4 b3 = gl_in[3].gl_Position;
 
+    vec2 s0 = (b0 / b0.w).xy;
+    vec2 s1 = (b1 / b1.w).xy;
+    vec2 s2 = (b2 / b2.w).xy;
+    vec2 s3 = (b3 / b3.w).xy;
+
+    float l = length (s1 - s0) + length (s2 - s1) + length (s3 - s2);
+
     vec2 offset;
     vec4 p1, p2;
 
+    // adaptive rendering
+    int divisions = min(100, int(l) * 15);
+
     float t = 0.0;
-    float step = 1.0 / 64;
+    float step = 1.0 / divisions;
 
     p1.x = decasteljeu (b0.x, b1.x, b2.x, b3.x, t);
     p1.y = decasteljeu (b0.y, b1.y, b2.y, b3.y, t);
@@ -122,7 +136,7 @@ void main () {
 
     offset = line_start (p1, p2);
 
-    for (int i = 0; i < 63; i++) {
+    for (int i = 0; i < divisions - 1; i++) {
         t = t + step;
 
         p1.x = decasteljeu (b0.x, b1.x, b2.x, b3.x, t);

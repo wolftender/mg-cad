@@ -27,6 +27,10 @@ namespace mini {
 	void bezier_curve_c0::integrate (float delta_time) { 
 		if (m_queue_curve_rebuild) {
 			m_rebuild_curve ();
+		} else {
+			for (auto & segment : m_segments) {
+				segment->integrate (delta_time);
+			}
 		}
 	}
 
@@ -85,17 +89,15 @@ namespace mini {
 		m_queue_curve_rebuild = false;
 		m_segments.clear ();
 
-		glm::vec3 points[4];
+		point_wptr points[4];
 		int index = 0, array_index = 0;
-
-		std::fill_n (points, 4, glm::vec3 { 0.0f, 0.0f, 0.0f });
 
 		for (auto & point_weak : m_points) {
 			auto point = point_weak.lock ();
 
 			if (point) {
 				array_index = index % 4;
-				points[array_index] = point->get_translation ();
+				points[array_index] = point;
 
 				index++;
 
@@ -113,22 +115,19 @@ namespace mini {
 		// todo: ending segment of degree smaller than 3
 	}
 
-	bezier_curve_c0::bezier_segment::bezier_segment (std::shared_ptr<shader_t> shader, const glm::vec3 & p0, 
-		const glm::vec3 & p1, const glm::vec3 & p2, const glm::vec3 & p3) {
-
+	bezier_curve_c0::bezier_segment::bezier_segment (std::shared_ptr<shader_t> shader, point_wptr p0, point_wptr p1, point_wptr p2, point_wptr p3) {
 		m_shader = shader;
 		m_vao = m_color_buffer = m_position_buffer = 0;
 
-		constexpr GLuint a_position = 0;
-		constexpr GLuint a_color = 1;
+		m_points[0] = p0;
+		m_points[1] = p1;
+		m_points[2] = p2;
+		m_points[3] = p3;
 
-		m_positions = {
-			p0.x, p0.y, p0.z,
-			p1.x, p1.y, p1.z,
-			p2.x, p2.y, p2.z,
-			p3.x, p3.y, p3.z,
-		};
+		m_ready = false;
 
+		m_positions.resize (12);
+		
 		m_colors = {
 			1.0f, 1.0f, 1.0f, 1.0f,
 			1.0f, 1.0f, 1.0f, 1.0f,
@@ -136,23 +135,7 @@ namespace mini {
 			1.0f, 1.0f, 1.0f, 1.0f
 		};
 
-		glGenVertexArrays (1, &m_vao);
-		glGenBuffers (1, &m_position_buffer);
-		glGenBuffers (1, &m_color_buffer);
-
-		glBindVertexArray (m_vao);
-
-		glBindBuffer (GL_ARRAY_BUFFER, m_position_buffer);
-		glBufferData (GL_ARRAY_BUFFER, sizeof (float) * m_positions.size (), reinterpret_cast<void *> (m_positions.data ()), GL_STATIC_DRAW);
-		glVertexAttribPointer (a_position, 3, GL_FLOAT, false, sizeof (float) * 3, (void *)0);
-		glEnableVertexAttribArray (a_position);
-
-		glBindBuffer (GL_ARRAY_BUFFER, m_color_buffer);
-		glBufferData (GL_ARRAY_BUFFER, sizeof (float) * m_colors.size (), reinterpret_cast<void *> (m_colors.data ()), GL_STATIC_DRAW);
-		glVertexAttribPointer (a_color, 4, GL_FLOAT, false, sizeof (float) * 4, (void *)0);
-		glEnableVertexAttribArray (a_color);
-
-		glBindVertexArray (static_cast<GLuint> (NULL));
+		m_init_buffers ();
 	}
 
 	bezier_curve_c0::bezier_segment::~bezier_segment () {
@@ -169,7 +152,17 @@ namespace mini {
 		}
 	}
 
+	void bezier_curve_c0::bezier_segment::integrate (float delta_time) {
+		if (m_ready) {
+			m_update_buffers ();
+		}
+	}
+
 	void bezier_curve_c0::bezier_segment::render (app_context & context, const glm::mat4x4 & world_matrix) const {
+		if (!m_ready) {
+			return;
+		}
+
 		glBindVertexArray (m_vao);
 
 		m_shader->bind ();
@@ -195,5 +188,70 @@ namespace mini {
 		glDrawArrays (GL_LINES_ADJACENCY, 0, 4);
 
 		glBindVertexArray (static_cast<GLuint> (NULL));
+	}
+
+	void bezier_curve_c0::bezier_segment::m_init_buffers () {
+		constexpr GLuint a_position = 0;
+		constexpr GLuint a_color = 1;
+
+		for (int index = 0; index < 4; ++index) {
+			auto point = m_points[index].lock ();
+
+			if (!point) {
+				m_ready = false;
+				return;
+			}
+
+			const auto& pos = point->get_translation ();
+			int offset = index * 3;
+
+			m_positions[offset + 0] = pos.x;
+			m_positions[offset + 1] = pos.y;
+			m_positions[offset + 2] = pos.z;
+		}
+
+		glGenVertexArrays (1, &m_vao);
+		glGenBuffers (1, &m_position_buffer);
+		glGenBuffers (1, &m_color_buffer);
+
+		glBindVertexArray (m_vao);
+
+		glBindBuffer (GL_ARRAY_BUFFER, m_position_buffer);
+		glBufferData (GL_ARRAY_BUFFER, sizeof (float) * m_positions.size (), reinterpret_cast<void *> (m_positions.data ()), GL_DYNAMIC_DRAW);
+		glVertexAttribPointer (a_position, 3, GL_FLOAT, false, sizeof (float) * 3, (void *)0);
+		glEnableVertexAttribArray (a_position);
+
+		glBindBuffer (GL_ARRAY_BUFFER, m_color_buffer);
+		glBufferData (GL_ARRAY_BUFFER, sizeof (float) * m_colors.size (), reinterpret_cast<void *> (m_colors.data ()), GL_DYNAMIC_DRAW);
+		glVertexAttribPointer (a_color, 4, GL_FLOAT, false, sizeof (float) * 4, (void *)0);
+		glEnableVertexAttribArray (a_color);
+
+		glBindVertexArray (static_cast<GLuint> (NULL));
+		m_ready = true;
+	}
+
+	void bezier_curve_c0::bezier_segment::m_update_buffers () {
+		constexpr GLuint a_position = 0;
+		constexpr GLuint a_color = 1;
+
+		for (int index = 0; index < 4; ++index) {
+			auto point = m_points[index].lock ();
+
+			if (!point) {
+				m_ready = false;
+				return;
+			}
+
+			const auto & pos = point->get_translation ();
+			int offset = index * 3;
+
+			m_positions[offset + 0] = pos.x;
+			m_positions[offset + 1] = pos.y;
+			m_positions[offset + 2] = pos.z;
+		}
+
+		glBindBuffer (GL_ARRAY_BUFFER, m_position_buffer);
+		glBufferSubData (GL_ARRAY_BUFFER, 0, sizeof (float) * m_positions.size (), m_positions.data ());
+		glBindBuffer (GL_ARRAY_BUFFER, static_cast<GLuint> (NULL));
 	}
 }

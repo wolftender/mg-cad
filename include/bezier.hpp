@@ -7,6 +7,9 @@
 namespace mini {
 	class bezier_curve_c0 : public scene_obj_t {
 		private:
+			using point_ptr = std::shared_ptr<point_object>;
+			using point_wptr = std::weak_ptr<point_object>;
+
 			class bezier_segment : public graphics_obj_t {
 				private:
 					GLuint m_vao;
@@ -14,15 +17,23 @@ namespace mini {
 
 					std::shared_ptr<shader_t> m_shader;
 					std::vector<float> m_positions, m_colors;
+					std::array<point_wptr, 4> m_points;
+
+					bool m_ready;
 
 				public:
-					bezier_segment (std::shared_ptr<shader_t> shader, const glm::vec3 & p0, const glm::vec3 & p1, const glm::vec3 & p2, const glm::vec3 & p3);
+					bezier_segment (std::shared_ptr<shader_t> shader, point_wptr p0, point_wptr p1, point_wptr p2, point_wptr p3);
 					~bezier_segment ();
 
 					bezier_segment (const bezier_segment &) = delete;
 					bezier_segment & operator= (const bezier_segment &) = delete;
 
+					void integrate (float delta_time);
 					virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override;
+
+				private:
+					void m_init_buffers ();
+					void m_update_buffers ();
 			};
  
 			std::vector<std::shared_ptr<bezier_segment>> m_segments;
