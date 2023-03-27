@@ -29,7 +29,7 @@ namespace mini {
 		});
 
 		m_factories.push_back ({
-			&object_factory::make_bezier_c0, "bezier c0", "a bezier curve with c0 continuity"
+			&object_factory::make_bezier_c0_gpu, "bezier c0 (gpu)", "a bezier curve with c0 continuity using geometry shader"
 		});
 	}
 
@@ -80,10 +80,12 @@ namespace mini {
 		);
 	}
 
-	std::shared_ptr<scene_obj_t> object_factory::make_bezier_c0 (scene_controller_base & scene, std::shared_ptr<const resource_store> store) {
+	std::shared_ptr<scene_obj_t> object_factory::make_bezier_c0_gpu (scene_controller_base & scene, std::shared_ptr<const resource_store> store) {
 		return std::make_shared<bezier_curve_c0> (
 			scene,
-			store->get_bezier_shader ()
+			store->get_bezier_shader (),
+			store->get_bezier_poly_shader (),
+			true
 		);
 	}
 }

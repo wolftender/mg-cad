@@ -113,13 +113,19 @@ void main () {
     vec2 s2 = (b2 / b2.w).xy;
     vec2 s3 = (b3 / b3.w).xy;
 
-    float l = length (s1 - s0) + length (s2 - s1) + length (s3 - s2);
+    vec2 px0 = u_resolution * s0;
+    vec2 px1 = u_resolution * s1;
+    vec2 px2 = u_resolution * s2;
+    vec2 px3 = u_resolution * s3;
+
+    float l = length (px1 - px0) + length (px2 - px1) + length (px3 - px2);
+    l = l / 100.0;
 
     vec2 offset;
     vec4 p1, p2;
 
     // adaptive rendering
-    int divisions = min(100, int(l) * 15);
+    int divisions = max (15, min(90, int(l)));
 
     float t = 0.0;
     float step = 1.0 / divisions;

@@ -11,7 +11,8 @@ namespace mini {
 			std::shared_ptr<shader_t> m_basic_shader, m_grid_xz_shader, m_grid_xy_shader;
 			std::shared_ptr<shader_t> m_billboard_shader, m_billboard_shader_s;
 			std::shared_ptr<shader_t> m_mesh_shader, m_alt_mesh_shader;
-			std::shared_ptr<shader_t> m_bezier_shader;
+			std::shared_ptr<shader_t> m_bezier_shader, m_bezier_poly_shader;
+			std::shared_ptr<shader_t> m_line_shader;
 
 			std::shared_ptr<texture_t> m_cursor_texture, m_point_texture;
 
@@ -24,6 +25,8 @@ namespace mini {
 			std::shared_ptr<shader_t> get_mesh_shader () const;
 			std::shared_ptr<shader_t> get_alt_mesh_shader () const;
 			std::shared_ptr<shader_t> get_bezier_shader () const;
+			std::shared_ptr<shader_t> get_bezier_poly_shader () const;
+			std::shared_ptr<shader_t> get_line_shader () const;
 
 			std::shared_ptr<texture_t> get_cursor_texture () const;
 			std::shared_ptr<texture_t> get_point_texture () const;
