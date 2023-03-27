@@ -37,5 +37,6 @@ namespace mini {
 			static std::shared_ptr<scene_obj_t> make_torus (scene_controller_base & scene, std::shared_ptr<const resource_store> store);
 			static std::shared_ptr<scene_obj_t> make_point (scene_controller_base & scene, std::shared_ptr<const resource_store> store);
 			static std::shared_ptr<scene_obj_t> make_bezier_c0_gpu (scene_controller_base & scene, std::shared_ptr<const resource_store> store);
+			static std::shared_ptr<scene_obj_t> make_bezier_c0_cpu (scene_controller_base & scene, std::shared_ptr<const resource_store> store);
 	};
 }

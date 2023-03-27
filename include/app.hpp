@@ -156,6 +156,9 @@ namespace mini {
 			virtual const glm::vec3 & get_cam_target () const override;
 			void set_cam_target (const glm::vec3 & target);
 
+			virtual const camera & get_camera () const override;
+			virtual const video_mode_t & get_video_mode () const override;
+
 			app_context & get_context ();
 			std::shared_ptr<scene_obj_t> get_selection ();
 			std::shared_ptr<scene_obj_t> get_group_selection ();

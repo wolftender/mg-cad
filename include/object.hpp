@@ -39,6 +39,9 @@ namespace mini {
 			virtual const glm::vec3 & get_cursor_pos () const = 0;
 			virtual const glm::vec3 & get_cam_target () const = 0;
 
+			virtual const camera & get_camera () const = 0;
+			virtual const video_mode_t & get_video_mode () const = 0;
+
 			virtual selected_object_iter_ptr get_selected_objects () = 0;
 	};
 

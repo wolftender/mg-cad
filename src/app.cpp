@@ -173,6 +173,14 @@ namespace mini {
 		m_camera_target = target;
 	}
 
+	const camera & application::get_camera () const {
+		return m_context.get_camera ();
+	}
+
+	const video_mode_t & application::get_video_mode () const {
+		return m_context.get_video_mode ();
+	}
+
 	app_context & application::get_context () {
 		return m_context;
 	}

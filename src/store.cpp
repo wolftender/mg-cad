@@ -120,7 +120,7 @@ namespace mini {
 		m_bezier_poly_shader = m_load_shader ("shaders/vs_position.glsl", "shaders/fs_white.glsl", "shaders/gs_bezier2.glsl");
 
 		// shader that draws nice polygon lines
-		m_line_shader = m_load_shader ("shaders/vs_basic.glsl", "shaders/fs_basic.glsl", "shaders/gs_lines.glsl");
+		m_line_shader = m_load_shader ("shaders/vs_basic.glsl", "shaders/fs_white.glsl", "shaders/gs_lines.glsl");
 
 		// textures
 		m_cursor_texture = texture_t::load_from_file ("assets/cursor.png");

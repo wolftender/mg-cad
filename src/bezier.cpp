@@ -293,7 +293,9 @@ namespace mini {
 							m_shader1, m_shader2, points[0], points[1], points[2], points[3])
 						);
 					} else {
-
+						m_segments.push_back (std::make_shared<bezier_segment_cpu> (
+							m_shader1, m_shader2, points[0], points[1], points[2], points[3])
+						);
 					}
 
 					points[0] = points[3];
@@ -303,5 +305,152 @@ namespace mini {
 		}
 
 		// todo: ending segment of degree smaller than 3
+	}
+
+	/***********************/
+	/*     CPU IMPL        */
+	/***********************/
+	bezier_segment_cpu::bezier_segment_cpu (std::shared_ptr<shader_t> shader1, std::shared_ptr<shader_t> shader2,
+		point_wptr p0, point_wptr p1, point_wptr p2, point_wptr p3) : 
+		bezier_segment_base (p0, p1, p2, p3) {
+
+		m_shader = shader1;
+		m_poly_shader = shader2;
+
+		m_vao = m_position_buffer = 0;
+		m_ready = false;
+
+		m_divisions = 64;
+	}
+
+	bezier_segment_cpu::~bezier_segment_cpu () {
+		if (m_vao) {
+			glDeleteVertexArrays (1, &m_vao);
+		}
+
+		if (m_position_buffer) {
+			glDeleteBuffers (1, &m_position_buffer);
+		}
+	}
+
+	void bezier_segment_cpu::integrate (float delta_time) {
+		m_init_buffers ();
+	}
+
+	void bezier_segment_cpu::render (app_context & context, const glm::mat4x4 & world_matrix) const {
+		if (!m_ready) {
+			return;
+		}
+
+		m_shader->bind ();
+
+		const auto & view_matrix = context.get_view_matrix ();
+		const auto & proj_matrix = context.get_projection_matrix ();
+
+		const auto & video_mode = context.get_video_mode ();
+
+		glm::vec2 resolution = {
+			static_cast<float> (video_mode.get_buffer_width ()),
+			static_cast<float> (video_mode.get_buffer_height ())
+		};
+
+		m_shader->set_uniform ("u_world", world_matrix);
+		m_shader->set_uniform ("u_view", view_matrix);
+		m_shader->set_uniform ("u_projection", proj_matrix);
+		m_shader->set_uniform ("u_resolution", resolution);
+		m_shader->set_uniform ("u_line_width", 2.0f);
+
+
+		glBindVertexArray (m_vao);
+		glDrawArrays (GL_LINES, 0, m_divisions * 2 + 2);
+
+		glBindVertexArray (static_cast<GLuint> (NULL));
+	}
+
+	void bezier_segment_cpu::m_init_buffers () {
+		constexpr GLuint a_position = 0;
+		
+		if (!m_update_positions ()) {
+			m_ready = false;
+			return;
+		}
+
+		glGenVertexArrays (1, &m_vao);
+		glGenBuffers (1, &m_position_buffer);
+
+		glBindVertexArray (m_vao);
+
+		glBindBuffer (GL_ARRAY_BUFFER, m_position_buffer);
+		glBufferData (GL_ARRAY_BUFFER, sizeof (float) * m_positions.size (), reinterpret_cast<void *> (m_positions.data ()), GL_STATIC_DRAW);
+		glVertexAttribPointer (a_position, 3, GL_FLOAT, false, sizeof (float) * 3, (void *)0);
+		glEnableVertexAttribArray (a_position);
+
+		glBindVertexArray (static_cast<GLuint> (NULL));
+		m_ready = true;
+	}
+
+	void bezier_segment_cpu::m_update_buffers () {
+		if (m_vao) {
+			glDeleteVertexArrays (1, &m_vao);
+		}
+
+		if (m_position_buffer) {
+			glDeleteBuffers (1, &m_position_buffer);
+		}
+
+		m_init_buffers ();
+	}
+
+	bool bezier_segment_cpu::m_update_positions () {
+		m_positions.clear ();
+		m_positions.resize (m_divisions * 6); // for each division theres a line
+
+		float step = 1.0f / m_divisions;
+
+		// get bernstein basis coefficients
+		glm::vec3 b[4];
+		for (int i = 0; i < 4; ++i) {
+			auto point = t_get_points ()[i].lock ();
+
+			if (!point) {
+				return false;
+			}
+
+			b[i] = point->get_translation ();
+		}
+
+		// sample the polynomial at intervals
+		for (int i = 0; i < m_divisions; ++i) {
+			int offset = 6 * i;
+			float t = step * static_cast<float> (i);
+
+			m_positions[offset + 0] = m_decasteljeu (b[0].x, b[1].x, b[2].x, b[3].x, t);
+			m_positions[offset + 1] = m_decasteljeu (b[0].y, b[1].y, b[2].y, b[3].y, t);
+			m_positions[offset + 2] = m_decasteljeu (b[0].z, b[1].z, b[2].z, b[3].z, t);
+
+			m_positions[offset + 3] = m_decasteljeu (b[0].x, b[1].x, b[2].x, b[3].x, t + step);
+			m_positions[offset + 4] = m_decasteljeu (b[0].y, b[1].y, b[2].y, b[3].y, t + step);
+			m_positions[offset + 5] = m_decasteljeu (b[0].z, b[1].z, b[2].z, b[3].z, t + step);
+		}
+	}
+
+	float bezier_segment_cpu::m_decasteljeu (float b00, float b01, float b02, float b03, float t) const {
+		float t1 = t;
+		float t0 = 1.0 - t;
+
+		float b10, b11, b12;
+		float b20, b21;
+		float b30;
+
+		b10 = t0 * b00 + t1 * b01;
+		b11 = t0 * b01 + t1 * b02;
+		b12 = t0 * b02 + t1 * b03;
+
+		b20 = t0 * b10 + t1 * b11;
+		b21 = t0 * b11 + t1 * b12;
+
+		b30 = t0 * b20 + t1 * b21;
+
+		return b30;
 	}
 }
