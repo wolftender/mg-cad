@@ -100,6 +100,7 @@ namespace mini {
 		m_grid_xy_shader = m_load_shader ("shaders/vs_grid.glsl", "shaders/fs_grid_xy.glsl");
 		m_billboard_shader = m_load_shader ("shaders/vs_billboard.glsl", "shaders/fs_billboard.glsl");
 		m_billboard_shader_s = m_load_shader ("shaders/vs_billboard_s.glsl", "shaders/fs_billboard.glsl");
+		m_bezier_shader = m_load_shader ("shaders/vs_bezier.glsl", "shaders/fs_bezier.glsl", "shaders/gs_bezier.glsl");
 
 		// textures
 		m_cursor_texture = texture_t::load_from_file ("assets/cursor.png");

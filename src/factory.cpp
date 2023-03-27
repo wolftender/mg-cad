@@ -83,7 +83,7 @@ namespace mini {
 	std::shared_ptr<scene_obj_t> object_factory::make_bezier_c0 (scene_controller_base & scene, std::shared_ptr<const resource_store> store) {
 		return std::make_shared<bezier_curve_c0> (
 			scene,
-			store->get_billboard_s_shader ()
+			store->get_bezier_shader ()
 		);
 	}
 }

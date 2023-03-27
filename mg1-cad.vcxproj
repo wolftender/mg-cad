@@ -180,12 +180,17 @@
     <None Include=".gitignore" />
     <None Include="Makefile" />
     <None Include="shaders\fs_basic.glsl" />
+    <None Include="shaders\fs_bezier.glsl" />
     <None Include="shaders\fs_billboard.glsl" />
     <None Include="shaders\fs_grid_xy.glsl" />
     <None Include="shaders\fs_grid_xz.glsl" />
     <None Include="shaders\fs_meshgrid.glsl" />
     <None Include="shaders\fs_meshgrid_s.glsl" />
+    <None Include="shaders\gs_bezier.glsl" />
+    <None Include="shaders\gs_polyline1.glsl" />
+    <None Include="shaders\gs_polyline2.glsl" />
     <None Include="shaders\vs_basic.glsl" />
+    <None Include="shaders\vs_bezier.glsl" />
     <None Include="shaders\vs_billboard.glsl" />
     <None Include="shaders\vs_billboard_s.glsl" />
     <None Include="shaders\vs_grid.glsl" />

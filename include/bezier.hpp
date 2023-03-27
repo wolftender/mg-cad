@@ -7,8 +7,28 @@
 namespace mini {
 	class bezier_curve_c0 : public scene_obj_t {
 		private:
+			class bezier_segment : public graphics_obj_t {
+				private:
+					GLuint m_vao;
+					GLuint m_position_buffer, m_color_buffer;
+
+					std::shared_ptr<shader_t> m_shader;
+					std::vector<float> m_positions, m_colors;
+
+				public:
+					bezier_segment (std::shared_ptr<shader_t> shader, const glm::vec3 & p0, const glm::vec3 & p1, const glm::vec3 & p2, const glm::vec3 & p3);
+					~bezier_segment ();
+
+					bezier_segment (const bezier_segment &) = delete;
+					bezier_segment & operator= (const bezier_segment &) = delete;
+
+					virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override;
+			};
+ 
+			std::vector<std::shared_ptr<bezier_segment>> m_segments;
 			std::shared_ptr<shader_t> m_shader;
 			std::list<std::weak_ptr<point_object>> m_points;
+
 			bool m_queue_curve_rebuild;
 			bool m_auto_extend;
 			
