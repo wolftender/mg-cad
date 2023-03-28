@@ -66,11 +66,13 @@ namespace mini {
 			std::shared_ptr<shader_t> m_shader, m_poly_shader;
 			std::vector<float> m_positions, m_positions_poly;
 
+			scene_controller_base & m_scene;
+
 			bool m_ready;
 			int m_divisions, m_last_divisions, m_degree;
 
 		public:
-			bezier_segment_cpu (std::shared_ptr<shader_t> shader1, std::shared_ptr<shader_t> shader2, 
+			bezier_segment_cpu (scene_controller_base & scene, std::shared_ptr<shader_t> shader1, std::shared_ptr<shader_t> shader2, 
 				point_wptr p0, point_wptr p1, point_wptr p2, point_wptr p3);
 			~bezier_segment_cpu ();
 

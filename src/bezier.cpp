@@ -361,7 +361,7 @@ namespace mini {
 						);
 					} else {
 						m_segments.push_back (std::make_shared<bezier_segment_cpu> (
-							m_shader1, m_shader2, points[0], points[1], points[2], points[3])
+							get_scene (), m_shader1, m_shader2, points[0], points[1], points[2], points[3])
 						);
 					}
 
@@ -375,11 +375,11 @@ namespace mini {
 		if (index > 0) {
 			if (index % 4 == 2) {
 				m_segments.push_back (std::make_shared<bezier_segment_cpu> (
-					m_shader1, m_shader2, points[0], points[1], point_wptr (), point_wptr ())
+					get_scene (), m_shader1, m_shader2, points[0], points[1], point_wptr (), point_wptr ())
 				);
 			} else if (index % 4 == 3) {
 				m_segments.push_back (std::make_shared<bezier_segment_cpu> (
-					m_shader1, m_shader2, points[0], points[1], points[2], point_wptr ())
+					get_scene (), m_shader1, m_shader2, points[0], points[1], points[2], point_wptr ())
 				);
 			}
 		}
@@ -388,9 +388,9 @@ namespace mini {
 	/***********************/
 	/*     CPU IMPL        */
 	/***********************/
-	bezier_segment_cpu::bezier_segment_cpu (std::shared_ptr<shader_t> shader1, std::shared_ptr<shader_t> shader2,
+	bezier_segment_cpu::bezier_segment_cpu (scene_controller_base & scene, std::shared_ptr<shader_t> shader1, std::shared_ptr<shader_t> shader2,
 		point_wptr p0, point_wptr p1, point_wptr p2, point_wptr p3) : 
-		bezier_segment_base (p0, p1, p2, p3) {
+		bezier_segment_base (p0, p1, p2, p3), m_scene (scene) {
 
 		m_shader = shader1;
 		m_poly_shader = shader2;
@@ -406,7 +406,7 @@ namespace mini {
 	}
 
 	void bezier_segment_cpu::integrate (float delta_time) {
-		m_init_buffers ();
+		m_update_buffers ();
 	}
 
 	void bezier_segment_cpu::render (app_context & context, const glm::mat4x4 & world_matrix) const {
@@ -547,7 +547,26 @@ namespace mini {
 			m_positions[5] = b[1].z;
 		} else {
 			// degree 2 or 3 so it is a curve
-			m_divisions = 64;
+			// calculate number of divisions based on curve length
+			const auto & projection = m_scene.get_camera ().get_projection_matrix ();
+			const auto & view = m_scene.get_camera ().get_view_matrix ();
+
+			float res_x = static_cast<float> (m_scene.get_video_mode ().get_buffer_width ());
+			float res_y = static_cast<float> (m_scene.get_video_mode ().get_buffer_height ());
+
+			float curve_length = 0.0f;
+
+			for (int i = 0; i < m_degree - 1; ++i) {
+				glm::vec4 p1 = projection * view * glm::vec4 (b[i + 0], 1.0f);
+				glm::vec4 p2 = projection * view * glm::vec4 (b[i + 1], 1.0f);
+
+				p1 = p1 / p1.w;
+				p2 = p2 / p2.w;
+
+				curve_length += glm::distance (glm::vec2 { p1.x * res_x, p1.y * res_y }, glm::vec2 { p2.x * res_x, p2.y * res_y });
+			}
+
+			m_divisions = glm::max (15, static_cast<int> (curve_length / 50.0f));
 
 			m_positions.resize (m_divisions * 6); // for each division theres a line
 			float step = 1.0f / m_divisions;
@@ -607,7 +626,7 @@ namespace mini {
 
 	float bezier_segment_cpu::m_decasteljeu (float b00, float b01, float b02, float b03, float t) const {
 		float t1 = t;
-		float t0 = 1.0 - t;
+		float t0 = 1.0f - t;
 
 		float b10, b11, b12;
 		float b20, b21;
@@ -627,7 +646,7 @@ namespace mini {
 
 	float bezier_segment_cpu::m_decasteljeu (float b00, float b01, float b02, float t) const {
 		float t1 = t;
-		float t0 = 1.0 - t;
+		float t0 = 1.0f - t;
 
 		float b10, b11;
 		float b20;
