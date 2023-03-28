@@ -1,5 +1,5 @@
 # MG CAD
-This is a application prepared as a part of WUT MiNI CAD/CAM course. It is a simple modelling application prepared in accordance with requirements specified by the tasks supplied as part of the course laboratories.
+This is an application prepared as a part of WUT MiNI CAD/CAM course. It is a simple modelling application prepared in accordance with requirements specified by the tasks supplied as a part of the course laboratories.
 
 ## Libraries
 This project requires following libraries to work properly:
