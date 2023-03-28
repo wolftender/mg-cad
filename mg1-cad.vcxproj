@@ -179,6 +179,7 @@
   <ItemGroup>
     <None Include=".gitignore" />
     <None Include="Makefile" />
+    <None Include="README.md" />
     <None Include="shaders\fs_basic.glsl" />
     <None Include="shaders\fs_white.glsl" />
     <None Include="shaders\fs_billboard.glsl" />
