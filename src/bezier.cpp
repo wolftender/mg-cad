@@ -566,7 +566,7 @@ namespace mini {
 				curve_length += glm::distance (glm::vec2 { p1.x * res_x, p1.y * res_y }, glm::vec2 { p2.x * res_x, p2.y * res_y });
 			}
 
-			m_divisions = glm::max (15, static_cast<int> (curve_length / 50.0f));
+			m_divisions = glm::min (150, glm::max (15, static_cast<int> (curve_length / 50.0f)));
 
 			m_positions.resize (m_divisions * 6); // for each division theres a line
 			float step = 1.0f / m_divisions;
