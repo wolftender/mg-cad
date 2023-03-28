@@ -59,7 +59,7 @@ namespace mini {
 
 	class bezier_segment_cpu : public bezier_segment_base {
 		private:
-			GLuint m_vao;
+			GLuint m_vao, m_poly_vao;
 			GLuint m_position_buffer;
 			GLuint m_position_buffer_poly;
 
@@ -67,7 +67,7 @@ namespace mini {
 			std::vector<float> m_positions, m_positions_poly;
 
 			bool m_ready;
-			int m_divisions, m_last_divisions;
+			int m_divisions, m_last_divisions, m_degree;
 
 		public:
 			bezier_segment_cpu (std::shared_ptr<shader_t> shader1, std::shared_ptr<shader_t> shader2, 
@@ -81,11 +81,13 @@ namespace mini {
 			virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override;
 
 		private:
+			void m_free_buffers ();
 			void m_init_buffers ();
 			void m_update_buffers ();
 			bool m_update_positions ();
 
 			float m_decasteljeu (float b00, float b01, float b02, float b03, float t) const;
+			float m_decasteljeu (float b00, float b01, float b02, float t) const;
 	};
 
 	class bezier_curve_c0 : public scene_obj_t {

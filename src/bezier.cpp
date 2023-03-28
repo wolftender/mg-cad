@@ -371,7 +371,18 @@ namespace mini {
 			}
 		}
 
-		// todo: ending segment of degree smaller than 3
+		// todo: make gpu segments be rendered by gpu
+		if (index > 0) {
+			if (index % 4 == 2) {
+				m_segments.push_back (std::make_shared<bezier_segment_cpu> (
+					m_shader1, m_shader2, points[0], points[1], point_wptr (), point_wptr ())
+				);
+			} else if (index % 4 == 3) {
+				m_segments.push_back (std::make_shared<bezier_segment_cpu> (
+					m_shader1, m_shader2, points[0], points[1], points[2], point_wptr ())
+				);
+			}
+		}
 	}
 
 	/***********************/
@@ -391,13 +402,7 @@ namespace mini {
 	}
 
 	bezier_segment_cpu::~bezier_segment_cpu () {
-		if (m_vao) {
-			glDeleteVertexArrays (1, &m_vao);
-		}
-
-		if (m_position_buffer) {
-			glDeleteBuffers (1, &m_position_buffer);
-		}
+		m_free_buffers ();
 	}
 
 	void bezier_segment_cpu::integrate (float delta_time) {
@@ -427,11 +432,42 @@ namespace mini {
 		m_shader->set_uniform ("u_resolution", resolution);
 		m_shader->set_uniform ("u_line_width", 2.0f);
 
-
 		glBindVertexArray (m_vao);
 		glDrawArrays (GL_LINES, 0, m_divisions * 2 + 2);
 
+		// now draw the polygon if asked to
+		if (is_showing_polygon () && m_degree > 1) {
+			m_poly_shader->bind ();
+
+			m_poly_shader->set_uniform ("u_world", world_matrix);
+			m_poly_shader->set_uniform ("u_view", view_matrix);
+			m_poly_shader->set_uniform ("u_projection", proj_matrix);
+			m_poly_shader->set_uniform ("u_resolution", resolution);
+			m_poly_shader->set_uniform ("u_line_width", 2.0f);
+
+			glBindVertexArray (m_poly_vao);
+			glDrawArrays (GL_LINES, 0, m_degree * 6); // magic number 18, should be called something probably
+		}
+
 		glBindVertexArray (static_cast<GLuint> (NULL));
+	}
+
+	void bezier_segment_cpu::m_free_buffers () {
+		if (m_vao) {
+			glDeleteVertexArrays (1, &m_vao);
+		}
+
+		if (m_position_buffer) {
+			glDeleteBuffers (1, &m_position_buffer);
+		}
+
+		if (m_poly_vao) {
+			glDeleteVertexArrays (1, &m_poly_vao);
+		}
+
+		if (m_position_buffer) {
+			glDeleteBuffers (1, &m_position_buffer_poly);
+		}
 	}
 
 	void bezier_segment_cpu::m_init_buffers () {
@@ -453,52 +489,120 @@ namespace mini {
 		glEnableVertexAttribArray (a_position);
 
 		glBindVertexArray (static_cast<GLuint> (NULL));
+
+		// second vao, do not allocate for degree 1
+		if (m_degree > 1) {
+			glGenVertexArrays (1, &m_poly_vao);
+			glGenBuffers (1, &m_position_buffer_poly);
+
+			glBindVertexArray (m_poly_vao);
+
+			glBindBuffer (GL_ARRAY_BUFFER, m_position_buffer_poly);
+			glBufferData (GL_ARRAY_BUFFER, sizeof (float) * m_positions_poly.size (), reinterpret_cast<void *> (m_positions_poly.data ()), GL_STATIC_DRAW);
+			glVertexAttribPointer (a_position, 3, GL_FLOAT, false, sizeof (float) * 3, (void *)0);
+			glEnableVertexAttribArray (a_position);
+		}
+
 		m_ready = true;
 	}
 
 	void bezier_segment_cpu::m_update_buffers () {
-		if (m_vao) {
-			glDeleteVertexArrays (1, &m_vao);
-		}
-
-		if (m_position_buffer) {
-			glDeleteBuffers (1, &m_position_buffer);
-		}
-
+		m_free_buffers ();
 		m_init_buffers ();
 	}
 
 	bool bezier_segment_cpu::m_update_positions () {
 		m_positions.clear ();
-		m_positions.resize (m_divisions * 6); // for each division theres a line
-
-		float step = 1.0f / m_divisions;
 
 		// get bernstein basis coefficients
 		glm::vec3 b[4];
+		int degree = 0;
+
 		for (int i = 0; i < 4; ++i) {
 			auto point = t_get_points ()[i].lock ();
 
-			if (!point) {
-				return false;
+			if (point) {
+				b[degree] = point->get_translation ();
+				degree++;
+			}
+		}
+
+		degree = degree - 1;
+		if (degree == 0) {
+			return false;
+		}
+
+		if (degree == 1) {
+			// degree 1, so it is simply a line
+			m_divisions = 1;
+			m_positions.resize (m_divisions * 6);
+
+			// degree 1 is simply a line
+			m_positions[0] = b[0].x;
+			m_positions[1] = b[0].y;
+			m_positions[2] = b[0].z;
+
+			m_positions[3] = b[1].x;
+			m_positions[4] = b[1].y;
+			m_positions[5] = b[1].z;
+		} else {
+			// degree 2 or 3 so it is a curve
+			m_divisions = 64;
+
+			m_positions.resize (m_divisions * 6); // for each division theres a line
+			float step = 1.0f / m_divisions;
+
+			if (m_degree == 2) {
+				// sample the polynomial at intervals
+				for (int i = 0; i < m_divisions; ++i) {
+					int offset = 6 * i;
+					float t = step * static_cast<float> (i);
+
+					m_positions[offset + 0] = m_decasteljeu (b[0].x, b[1].x, b[2].x, t);
+					m_positions[offset + 1] = m_decasteljeu (b[0].y, b[1].y, b[2].y, t);
+					m_positions[offset + 2] = m_decasteljeu (b[0].z, b[1].z, b[2].z, t);
+
+					m_positions[offset + 3] = m_decasteljeu (b[0].x, b[1].x, b[2].x, t + step);
+					m_positions[offset + 4] = m_decasteljeu (b[0].y, b[1].y, b[2].y, t + step);
+					m_positions[offset + 5] = m_decasteljeu (b[0].z, b[1].z, b[2].z, t + step);
+				}
+			} else if (m_degree == 3) {
+				for (int i = 0; i < m_divisions; ++i) {
+					int offset = 6 * i;
+					float t = step * static_cast<float> (i);
+
+					m_positions[offset + 0] = m_decasteljeu (b[0].x, b[1].x, b[2].x, b[3].x, t);
+					m_positions[offset + 1] = m_decasteljeu (b[0].y, b[1].y, b[2].y, b[3].y, t);
+					m_positions[offset + 2] = m_decasteljeu (b[0].z, b[1].z, b[2].z, b[3].z, t);
+
+					m_positions[offset + 3] = m_decasteljeu (b[0].x, b[1].x, b[2].x, b[3].x, t + step);
+					m_positions[offset + 4] = m_decasteljeu (b[0].y, b[1].y, b[2].y, b[3].y, t + step);
+					m_positions[offset + 5] = m_decasteljeu (b[0].z, b[1].z, b[2].z, b[3].z, t + step);
+				}
 			}
 
-			b[i] = point->get_translation ();
+			// now allocate positions for the polygon object
+			m_positions_poly.clear ();
+			m_positions_poly.resize (degree * 6);
+
+			// write the lines into the buffer
+			for (int i = 0; i < degree; ++i) {
+				int offset = 6 * i;
+
+				// p1
+				m_positions_poly[offset + 0] = b[i + 0].x;
+				m_positions_poly[offset + 1] = b[i + 0].y;
+				m_positions_poly[offset + 2] = b[i + 0].z;
+
+				// p2
+				m_positions_poly[offset + 3] = b[i + 1].x;
+				m_positions_poly[offset + 4] = b[i + 1].y;
+				m_positions_poly[offset + 5] = b[i + 1].z;
+			}
 		}
 
-		// sample the polynomial at intervals
-		for (int i = 0; i < m_divisions; ++i) {
-			int offset = 6 * i;
-			float t = step * static_cast<float> (i);
-
-			m_positions[offset + 0] = m_decasteljeu (b[0].x, b[1].x, b[2].x, b[3].x, t);
-			m_positions[offset + 1] = m_decasteljeu (b[0].y, b[1].y, b[2].y, b[3].y, t);
-			m_positions[offset + 2] = m_decasteljeu (b[0].z, b[1].z, b[2].z, b[3].z, t);
-
-			m_positions[offset + 3] = m_decasteljeu (b[0].x, b[1].x, b[2].x, b[3].x, t + step);
-			m_positions[offset + 4] = m_decasteljeu (b[0].y, b[1].y, b[2].y, b[3].y, t + step);
-			m_positions[offset + 5] = m_decasteljeu (b[0].z, b[1].z, b[2].z, b[3].z, t + step);
-		}
+		// update degree of this polynomial fragment
+		m_degree = degree;
 	}
 
 	float bezier_segment_cpu::m_decasteljeu (float b00, float b01, float b02, float b03, float t) const {
@@ -519,5 +623,20 @@ namespace mini {
 		b30 = t0 * b20 + t1 * b21;
 
 		return b30;
+	}
+
+	float bezier_segment_cpu::m_decasteljeu (float b00, float b01, float b02, float t) const {
+		float t1 = t;
+		float t0 = 1.0 - t;
+
+		float b10, b11;
+		float b20;
+
+		b10 = t0 * b00 + t1 * b01;
+		b11 = t0 * b01 + t1 * b02;
+
+		b20 = t0 * b10 + t1 * b11;
+
+		return b20;
 	}
 }
