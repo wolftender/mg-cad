@@ -9,6 +9,8 @@ namespace mini {
 	application::object_wrapper_t::object_wrapper_t (std::shared_ptr<scene_obj_t> o, const std::string & name) : object (o), name (name), selected (false) {
 		tmp_name = name;
 		destroy = false;
+
+		object->set_name (name);
 	}
 
 	float application::get_cam_yaw () const {
@@ -753,6 +755,7 @@ namespace mini {
 						auto real_name = m_get_free_name (m_selected_object->tmp_name, m_selected_object->name);
 						m_selected_object->name = real_name;
 						m_selected_object->tmp_name = real_name;
+						m_selected_object->object->set_name (real_name);
 					} else {
 						m_selected_object->tmp_name = m_selected_object->name;
 					}

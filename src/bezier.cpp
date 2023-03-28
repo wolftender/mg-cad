@@ -188,7 +188,7 @@ namespace mini {
 			auto object = std::dynamic_pointer_cast<point_object> (iter->get_object ());
 
 			if (object) {
-				m_points.push_back (object);
+				m_points.push_back (point_wrapper_t (object));
 			}
 		}
 
@@ -228,6 +228,73 @@ namespace mini {
 
 			gui::prefix_label ("Show Polygon: ", 250.0f);
 			ImGui::Checkbox ("##show_polygon", &m_show_polygon);
+
+			ImGui::Text ("Control Points:");
+			// point list
+			if (ImGui::BeginListBox ("##pointlist", ImVec2 (-1.0f, 0.0f))) {
+				for (auto & point_wrapper : m_points) {
+					auto point = point_wrapper.point.lock ();
+
+					if (point) {
+						std::string full_name;
+						bool selected = point_wrapper.selected;
+
+						if (selected) {
+							full_name = "*" + point->get_name () + " : (" + point->get_type_name () + ")";
+						} else {
+							full_name = point->get_name () + " : (" + point->get_type_name () + ")";
+						}
+
+						ImGui::Selectable (full_name.c_str (), &point_wrapper.selected);
+					}
+				}
+
+				ImGui::EndListBox ();
+			}
+
+			ImGui::NewLine ();
+
+			if (ImGui::Button ("Add Selected", ImVec2 (ImGui::GetWindowWidth () * 0.45f, 24.0f))) {
+				auto iter = get_scene ().get_selected_objects ();
+
+				for (; iter->has (); iter->next ()) {
+					auto object = iter->get_object ();
+					auto point = std::dynamic_pointer_cast<point_object> (object);
+
+					if (point) {
+						bool duplicate = false;
+						for (auto point_wrapper : m_points) {
+							if (point_wrapper.point.lock () == point) {
+								duplicate = true;
+								break;
+							}
+						}
+
+						if (duplicate) {
+							continue;
+						} else {
+							m_points.push_back (point_wrapper_t (point));
+							m_queue_curve_rebuild = true;
+						}
+					}
+				}
+			}
+
+			ImGui::SameLine ();
+
+			if (ImGui::Button ("Delete Selected", ImVec2 (-1.0f, 24.0f))) {
+				for (auto iter = m_points.begin (); iter != m_points.end (); ++iter) {
+					if (iter->selected) {
+						iter = m_points.erase (iter);
+						m_queue_curve_rebuild = true;
+					}
+
+					if (iter == m_points.end ()) {
+						break;
+					}
+				}
+			}
+
 			ImGui::NewLine ();
 		}
 	}
@@ -240,7 +307,7 @@ namespace mini {
 		auto point = std::dynamic_pointer_cast<point_object> (object);
 
 		if (point) {
-			m_points.push_back (point);
+			m_points.push_back (point_wrapper_t (point));
 			m_queue_curve_rebuild = true;
 		}
 	}
@@ -249,7 +316,7 @@ namespace mini {
 		bool changed = false;
 
 		for (auto iter = m_points.begin (); iter != m_points.end (); ++iter) {
-			auto point = iter->lock ();
+			auto point = iter->point.lock ();
 
 			if (point) {
 				if (object == point) {
@@ -278,8 +345,8 @@ namespace mini {
 		point_wptr points[4];
 		int index = 0, array_index = 0;
 
-		for (auto & point_weak : m_points) {
-			auto point = point_weak.lock ();
+		for (auto & point_wrapper : m_points) {
+			auto point = point_wrapper.point.lock ();
 
 			if (point) {
 				array_index = index % 4;

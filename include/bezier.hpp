@@ -90,9 +90,18 @@ namespace mini {
 
 	class bezier_curve_c0 : public scene_obj_t {
 		private: 
+			struct point_wrapper_t {
+				std::weak_ptr<point_object> point;
+				bool selected;
+
+				point_wrapper_t (std::weak_ptr<point_object> point) : point(point) {
+					selected = false;
+				}
+			};
+
 			std::vector<std::shared_ptr<bezier_segment_base>> m_segments;
 			std::shared_ptr<shader_t> m_shader1, m_shader2;
-			std::list<std::weak_ptr<point_object>> m_points;
+			std::list<point_wrapper_t> m_points;
 
 			const bool m_is_gpu;
 

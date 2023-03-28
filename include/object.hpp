@@ -49,6 +49,7 @@ namespace mini {
 		private:
 			scene_controller_base & m_scene;
 			std::string m_type_name;
+			std::string m_name;
 
 			glm::vec3 m_translation;
 			glm::vec3 m_euler_angles;
@@ -59,6 +60,7 @@ namespace mini {
 
 		public:
 			const std::string & get_type_name () const;
+			const std::string & get_name () const;
 
 			const glm::vec3 & get_translation () const;
 			const glm::vec3 & get_euler_angles () const;
@@ -78,6 +80,7 @@ namespace mini {
 			void set_euler_angles (const glm::vec3 & euler_angles);
 			void set_scale (const glm::vec3 & scale);
 			void set_selected (bool selected);
+			void set_name (const std::string & name);
 
 			glm::mat4x4 compose_matrix (const glm::vec3 & translation, const glm::vec3 & euler_angles, const glm::vec3 & scale) const;
 			glm::mat4x4 get_matrix () const;

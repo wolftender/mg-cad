@@ -36,6 +36,10 @@ namespace mini {
 		return m_type_name;
 	}
 
+	const std::string & scene_obj_t::get_name () const {
+		return m_name;
+	}
+
 	const glm::vec3 & scene_obj_t::get_translation () const {
 		return m_translation;
 	}
@@ -93,6 +97,10 @@ namespace mini {
 			m_selected = selected;
 			t_on_selection (selected);
 		}		
+	}
+
+	void scene_obj_t::set_name (const std::string & name) {
+		m_name = name;
 	}
 
 	glm::mat4x4 scene_obj_t::compose_matrix (const glm::vec3 & translation, const glm::vec3 & euler_angles, const glm::vec3 & scale) const {
