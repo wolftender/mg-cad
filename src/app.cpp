@@ -146,7 +146,7 @@ namespace mini {
 			plane_center = m_camera_target;
 		}
 
-		glm::vec3 plane_normal = glm::normalize (plane_center - cam_pos);
+		glm::vec3 plane_normal = glm::normalize (get_cam_target () - cam_pos);
 		glm::vec3 direction = get_screen_direction (new_pos.x, new_pos.y);
 
 		float nt = glm::dot ((plane_center - camera.get_position ()), plane_normal);

@@ -132,7 +132,7 @@ namespace mini {
 		if (m_axis_lock == axis_t::none) {
 			const auto & camera = get_app ().get_context ().get_camera ();
 
-			glm::vec3 plane_normal = normalize (camera.get_position () - m_original_transform);
+			glm::vec3 plane_normal = normalize (camera.get_position () - camera.get_target ());
 			glm::vec3 direction = calculate_mouse_dir (m_offset_x, m_offset_y);
 
 			float nt = glm::dot ((m_original_transform - camera.get_position ()), plane_normal);
