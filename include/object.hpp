@@ -4,7 +4,7 @@
 
 namespace mini {
 	struct hit_test_data_t {
-		camera & camera;
+		mini::camera & camera;
 		glm::vec2 mouse_screen;
 		glm::vec2 screen_res;
 		glm::vec3 mouse_ray;

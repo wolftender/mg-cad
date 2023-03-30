@@ -399,6 +399,7 @@ namespace mini {
 		m_ready = false;
 
 		m_divisions = 64;
+		m_degree = 0;
 	}
 
 	bezier_segment_cpu::~bezier_segment_cpu () {
@@ -528,6 +529,8 @@ namespace mini {
 		}
 
 		degree = degree - 1;
+		m_degree = degree;
+
 		if (degree == 0) {
 			return false;
 		}
@@ -622,6 +625,7 @@ namespace mini {
 
 		// update degree of this polynomial fragment
 		m_degree = degree;
+		return true;
 	}
 
 	float bezier_segment_cpu::m_decasteljeu (float b00, float b01, float b02, float b03, float t) const {
