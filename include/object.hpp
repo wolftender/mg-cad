@@ -1,4 +1,8 @@
 #pragma once
+#include <functional>
+#include <array>
+#include <set>
+
 #include "context.hpp"
 #include "algebra.hpp"
 
@@ -45,7 +49,19 @@ namespace mini {
 			virtual selected_object_iter_ptr get_selected_objects () = 0;
 	};
 
-	class scene_obj_t : public graphics_obj_t, std::enable_shared_from_this<scene_obj_t> {
+	class scene_obj_t : public graphics_obj_t, public std::enable_shared_from_this<scene_obj_t> {
+		public:
+			enum class signal_event_t {
+				moved		= 0,
+				rotated		= 1,
+				scaled		= 2,
+				selected	= 3,
+				renamed		= 4,
+				MAX
+			};
+
+			using signal_handler_t = std::function<void(signal_event_t, scene_obj_t &)>;
+
 		private:
 			scene_controller_base & m_scene;
 			std::string m_type_name;
@@ -57,6 +73,20 @@ namespace mini {
 
 			bool m_rotatable, m_movable, m_scalable;
 			bool m_selected, m_disposed;
+
+			std::array<std::list<std::weak_ptr<scene_obj_t>>, static_cast<int> (signal_event_t::MAX)> m_listeners;
+			std::array<signal_handler_t, static_cast<int> (signal_event_t::MAX) + 1> m_handlers;
+
+		private:
+			void m_notify (signal_event_t sig);
+			void m_receive (signal_event_t sig, scene_obj_t & emitter);
+			void m_listen (signal_event_t sig, std::shared_ptr<scene_obj_t> listener);
+			void m_ignore (signal_event_t sig, std::shared_ptr<scene_obj_t> listener);
+
+		protected:
+			void t_listen (signal_event_t sig, scene_obj_t & target);
+			void t_ignore (signal_event_t sig, scene_obj_t & target);
+			void t_set_handler (signal_event_t sig, signal_handler_t handler);
 
 		public:
 			const std::string & get_type_name () const;

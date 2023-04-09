@@ -109,7 +109,10 @@ namespace mini {
 			std::list<point_wrapper_t> m_points;
 
 			bool m_queue_curve_rebuild;
-			bool m_auto_extend, m_show_polygon;
+			bool m_auto_extend, m_show_polygon, m_configured;
+
+		private:
+			void m_moved_sighandler (signal_event_t sig, scene_obj_t & sender);
 
 		public:
 			void rebuild_curve ();
@@ -117,6 +120,10 @@ namespace mini {
 			bool is_rebuild_queued () const;
 			bool is_auto_extend () const;
 			bool is_show_polygon () const;
+
+			void set_rebuild_queued (bool rebuild);
+			void set_auto_extend (bool extend);
+			void set_show_polygon (bool show);
 
 		protected:
 			curve_base (scene_controller_base & scene, const std::string & name);

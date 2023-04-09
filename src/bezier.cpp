@@ -292,6 +292,13 @@ namespace mini {
 		}
 	}
 
+	/***********************/
+	/*     CURVE BASE      */
+	/***********************/
+	void curve_base::m_moved_sighandler (signal_event_t sig, scene_obj_t & sender) {
+		set_rebuild_queued (true);
+	}
+
 	void curve_base::rebuild_curve () {
 		m_queue_curve_rebuild = false;
 		t_rebuild_curve ();
@@ -309,13 +316,26 @@ namespace mini {
 		return m_show_polygon;
 	}
 
-	/***********************/
-	/*     CURVE BASE      */
-	/***********************/
+	void curve_base::set_rebuild_queued (bool rebuild) {
+		m_queue_curve_rebuild = rebuild;
+	}
+
+	void curve_base::set_auto_extend (bool extend) {
+		m_auto_extend = extend;
+	}
+
+	void curve_base::set_show_polygon (bool show) {
+		m_show_polygon = show;
+	}
+
 	curve_base::curve_base (scene_controller_base & scene, const std::string & name) : scene_obj_t (scene, name, false, false, false) {
 		m_auto_extend = false;
 		m_show_polygon = false;
 		m_queue_curve_rebuild = false;
+		m_configured = false;
+
+		t_set_handler (signal_event_t::moved, std::bind (&curve_base::m_moved_sighandler,
+			this, std::placeholders::_1, std::placeholders::_2));
 
 		for (auto iter = get_scene ().get_selected_objects (); iter->has (); iter->next ()) {
 			auto object = std::dynamic_pointer_cast<point_object> (iter->get_object ());
@@ -335,6 +355,18 @@ namespace mini {
 	}
 
 	void curve_base::configure () {
+		// todo: move this somewhere else
+		if (!m_configured) {
+			for (const auto & wrapper : m_points) {
+				auto ptr = wrapper.point.lock ();
+				if (ptr) {
+					t_listen (signal_event_t::moved, *ptr);
+				}
+			}
+
+			m_configured = true;
+		}
+
 		if (ImGui::CollapsingHeader ("Bezier Curve")) {
 			gui::prefix_label ("Auto Extend: ", 250.0f);
 			ImGui::Checkbox ("##auto_extend", &m_auto_extend);
@@ -386,6 +418,7 @@ namespace mini {
 						if (duplicate) {
 							continue;
 						} else {
+							t_listen (signal_event_t::moved, *point);
 							m_points.push_back (point_wrapper_t (point));
 							m_queue_curve_rebuild = true;
 						}
@@ -420,6 +453,7 @@ namespace mini {
 		auto point = std::dynamic_pointer_cast<point_object> (object);
 
 		if (point) {
+			t_listen (signal_event_t::moved, *point);
 			m_points.push_back (point_wrapper_t (point));
 			m_queue_curve_rebuild = true;
 		}

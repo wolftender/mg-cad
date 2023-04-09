@@ -20,6 +20,79 @@ namespace mini {
 
 	scene_obj_t::~scene_obj_t () { }
 
+	void scene_obj_t::m_listen (signal_event_t sig, std::shared_ptr<scene_obj_t> listener) {
+		auto & list = m_listeners[static_cast<int>(sig)];
+
+		for (auto iter = list.begin (); iter != list.end (); ) {
+			auto el = iter->lock ();
+			if (!el) {
+				iter = list.erase (iter);
+				continue;
+			}
+
+			if (el == listener) {
+				return;
+			}
+
+			iter++;
+		}
+
+		list.push_back (listener);
+	}
+
+	void scene_obj_t::m_ignore (signal_event_t sig, std::shared_ptr<scene_obj_t> listener) {
+		auto & list = m_listeners[static_cast<int>(sig)];
+
+		for (auto iter = list.begin (); iter != list.end (); ) {
+			auto el = iter->lock ();
+			if (!el) {
+				iter = list.erase (iter);
+				continue;
+			}
+
+			if (el == listener) {
+				list.erase (iter);
+				return;
+			}
+
+			iter++;
+		}
+	}
+
+	void scene_obj_t::t_listen (signal_event_t sig, scene_obj_t & target) {
+		target.m_listen (sig, shared_from_this ());
+	}
+
+	void scene_obj_t::t_ignore (signal_event_t sig, scene_obj_t & target) {
+		target.m_ignore (sig, shared_from_this ());
+	}
+
+	void scene_obj_t::m_notify (signal_event_t sig) {
+		auto & set = m_listeners[static_cast<int>(sig)];
+		for (auto iter = set.begin (); iter != set.end (); ) {
+			auto listener = iter->lock();
+
+			if (listener) {
+				listener->m_receive (sig, *this);
+				iter++;
+			} else {
+				iter = set.erase (iter);
+			}
+		}
+	}
+
+	void scene_obj_t::m_receive (signal_event_t sig, scene_obj_t & emitter) {
+		int sig_id = static_cast<int>(sig);
+		if (m_handlers[sig_id]) {
+			m_handlers[sig_id] (sig, emitter);
+		}
+	}
+
+	void scene_obj_t::t_set_handler (signal_event_t sig, signal_handler_t handler) {
+		int sig_id = static_cast<int>(sig);
+		m_handlers[sig_id] = handler;
+	}
+
 	void scene_obj_t::notify_object_created (std::shared_ptr<scene_obj_t> object) {
 		t_on_object_created (object);
 	}
@@ -82,20 +155,25 @@ namespace mini {
 
 	void scene_obj_t::set_translation (const glm::vec3 & translation) {
 		m_translation = translation;
+		m_notify (signal_event_t::moved);
 	}
 
 	void scene_obj_t::set_euler_angles (const glm::vec3 & euler_angles) {
 		m_euler_angles = euler_angles;
+		m_notify (signal_event_t::rotated);
 	}
 
 	void scene_obj_t::set_scale (const glm::vec3 & scale) {
 		m_scale = scale;
+		m_notify (signal_event_t::scaled);
 	}
 
 	void scene_obj_t::set_selected (bool selected) {
 		if (selected != m_selected) {
 			m_selected = selected;
 			t_on_selection (selected);
+
+			m_notify (signal_event_t::selected);
 		}		
 	}
 
