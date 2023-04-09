@@ -111,7 +111,7 @@ namespace mini {
 		return std::make_shared<bspline_curve> (
 			scene,
 			store->get_bezier_shader (),
-			store->get_bezier_poly_shader (),
+			store->get_line_shader (),
 			store->get_billboard_s_shader (),
 			store->get_point_texture ()
 		);
