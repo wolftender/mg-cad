@@ -92,25 +92,53 @@ namespace mini {
 			float m_decasteljeu (float b00, float b01, float b02, float t) const;
 	};
 
-	class bezier_curve_c0 : public scene_obj_t {
-		private: 
+	class curve_base : public scene_obj_t {
+		private:
 			struct point_wrapper_t {
 				std::weak_ptr<point_object> point;
 				bool selected;
 
-				point_wrapper_t (std::weak_ptr<point_object> point) : point(point) {
+				point_wrapper_t (std::weak_ptr<point_object> point) : point (point) {
 					selected = false;
 				}
 			};
 
-			std::vector<std::shared_ptr<bezier_segment_base>> m_segments;
-			std::shared_ptr<shader_t> m_shader1, m_shader2;
 			std::list<point_wrapper_t> m_points;
-
-			const bool m_is_gpu;
 
 			bool m_queue_curve_rebuild;
 			bool m_auto_extend, m_show_polygon;
+
+		public:
+			void rebuild_curve ();
+
+			bool is_rebuild_queued () const;
+			bool is_auto_extend () const;
+			bool is_show_polygon () const;
+
+		protected:
+			curve_base (scene_controller_base & scene, const std::string & name);
+			virtual ~curve_base () { }
+
+			curve_base (const curve_base &) = delete;
+			curve_base & operator=(const curve_base &) = delete;
+
+			const std::list<point_wrapper_t> & t_get_points () const;
+			std::list<point_wrapper_t> & t_get_points ();
+
+			virtual void configure () override;
+
+			virtual void t_on_object_created (std::shared_ptr<scene_obj_t> object) override;
+			virtual void t_on_object_deleted (std::shared_ptr<scene_obj_t> object) override;
+
+			virtual void t_rebuild_curve () = 0;
+	};
+
+	class bezier_curve_c0 : public curve_base {
+		private: 
+			std::vector<std::shared_ptr<bezier_segment_base>> m_segments;
+			std::shared_ptr<shader_t> m_shader1, m_shader2;
+
+			const bool m_is_gpu;
 			
 		public:
 			bezier_curve_c0 (scene_controller_base & scene, std::shared_ptr<shader_t> shader1, std::shared_ptr<shader_t> shader2, bool is_gpu = true);
@@ -121,13 +149,8 @@ namespace mini {
 
 			virtual void integrate (float delta_time) override;
 			virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override;
-			virtual void configure () override;
 
 		protected:
-			virtual void t_on_object_created (std::shared_ptr<scene_obj_t> object) override;
-			virtual void t_on_object_deleted (std::shared_ptr<scene_obj_t> object) override;
-
-		private:
-			void m_rebuild_curve ();
+			virtual void t_rebuild_curve () override;
 	};
 }

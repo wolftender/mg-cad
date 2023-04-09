@@ -1,7 +1,7 @@
 #version 330
 
 layout (lines_adjacency) in;
-layout (triangle_strip, max_vertices = 200) out;
+layout (triangle_strip, max_vertices = 256) out;
 
 // screen resolution
 uniform vec2 u_resolution;

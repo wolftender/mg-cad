@@ -178,11 +178,30 @@ namespace mini {
 		glBindBuffer (GL_ARRAY_BUFFER, static_cast<GLuint> (NULL));
 	}
 
+	void curve_base::rebuild_curve () {
+		m_queue_curve_rebuild = false;
+		t_rebuild_curve ();
+	}
 
-	bezier_curve_c0::bezier_curve_c0 (scene_controller_base & scene, std::shared_ptr<shader_t> shader1,
-		std::shared_ptr<shader_t> shader2, bool is_gpu) :
-		scene_obj_t (scene, (is_gpu) ? "gpu_bezier_c0" : "bezier_c0", false, false, false),
-		m_is_gpu (is_gpu) {
+	bool curve_base::is_rebuild_queued () const {
+		return m_queue_curve_rebuild;
+	}
+
+	bool curve_base::is_auto_extend () const {
+		return m_auto_extend;
+	}
+
+	bool curve_base::is_show_polygon () const {
+		return m_show_polygon;
+	}
+
+	/***********************/
+	/*     CURVE BASE      */
+	/***********************/
+	curve_base::curve_base (scene_controller_base & scene, const std::string & name) : scene_obj_t (scene, name, false, false, false) {
+		m_auto_extend = false;
+		m_show_polygon = false;
+		m_queue_curve_rebuild = false;
 
 		for (auto iter = get_scene ().get_selected_objects (); iter->has (); iter->next ()) {
 			auto object = std::dynamic_pointer_cast<point_object> (iter->get_object ());
@@ -191,37 +210,17 @@ namespace mini {
 				m_points.push_back (point_wrapper_t (object));
 			}
 		}
-
-		m_shader1 = shader1;
-		m_shader2 = shader2;
-
-		m_auto_extend = false;
-		m_show_polygon = false;
-		m_queue_curve_rebuild = false;
-
-		m_rebuild_curve ();
 	}
 
-	bezier_curve_c0::~bezier_curve_c0 () {}
-
-	void bezier_curve_c0::integrate (float delta_time) {
-		if (m_queue_curve_rebuild) {
-			m_rebuild_curve ();
-		} else {
-			for (auto & segment : m_segments) {
-				segment->set_showing_polygon (m_show_polygon);
-				segment->integrate (delta_time);
-			}
-		}
+	const std::list<curve_base::point_wrapper_t> & curve_base::t_get_points () const {
+		return m_points;
 	}
 
-	void bezier_curve_c0::render (app_context & context, const glm::mat4x4 & world_matrix) const {
-		for (auto segment : m_segments) {
-			context.draw (segment, world_matrix);
-		}
+	std::list<curve_base::point_wrapper_t> & curve_base::t_get_points () {
+		return m_points;
 	}
 
-	void bezier_curve_c0::configure () {
+	void curve_base::configure () {
 		if (ImGui::CollapsingHeader ("Bezier Curve")) {
 			gui::prefix_label ("Auto Extend: ", 250.0f);
 			ImGui::Checkbox ("##auto_extend", &m_auto_extend);
@@ -299,7 +298,7 @@ namespace mini {
 		}
 	}
 
-	void bezier_curve_c0::t_on_object_created (std::shared_ptr<scene_obj_t> object) {
+	void curve_base::t_on_object_created (std::shared_ptr<scene_obj_t> object) {
 		if (!m_auto_extend) {
 			return;
 		}
@@ -312,7 +311,7 @@ namespace mini {
 		}
 	}
 
-	void bezier_curve_c0::t_on_object_deleted (std::shared_ptr<scene_obj_t> object) {
+	void curve_base::t_on_object_deleted (std::shared_ptr<scene_obj_t> object) {
 		bool changed = false;
 
 		for (auto iter = m_points.begin (); iter != m_points.end (); ++iter) {
@@ -338,14 +337,46 @@ namespace mini {
 		}
 	}
 
-	void bezier_curve_c0::m_rebuild_curve () {
-		m_queue_curve_rebuild = false;
+	/***********************/
+	/*      BEZIER C0      */
+	/***********************/
+	bezier_curve_c0::bezier_curve_c0 (scene_controller_base & scene, std::shared_ptr<shader_t> shader1,
+		std::shared_ptr<shader_t> shader2, bool is_gpu) :
+		curve_base (scene, (is_gpu) ? "gpu_bezier_c0" : "bezier_c0"),
+		m_is_gpu (is_gpu) {
+
+		m_shader1 = shader1;
+		m_shader2 = shader2;
+
+		rebuild_curve ();
+	}
+
+	bezier_curve_c0::~bezier_curve_c0 () {}
+
+	void bezier_curve_c0::integrate (float delta_time) {
+		if (is_rebuild_queued ()) {
+			rebuild_curve ();
+		} else {
+			for (auto & segment : m_segments) {
+				segment->set_showing_polygon (is_show_polygon ());
+				segment->integrate (delta_time);
+			}
+		}
+	}
+
+	void bezier_curve_c0::render (app_context & context, const glm::mat4x4 & world_matrix) const {
+		for (auto segment : m_segments) {
+			context.draw (segment, world_matrix);
+		}
+	}
+
+	void bezier_curve_c0::t_rebuild_curve () {
 		m_segments.clear ();
 
 		point_wptr points[4];
 		int index = 0, array_index = 0;
 
-		for (auto & point_wrapper : m_points) {
+		for (auto & point_wrapper : t_get_points ()) {
 			auto point = point_wrapper.point.lock ();
 
 			if (point) {
