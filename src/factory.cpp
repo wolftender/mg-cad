@@ -6,6 +6,7 @@
 #include "torus.hpp"
 #include "point.hpp"
 #include "bezier.hpp"
+#include "bspline.hpp"
 
 namespace mini {
 	object_factory::object_factory_impl_t::object_factory_impl_t (object_ctor_t c, const std::string & n, const std::string & d) :
@@ -34,6 +35,10 @@ namespace mini {
 
 		m_factories.push_back ({
 			&object_factory::make_bezier_c0_cpu, "bezier c0 (cpu)", "a bezier curve with c0 continuity using geometry shader"
+		});
+
+		m_factories.push_back ({
+			&object_factory::make_bspline_c2, "curve c2", "a c2 bspline curve"
 		});
 	}
 
@@ -99,6 +104,16 @@ namespace mini {
 			store->get_line_shader (),
 			store->get_line_shader (),
 			false
+		);
+	}
+
+	std::shared_ptr<scene_obj_t> object_factory::make_bspline_c2 (scene_controller_base & scene, std::shared_ptr<const resource_store> store) {
+		return std::make_shared<bspline_curve> (
+			scene,
+			store->get_bezier_shader (),
+			store->get_bezier_poly_shader (),
+			store->get_billboard_s_shader (),
+			store->get_point_texture ()
 		);
 	}
 }
