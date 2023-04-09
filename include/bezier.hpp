@@ -31,14 +31,15 @@ namespace mini {
 
 	class bezier_segment_gpu : public bezier_segment_base {
 		private:
-			GLuint m_vao;
-			GLuint m_position_buffer, m_color_buffer;
+			GLuint m_vao, m_vao_poly;
+			GLuint m_position_buffer, m_position_buffer_poly;
 
 			std::shared_ptr<shader_t> m_shader;
-			std::shared_ptr<shader_t> m_poly_shader;
-			std::vector<float> m_positions, m_colors;
+			std::shared_ptr<shader_t> m_line_shader;
+			std::vector<float> m_positions, m_positions_poly;
 
 			bool m_ready;
+			int m_degree, m_last_degree;
 
 		public:
 			bezier_segment_gpu (std::shared_ptr<shader_t> shader1, std::shared_ptr<shader_t> shader2, 
@@ -52,7 +53,9 @@ namespace mini {
 			virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override;
 
 		private:
+			void m_free_buffers ();
 			void m_bind_shader (app_context & context, std::shared_ptr<shader_t> shader, const glm::mat4x4 & world_matrix) const;
+			void m_init_positions ();
 			void m_init_buffers ();
 			void m_update_buffers ();
 	};

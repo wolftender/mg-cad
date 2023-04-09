@@ -93,7 +93,7 @@ namespace mini {
 		return std::make_shared<bezier_curve_c0> (
 			scene,
 			store->get_bezier_shader (),
-			store->get_bezier_poly_shader (),
+			store->get_line_shader (),
 			true
 		);
 	}
