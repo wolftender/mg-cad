@@ -82,6 +82,13 @@ namespace mini {
 		glBindVertexArray (m_vao);
 
 		m_bind_shader (context, m_shader, world_matrix);
+
+		m_shader->set_uniform ("u_start_t", 0.0f);
+		m_shader->set_uniform ("u_end_t", 0.5f);
+		glDrawArrays (GL_LINES_ADJACENCY, 0, 4);
+
+		m_shader->set_uniform ("u_start_t", 0.5f);
+		m_shader->set_uniform ("u_end_t", 1.0f);
 		glDrawArrays (GL_LINES_ADJACENCY, 0, 4);
 
 		if (is_showing_polygon ()) {
@@ -405,13 +412,25 @@ namespace mini {
 		// todo: make gpu segments be rendered by gpu
 		if (index > 0) {
 			if (index % 4 == 2) {
-				m_segments.push_back (std::make_shared<bezier_segment_cpu> (
-					get_scene (), m_shader1, m_shader2, points[0], points[1], point_wptr (), point_wptr ())
-				);
+				if (m_is_gpu) {
+					m_segments.push_back (std::make_shared<bezier_segment_gpu> (
+						m_shader1, m_shader2, points[0], points[1], point_wptr (), point_wptr ())
+					);
+				} else {
+					m_segments.push_back (std::make_shared<bezier_segment_cpu> (
+						get_scene (), m_shader1, m_shader2, points[0], points[1], point_wptr (), point_wptr ())
+					);
+				}
 			} else if (index % 4 == 3) {
-				m_segments.push_back (std::make_shared<bezier_segment_cpu> (
-					get_scene (), m_shader1, m_shader2, points[0], points[1], points[2], point_wptr ())
-				);
+				if (m_is_gpu) {
+					m_segments.push_back (std::make_shared<bezier_segment_gpu> (
+						m_shader1, m_shader2, points[0], points[1], points[2], point_wptr ())
+					);
+				} else {
+					m_segments.push_back (std::make_shared<bezier_segment_cpu> (
+						get_scene (), m_shader1, m_shader2, points[0], points[1], points[2], point_wptr ())
+					);
+				}
 			}
 		}
 	}

@@ -6,6 +6,8 @@ layout (triangle_strip, max_vertices = 256) out;
 // screen resolution
 uniform vec2 u_resolution;
 uniform float u_line_width;
+uniform float u_start_t;
+uniform float u_end_t;
 
 vec2 line_start (vec4 p1, vec4 p2) {
     // screen space ndc
@@ -120,6 +122,7 @@ void main () {
 
     float l = length (px1 - px0) + length (px2 - px1) + length (px3 - px2);
     l = l / 100.0;
+    l = (u_end_t - u_start_t) * l;
 
     vec2 offset;
     vec4 p1, p2;
@@ -127,8 +130,8 @@ void main () {
     // adaptive rendering
     int divisions = max (15, min(90, int(l)));
 
-    float t = 0.0;
-    float step = 1.0 / divisions;
+    float t = u_start_t;
+    float step = (u_end_t - u_start_t) / divisions;
 
     p1.x = decasteljeu (b0.x, b1.x, b2.x, b3.x, t);
     p1.y = decasteljeu (b0.y, b1.y, b2.y, b3.y, t);
