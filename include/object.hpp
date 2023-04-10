@@ -5,6 +5,7 @@
 
 #include "context.hpp"
 #include "algebra.hpp"
+#include "event.hpp"
 
 namespace mini {
 	struct hit_test_data_t {
@@ -49,7 +50,7 @@ namespace mini {
 			virtual selected_object_iter_ptr get_selected_objects () = 0;
 	};
 
-	class scene_obj_t : public graphics_obj_t, public std::enable_shared_from_this<scene_obj_t> {
+	class scene_obj_t : public graphics_obj_t, public event_listener_base, public std::enable_shared_from_this<scene_obj_t> {
 		public:
 			enum class signal_event_t {
 				moved		= 0,

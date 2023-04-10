@@ -222,6 +222,12 @@ namespace mini {
 			}
 		}
 
+		if (m_selected_object && m_selected_group->group_size () == 1) {
+			if (m_selected_object->object->on_key_event (key, scancode, action, mods)) {
+				return;
+			}
+		}
+
 		if (action == GLFW_RELEASE && !ImGui::GetIO ().WantCaptureKeyboard) {
 			switch (key) {
 				case KEY_TRANSLATE:
@@ -253,9 +259,80 @@ namespace mini {
 	}
 
 	void application::t_on_scroll (double offset_x, double offset_y) {
+		if (m_selected_tool) {
+			if (m_selected_tool->on_scroll (offset_x, offset_y)) {
+				return;
+			}
+		}
+
+		if (m_selected_object && m_selected_group->group_size () == 1) {
+			if (m_selected_object->object->on_scroll (offset_x, offset_y)) {
+				return;
+			}
+		}
+
 		if (m_viewport_focus) {
 			m_distance = m_distance - (static_cast<float> (offset_y) / 2.0f);
 		}
+	}
+
+	void application::t_on_character (unsigned int code) {
+		if (m_selected_tool) {
+			if (m_selected_tool->on_character (code)) {
+				return app_window::t_on_character (code);
+			}
+		}
+
+		if (m_selected_object && m_selected_group->group_size () == 1) {
+			if (m_selected_object->object->on_character (code)) {
+				return;
+			}
+		}
+
+		app_window::t_on_character (code);
+	}
+
+	void application::t_on_cursor_pos (double posx, double posy) {
+		if (m_selected_tool) {
+			if (m_selected_tool->on_cursor_pos (posx, posy)) {
+				return app_window::t_on_cursor_pos (posx, posy);
+			}
+		}
+
+		if (m_selected_object && m_selected_group->group_size () == 1) {
+			if (m_selected_object->object->on_cursor_pos (posx, posy)) {
+				return;
+			}
+		}
+
+		app_window::t_on_cursor_pos (posx, posy);
+	}
+
+	void application::t_on_mouse_button (int button, int action, int mods) {
+		if (m_selected_tool) {
+			if (m_selected_tool->on_mouse_button (button, action, mods)) {
+				return app_window::t_on_mouse_button (button, action, mods);
+			}
+		}
+
+		if (m_selected_object && m_selected_group->group_size () == 1) {
+			if (m_selected_object->object->on_mouse_button (button, action, mods)) {
+				return app_window::t_on_mouse_button (button, action, mods);
+			}
+		}
+		
+		if (action == GLFW_PRESS) {
+			if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
+				m_selected_tool = std::make_shared<camera_pan_tool> (*this);
+			} else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+				m_snap_cursor_to_mouse ();
+			} else if (button == GLFW_MOUSE_BUTTON_LEFT) {
+				// selection code
+				m_handle_mouse_select ();
+			}
+		}
+
+		app_window::t_on_mouse_button (button, action, mods);
 	}
 
 	void application::t_on_resize (int width, int height) {
@@ -531,45 +608,6 @@ namespace mini {
 		if (m_show_creator) {
 			m_draw_object_creator ();
 		}
-	}
-
-	void application::t_on_character (unsigned int code) {
-		if (m_selected_tool) {
-			if (m_selected_tool->on_character (code)) {
-				return app_window::t_on_character (code);
-			}
-		}
-
-		app_window::t_on_character (code);
-	}
-
-	void application::t_on_cursor_pos (double posx, double posy) {
-		if (m_selected_tool) {
-			if (m_selected_tool->on_cursor_pos (posx, posy)) {
-				return app_window::t_on_cursor_pos (posx, posy);
-			}
-		}
-
-		app_window::t_on_cursor_pos (posx, posy);
-	}
-
-	void application::t_on_mouse_button (int button, int action, int mods) {
-		if (m_selected_tool) {
-			if (m_selected_tool->on_mouse_button (button, action, mods)) {
-				return app_window::t_on_mouse_button (button, action, mods);
-			}
-		} else if (action == GLFW_PRESS) {
-			if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
-				m_selected_tool = std::make_shared<camera_pan_tool> (*this);
-			} else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-				m_snap_cursor_to_mouse ();
-			} else if (button == GLFW_MOUSE_BUTTON_LEFT) {
-				// selection code
-				m_handle_mouse_select ();
-			}
-		}
-
-		app_window::t_on_mouse_button (button, action, mods);
 	}
 
 	void application::m_draw_main_menu () {

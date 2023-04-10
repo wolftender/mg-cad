@@ -143,6 +143,7 @@
     <ClInclude Include="include\context.hpp" />
     <ClInclude Include="include\cube.hpp" />
     <ClInclude Include="include\billboard.hpp" />
+    <ClInclude Include="include\event.hpp" />
     <ClInclude Include="include\factory.hpp" />
     <ClInclude Include="include\grid.hpp" />
     <ClInclude Include="include\gui.hpp" />

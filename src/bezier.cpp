@@ -367,7 +367,7 @@ namespace mini {
 			m_configured = true;
 		}
 
-		if (ImGui::CollapsingHeader ("Bezier Curve")) {
+		if (ImGui::CollapsingHeader ("Curve Settings")) {
 			gui::prefix_label ("Auto Extend: ", 250.0f);
 			ImGui::Checkbox ("##auto_extend", &m_auto_extend);
 

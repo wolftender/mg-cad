@@ -34,12 +34,6 @@ namespace mini {
 		return false;
 	}
 
-	bool tool_base::on_character (unsigned int code) { return false; }
-	bool tool_base::on_cursor_pos (double posx, double posy) { return false; }
-	bool tool_base::on_mouse_button (int button, int action, int mods) { return false; }
-	bool tool_base::on_scroll (double offset_x, double offset_y) { return false; }
-	bool tool_base::on_update (float delta_time) { return false; }
-
 	glm::vec3 tool_base::calculate_mouse_dir () const {
 		return get_app ().get_mouse_direction ();
 	}

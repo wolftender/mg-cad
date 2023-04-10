@@ -1,6 +1,7 @@
 #pragma once
 #include "context.hpp"
 #include "object.hpp"
+#include "event.hpp"
 
 #include <string>
 #include <GLFW/glfw3.h>
@@ -20,7 +21,7 @@ namespace mini {
 
 	class application;
 
-	class tool_base {
+	class tool_base : public event_listener_base {
 		private:
 			std::string m_name;
 			application & m_app;
@@ -40,13 +41,7 @@ namespace mini {
 			tool_base (const tool_base &) = delete;
 			tool_base & operator= (const tool_base &) = delete;
 
-			// virtual methods
-			virtual bool on_key_event (int key, int scancode, int action, int mods);
-			virtual bool on_character (unsigned int code);
-			virtual bool on_cursor_pos (double posx, double posy);
-			virtual bool on_mouse_button (int button, int action, int mods);
-			virtual bool on_scroll (double offset_x, double offset_y);
-			virtual bool on_update (float delta_time);
+			virtual bool on_key_event (int key, int scancode, int action, int mods) override;
 
 		public:
 			glm::vec3 calculate_mouse_dir () const;

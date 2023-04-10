@@ -1,6 +1,14 @@
 #include "point.hpp"
 
 namespace mini {
+	const glm::vec4 & point_object::get_color_modifier () const {
+		return m_billboard.get_color_tint ();
+	}
+
+	void point_object::set_color_modifier (const glm::vec4 & color) {
+		m_billboard.set_color_tint (color);
+	}
+
 	point_object::point_object (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<texture_t> texture) :
 		scene_obj_t (scene, "point", true, false, false),
 		m_billboard (shader, texture) { 

@@ -1,6 +1,7 @@
 #include <deque>
 
 #include "bspline.hpp"
+#include "gui.hpp"
 
 namespace mini {
 	bspline_curve::bspline_curve (scene_controller_base & scene, std::shared_ptr<shader_t> shader1, 
@@ -12,10 +13,22 @@ namespace mini {
 		m_point_texture = point_texture;
 		m_point_shader = point_shader;
 
+		m_show_bezier = false;
+
 		rebuild_curve ();
 	}
 
 	bspline_curve::~bspline_curve () { }
+
+	void bspline_curve::configure () {
+		if (ImGui::CollapsingHeader ("B-Spline Settings")) {
+			gui::prefix_label ("Show Bernstein: ", 250.0f);
+			ImGui::Checkbox ("##show_bezier", &m_show_bezier);
+		}
+
+		ImGui::NewLine ();
+		curve_base::configure ();
+	}
 
 	void bspline_curve::integrate (float delta_time) {
 		if (is_rebuild_queued ()) {
@@ -33,6 +46,13 @@ namespace mini {
 	void bspline_curve::render (app_context & context, const glm::mat4x4 & world_matrix) const {
 		for (auto segment : m_segments) {
 			context.draw (segment, world_matrix);
+		}
+
+		// draw the control points if asked to
+		if (m_show_bezier) {
+			for (const auto & point : m_bezier_points) {
+				context.draw (point, point->get_matrix ());
+			}
 		}
 	}
 
@@ -83,6 +103,11 @@ namespace mini {
 				p2->set_translation ({ curve_x_bz[1], curve_y_bz[1], curve_z_bz[1] });
 				p3->set_translation ({ curve_x_bz[2], curve_y_bz[2], curve_z_bz[2] });
 				p4->set_translation ({ curve_x_bz[3], curve_y_bz[3], curve_z_bz[3] });
+
+				p1->set_color_modifier ({ 0.0f, 0.0f, 1.0f, 1.0f });
+				p2->set_color_modifier ({ 0.0f, 0.0f, 1.0f, 1.0f });
+				p3->set_color_modifier ({ 0.0f, 0.0f, 1.0f, 1.0f });
+				p4->set_color_modifier ({ 0.0f, 0.0f, 1.0f, 1.0f });
 
 				m_bezier_points.push_back (p1);
 				m_bezier_points.push_back (p2);
