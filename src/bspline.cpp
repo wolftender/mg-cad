@@ -5,6 +5,8 @@
 #include "bspline.hpp"
 #include "gui.hpp"
 
+#include <GLFW/glfw3.h>
+
 namespace mini {
 	bspline_curve::bspline_curve (scene_controller_base & scene, std::shared_ptr<shader_t> shader1, 
 		std::shared_ptr<shader_t> shader2, std::shared_ptr<shader_t> point_shader, std::shared_ptr<texture_t> point_texture) :
@@ -47,15 +49,7 @@ namespace mini {
 						name << "point " << (index++) << " (" << std::setprecision (2) << pos.x << "; " << std::setprecision (2) << pos.y << ")";
 						
 						if (ImGui::Selectable (name.str ().c_str (), &point_wrapper.selected)) {
-							bool val = point_wrapper.selected;
-
-							for (auto & p : m_bezier_points) {
-								p.selected = false;
-								p.point->set_selected (false);
-							}
-
-							point_wrapper.selected = val;
-							point_wrapper.point->set_selected (val);
+							m_select_point (point_wrapper);
 						}
 					}
 
@@ -88,11 +82,39 @@ namespace mini {
 		}
 
 		// draw the control points if asked to
-		if (m_show_bezier) {
+		if (m_show_bezier && is_selected ()) {
 			for (const auto & point : m_bezier_points) {
 				context.draw (point.point, point.point->get_matrix ());
 			}
 		}
+	}
+
+	bool bspline_curve::on_mouse_button (int button, int action, int mods) {
+		if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT) {
+			auto hit_data = get_scene ().get_hit_test_data ();
+
+			glm::vec3 cam_pos = get_scene ().get_camera ().get_position ();
+			glm::vec3 hit_pos;
+			float dist, best_dist = 1000000.0f;
+
+			point_wrapper * sel = nullptr;
+			for (auto & point : m_bezier_points) {
+				if (point.point->hit_test (hit_data, hit_pos)) {
+					dist = glm::distance (cam_pos, hit_pos);
+					if (dist < best_dist) {
+						sel = &point;
+					}
+				}
+			}
+
+			if (sel) {
+				m_select_point (*sel);
+			}
+
+			return (sel != nullptr);
+		}
+
+		return false;
 	}
 
 	void bspline_curve::t_rebuild_curve () {
@@ -174,5 +196,15 @@ namespace mini {
 				));
 			}
 		}
+	}
+
+	void bspline_curve::m_select_point (point_wrapper & wrapper) {
+		for (auto & p : m_bezier_points) {
+			p.selected = false;
+			p.point->set_selected (false);
+		}
+
+		wrapper.selected = true;
+		wrapper.point->set_selected (true);
 	}
 }

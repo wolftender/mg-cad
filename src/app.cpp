@@ -52,6 +52,30 @@ namespace mini {
 		return static_cast<glm::vec2> (screen_pos);
 	}
 
+	hit_test_data_t application::get_hit_test_data () const {
+		auto & camera = m_context.get_camera ();
+
+		glm::vec2 mouse_screen = glm::vec2 (
+			static_cast<float> (m_vp_mouse_offset.x),
+			static_cast<float> (m_vp_mouse_offset.y)
+		);
+
+		glm::vec2 screen_res = glm::vec2 (
+			static_cast<float> (m_last_vp_width),
+			static_cast<float> (m_last_vp_height)
+		);
+
+		hit_test_data_t hit_data (
+			camera,
+			mouse_screen,
+			screen_res,
+			get_mouse_direction ()
+		);
+		
+		hit_data.valid = is_mouse_in_viewport ();
+		return hit_data;
+	}
+
 	glm::vec3 application::get_mouse_direction () const {
 		return get_mouse_direction (0, 0);
 	}
@@ -350,30 +374,11 @@ namespace mini {
 
 	void application::m_handle_mouse_select () {
 		// todo: probably rework this code
+		auto hit_data = get_hit_test_data ();
 
-		if (!is_mouse_in_viewport ()) {
+		if (!hit_data.valid) {
 			return;
 		}
-
-		//std::cout << "try selecting object" << std::endl;
-		auto & camera = m_context.get_camera ();
-
-		glm::vec2 mouse_screen = glm::vec2 (
-			static_cast<float> (m_vp_mouse_offset.x),
-			static_cast<float> (m_vp_mouse_offset.y)
-		);
-
-		glm::vec2 screen_res = glm::vec2 (
-			static_cast<float> (m_last_vp_width),
-			static_cast<float> (m_last_vp_height)
-		);
-
-		hit_test_data_t hit_data (
-			camera,
-			mouse_screen,
-			screen_res,
-			get_mouse_direction ()
-		);
 
 		// pass all of this to the hit detect functions
 		std::shared_ptr<object_wrapper_t> selection = nullptr;
@@ -385,7 +390,7 @@ namespace mini {
 				// hit was detected, compare hit vector with "best" hit vector
 				// i.e. select the object closer to the camera
 
-				dist = glm::distance (camera.get_position (), pos);
+				dist = glm::distance (get_camera ().get_position (), pos);
 				if (dist < best_dist) {
 					selection = object;
 					best_dist = dist;
@@ -525,7 +530,9 @@ namespace mini {
 		// if no tool selected then handle mouse events
 		// otherwise update tool and only update mouse if allowed
 		if (!m_selected_tool || !m_selected_tool->on_update (delta_time)) {
-			m_handle_mouse ();
+			if (!m_selected_object || m_selected_group->group_size () != 1 || !m_selected_object->object->is_mouse_lock ()) {
+				m_handle_mouse ();
+			}
 		}
 
 		// clamp pitch to avoid camera "going over" the center

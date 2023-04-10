@@ -9,12 +9,13 @@
 
 namespace mini {
 	struct hit_test_data_t {
-		mini::camera & camera;
+		const mini::camera & camera;
 		glm::vec2 mouse_screen;
 		glm::vec2 screen_res;
 		glm::vec3 mouse_ray;
+		bool valid;
 
-		hit_test_data_t (mini::camera & cam, const glm::vec2 & mouse_screen, 
+		hit_test_data_t (const mini::camera & cam, const glm::vec2 & mouse_screen, 
 			const glm::vec2 & screen_res, const glm::vec3 & mouse_ray);
 	};
 
@@ -41,8 +42,20 @@ namespace mini {
 			virtual void add_object (const std::string & name, std::shared_ptr<scene_obj_t> object) = 0;
 			virtual void set_cursor_pos (const glm::vec3 & position) = 0;
 
+			virtual bool is_viewport_focused () const = 0;
+			virtual bool is_mouse_in_viewport () const = 0;
+
+			virtual glm::vec3 get_mouse_direction () const = 0;
+			virtual glm::vec3 get_mouse_direction (int offset_x, int offset_y) const = 0;
+			virtual glm::vec3 get_screen_direction (float screen_x, float screen_y) const = 0;
+			virtual glm::vec2 pixels_to_screen (const glm::vec2 & pos) const = 0;
+			virtual glm::vec2 screen_to_pixels (const glm::vec2 & pos) const = 0;
+			virtual glm::vec2 world_to_screen (const glm::vec3 & world_pos) const = 0;
+
 			virtual const glm::vec3 & get_cursor_pos () const = 0;
 			virtual const glm::vec3 & get_cam_target () const = 0;
+
+			virtual hit_test_data_t get_hit_test_data () const = 0;
 
 			virtual const camera & get_camera () const = 0;
 			virtual const video_mode_t & get_video_mode () const = 0;
@@ -74,6 +87,7 @@ namespace mini {
 
 			bool m_rotatable, m_movable, m_scalable;
 			bool m_selected, m_disposed;
+			bool m_mouse_lock;
 
 			std::array<std::list<std::weak_ptr<scene_obj_t>>, static_cast<int> (signal_event_t::MAX)> m_listeners;
 			std::array<signal_handler_t, static_cast<int> (signal_event_t::MAX) + 1> m_handlers;
@@ -89,6 +103,8 @@ namespace mini {
 			void t_ignore (signal_event_t sig, scene_obj_t & target);
 			void t_set_handler (signal_event_t sig, signal_handler_t handler);
 
+			void t_set_mouse_lock (bool lock);
+
 		public:
 			const std::string & get_type_name () const;
 			const std::string & get_name () const;
@@ -102,6 +118,8 @@ namespace mini {
 			bool is_scalable () const;
 			bool is_movable () const;
 			bool is_disposed () const;
+
+			bool is_mouse_lock () const;
 
 			scene_controller_base & get_scene () const;
 

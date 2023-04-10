@@ -43,7 +43,12 @@ namespace mini {
 			virtual void integrate (float delta_time) override;
 			virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override;
 
+			virtual bool on_mouse_button (int button, int action, int mods) override;
+
 		protected:
 			virtual void t_rebuild_curve () override;
+
+		private:
+			void m_select_point (point_wrapper & wrapper);
 	};
 }

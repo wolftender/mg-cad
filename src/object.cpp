@@ -16,9 +16,14 @@ namespace mini {
 
 		m_selected = false;
 		m_disposed = false;
+		m_mouse_lock = false;
 	}
 
 	scene_obj_t::~scene_obj_t () { }
+
+	void scene_obj_t::t_set_mouse_lock (bool lock) {
+		m_mouse_lock = true;
+	}
 
 	void scene_obj_t::m_listen (signal_event_t sig, std::shared_ptr<scene_obj_t> listener) {
 		auto & list = m_listeners[static_cast<int>(sig)];
@@ -238,11 +243,17 @@ namespace mini {
 		return false;
 	}
 
-	hit_test_data_t::hit_test_data_t (mini::camera & cam, const glm::vec2 & mouse_screen, 
+	bool scene_obj_t::is_mouse_lock () const {
+		return m_mouse_lock;
+	}
+
+	hit_test_data_t::hit_test_data_t (const mini::camera & cam, const glm::vec2 & mouse_screen, 
 		const glm::vec2 & screen_res, const glm::vec3 & mouse_ray) :
 		camera (cam), 
 		mouse_screen (mouse_screen),
 		screen_res (screen_res),
 		mouse_ray (mouse_ray) {
+
+		valid = true;
 	}
 }

@@ -129,20 +129,22 @@ namespace mini {
 			float get_cam_pitch () const;
 			float get_cam_distance () const;
 			float get_time () const;
-			bool is_viewport_focused () const;
-			bool is_mouse_in_viewport () const;
+			virtual bool is_viewport_focused () const override;
+			virtual bool is_mouse_in_viewport () const override;
 
 			virtual void add_object (const std::string & name, std::shared_ptr<scene_obj_t> object) override;
 
 			virtual const glm::vec3 & get_cursor_pos () const override;
 			glm::vec2 get_cursor_screen_pos () const;
 
-			glm::vec3 get_mouse_direction () const;
-			glm::vec3 get_mouse_direction (int offset_x, int offset_y) const;
-			glm::vec3 get_screen_direction (float screen_x, float screen_y) const;
-			glm::vec2 pixels_to_screen (const glm::vec2 & pos) const;
-			glm::vec2 screen_to_pixels (const glm::vec2 & pos) const;
-			glm::vec2 world_to_screen (const glm::vec3 & world_pos) const;
+			virtual hit_test_data_t get_hit_test_data () const override;
+
+			virtual glm::vec3 get_mouse_direction () const override;
+			virtual glm::vec3 get_mouse_direction (int offset_x, int offset_y) const override;
+			virtual glm::vec3 get_screen_direction (float screen_x, float screen_y) const override;
+			virtual glm::vec2 pixels_to_screen (const glm::vec2 & pos) const override;
+			virtual glm::vec2 screen_to_pixels (const glm::vec2 & pos) const override;
+			virtual glm::vec2 world_to_screen (const glm::vec3 & world_pos) const override;
 
 			virtual selected_object_iter_ptr get_selected_objects () override;
 			
