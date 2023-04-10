@@ -18,8 +18,13 @@ namespace mini {
 
 	class bspline_curve : public curve_base {
 		private:
+			struct point_wrapper {
+				point_ptr point;
+				bool selected;
+			};
+
 			std::vector<std::shared_ptr<bezier_segment_base>> m_segments;
-			std::vector<std::shared_ptr<point_object>> m_bezier_points;
+			std::vector<point_wrapper> m_bezier_points;
 
 			std::shared_ptr<shader_t> m_shader1, m_shader2, m_point_shader;
 			std::shared_ptr<texture_t> m_point_texture;

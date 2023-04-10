@@ -6,10 +6,14 @@ namespace mini {
 	class point_object : public scene_obj_t {
 		private:
 			billboard_object m_billboard;
+			glm::vec4 m_color, m_selected_color;
 
 		public:
-			const glm::vec4 & get_color_modifier () const;
-			void set_color_modifier (const glm::vec4 & color);
+			const glm::vec4 & get_color () const;
+			const glm::vec4 & get_select_color () const;
+
+			void set_color (const glm::vec4 & color);
+			void set_select_color (const glm::vec4 & color);
 
 			point_object (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<texture_t> texture);
 			~point_object () = default;

@@ -215,15 +215,21 @@ namespace mini {
 	void scene_obj_t::configure () {
 		if (ImGui::CollapsingHeader ("Basic Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
 			if (m_movable) {
-				gui::vector_editor ("Translation", m_translation);
+				if (gui::vector_editor ("Translation", m_translation)) {
+					m_notify (signal_event_t::moved);
+				}
 			}
 
 			if (m_rotatable) {
-				gui::vector_editor ("Rotation", m_euler_angles);
+				if (gui::vector_editor ("Rotation", m_euler_angles)) {
+					m_notify (signal_event_t::rotated);
+				}
 			}
 			
 			if (m_scalable) {
-				gui::vector_editor ("Scale", m_scale);
+				if (gui::vector_editor ("Scale", m_scale)) {
+					m_notify (signal_event_t::scaled);
+				}
 			}
 		}
 	}

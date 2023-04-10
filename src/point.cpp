@@ -1,17 +1,36 @@
 #include "point.hpp"
 
 namespace mini {
-	const glm::vec4 & point_object::get_color_modifier () const {
-		return m_billboard.get_color_tint ();
+	const glm::vec4 & point_object::get_color () const {
+		return m_color;
 	}
 
-	void point_object::set_color_modifier (const glm::vec4 & color) {
-		m_billboard.set_color_tint (color);
+	const glm::vec4 & point_object::get_select_color () const {
+		return m_selected_color;
+	}
+
+	void point_object::set_color (const glm::vec4 & color) {
+		if (!is_selected ()) {
+			m_billboard.set_color_tint (color);
+		}
+
+		m_color = color;
+	}
+
+	void point_object::set_select_color (const glm::vec4 & color) {
+		if (is_selected ()) {
+			m_billboard.set_color_tint (color);
+		}
+
+		m_selected_color = color;
 	}
 
 	point_object::point_object (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<texture_t> texture) :
 		scene_obj_t (scene, "point", true, false, false),
 		m_billboard (shader, texture) { 
+
+		m_color = { 1.0f, 1.0f, 1.0f, 1.0f };
+		m_selected_color = { 0.960f, 0.646f, 0.0192f, 1.0f };
 
 		m_billboard.set_size ({ 16.0f, 16.0f });
 	}
@@ -47,9 +66,9 @@ namespace mini {
 
 	void point_object::t_on_selection (bool selected) {
 		if (selected) {
-			m_billboard.set_color_tint (glm::vec4 (0.960f, 0.646f, 0.0192f, 1.0f));
+			m_billboard.set_color_tint (m_selected_color);
 		} else {
-			m_billboard.set_color_tint (glm::vec4 (1.0f, 1.0f, 1.0f, 1.0f));
+			m_billboard.set_color_tint (m_color);
 		}
 	}
 }

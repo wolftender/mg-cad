@@ -1,4 +1,6 @@
 #include <deque>
+#include <sstream>
+#include <iomanip>
 
 #include "bspline.hpp"
 #include "gui.hpp"
@@ -21,12 +23,49 @@ namespace mini {
 	bspline_curve::~bspline_curve () { }
 
 	void bspline_curve::configure () {
-		if (ImGui::CollapsingHeader ("B-Spline Settings")) {
+		if (ImGui::CollapsingHeader ("B-Spline Curve")) {
 			gui::prefix_label ("Show Bernstein: ", 250.0f);
 			ImGui::Checkbox ("##show_bezier", &m_show_bezier);
+
+			if (m_show_bezier) {
+				ImGui::Text ("Bernstein Points:");
+				// point list
+				if (ImGui::BeginListBox ("##bezierlist", ImVec2 (-1.0f, 0.0f))) {
+					std::stringstream name;
+					int index = 0;;
+
+					for (auto & point_wrapper : m_bezier_points) {
+						auto & point = point_wrapper.point;
+						const auto & pos = point->get_translation ();
+
+						name.str (std::string ());
+
+						if (point_wrapper.selected) {
+							name << "*";
+						}
+
+						name << "point " << (index++) << " (" << std::setprecision (2) << pos.x << "; " << std::setprecision (2) << pos.y << ")";
+						
+						if (ImGui::Selectable (name.str ().c_str (), &point_wrapper.selected)) {
+							bool val = point_wrapper.selected;
+
+							for (auto & p : m_bezier_points) {
+								p.selected = false;
+								p.point->set_selected (false);
+							}
+
+							point_wrapper.selected = val;
+							point_wrapper.point->set_selected (val);
+						}
+					}
+
+					ImGui::EndListBox ();
+				}
+			}
+
+			ImGui::NewLine ();
 		}
 
-		ImGui::NewLine ();
 		curve_base::configure ();
 	}
 
@@ -51,7 +90,7 @@ namespace mini {
 		// draw the control points if asked to
 		if (m_show_bezier) {
 			for (const auto & point : m_bezier_points) {
-				context.draw (point, point->get_matrix ());
+				context.draw (point.point, point.point->get_matrix ());
 			}
 		}
 	}
@@ -67,6 +106,8 @@ namespace mini {
 
 		std::deque<std::shared_ptr<point_object>> point_q;
 		std::shared_ptr<point_object> point;
+
+		point_ptr prev_end = nullptr;
 
 		for (const auto& point_wrapper : points) {
 			point = point_wrapper.point.lock ();
@@ -94,25 +135,39 @@ namespace mini {
 				glm::vec4 curve_y_bz = BSPLINE_TO_BEZIER * curve_y_bs;
 				glm::vec4 curve_z_bz = BSPLINE_TO_BEZIER * curve_z_bs;
 
-				auto p1 = std::make_shared<point_object>(get_scene (), m_point_shader, m_point_texture);
-				auto p2 = std::make_shared<point_object>(get_scene (), m_point_shader, m_point_texture);
-				auto p3 = std::make_shared<point_object>(get_scene (), m_point_shader, m_point_texture);
-				auto p4 = std::make_shared<point_object>(get_scene (), m_point_shader, m_point_texture);
+				point_ptr p1 = nullptr;
+				if (prev_end) {
+					p1 = prev_end;
+				} else {
+					p1 = std::make_shared<point_object> (get_scene (), m_point_shader, m_point_texture);
+					p1->set_translation ({ curve_x_bz[0], curve_y_bz[0], curve_z_bz[0] });
+					p1->set_color ({ 0.0f, 0.0f, 1.0f, 1.0f });
+					p1->set_select_color ({ 0.0f, 1.0f, 0.0f, 1.0f });
 
-				p1->set_translation ({ curve_x_bz[0], curve_y_bz[0], curve_z_bz[0] });
+					m_bezier_points.push_back ({ p1, false });
+				}
+
+				point_ptr p2 = std::make_shared<point_object>(get_scene (), m_point_shader, m_point_texture);
+				point_ptr p3 = std::make_shared<point_object>(get_scene (), m_point_shader, m_point_texture);
+				point_ptr p4 = std::make_shared<point_object>(get_scene (), m_point_shader, m_point_texture);
+				
 				p2->set_translation ({ curve_x_bz[1], curve_y_bz[1], curve_z_bz[1] });
 				p3->set_translation ({ curve_x_bz[2], curve_y_bz[2], curve_z_bz[2] });
 				p4->set_translation ({ curve_x_bz[3], curve_y_bz[3], curve_z_bz[3] });
+				
+				p2->set_color ({ 0.0f, 0.0f, 1.0f, 1.0f });
+				p3->set_color ({ 0.0f, 0.0f, 1.0f, 1.0f });
+				p4->set_color ({ 0.0f, 0.0f, 1.0f, 1.0f });
 
-				p1->set_color_modifier ({ 0.0f, 0.0f, 1.0f, 1.0f });
-				p2->set_color_modifier ({ 0.0f, 0.0f, 1.0f, 1.0f });
-				p3->set_color_modifier ({ 0.0f, 0.0f, 1.0f, 1.0f });
-				p4->set_color_modifier ({ 0.0f, 0.0f, 1.0f, 1.0f });
+				p2->set_select_color ({ 0.0f, 1.0f, 0.0f, 1.0f });
+				p3->set_select_color ({ 0.0f, 1.0f, 0.0f, 1.0f });
+				p4->set_select_color ({ 0.0f, 1.0f, 0.0f, 1.0f });
+				
+				m_bezier_points.push_back ({p2, false});
+				m_bezier_points.push_back ({p3, false});
+				m_bezier_points.push_back ({p4, false});
 
-				m_bezier_points.push_back (p1);
-				m_bezier_points.push_back (p2);
-				m_bezier_points.push_back (p3);
-				m_bezier_points.push_back (p4);
+				prev_end = p4;
 
 				m_segments.push_back (std::make_shared<bezier_segment_gpu> (
 					m_shader1, m_shader2, p1, p2, p3, p4
