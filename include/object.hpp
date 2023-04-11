@@ -2,6 +2,7 @@
 #include <functional>
 #include <array>
 #include <set>
+#include <list>
 
 #include "context.hpp"
 #include "algebra.hpp"
