@@ -48,7 +48,10 @@ namespace mini {
 							name << "*";
 						}
 
-						name << "point " << (point_wrapper.index) << " (" << std::setprecision (2) << pos.x << "; " << std::setprecision (2) << pos.y << ")";
+						name << "point " << (point_wrapper.index) << " (" << 
+							std::setprecision (2) << pos.x << "; " << 
+							std::setprecision (2) << pos.y << "; " <<
+							std::setprecision (2) << pos.z << ")";
 						
 						if (ImGui::Selectable (name.str ().c_str (), &point_wrapper.selected)) {
 							m_select_point (point_wrapper);
@@ -77,11 +80,14 @@ namespace mini {
 			}
 		}
 
-		if (m_drag && m_drag_index > 0 && m_drag_index < m_bezier_points.size ()) {
+		if (m_drag && m_drag_index >= 0 && m_drag_index < m_bezier_points.size ()) {
 			t_set_mouse_lock (true);
 
 			point_wrapper & wrapper = m_bezier_points[m_drag_index];
 			point_ptr point = wrapper.point;
+
+			wrapper.selected = true;
+			wrapper.point->set_selected (true);
 
 			const auto & camera = get_scene ().get_camera ();
 

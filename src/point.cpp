@@ -56,7 +56,7 @@ namespace mini {
 			((screen_pos.y + 1.0f) / 2.0f) * data.screen_res.y
 		};
 
-		if (glm::distance (pixel_pos, data.mouse_screen) < 40.0f) {
+		if (glm::distance (pixel_pos, data.mouse_screen) < 25.0f) {
 			hit_pos = get_translation ();
 			return true;
 		}
