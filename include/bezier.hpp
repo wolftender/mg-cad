@@ -106,7 +106,7 @@ namespace mini {
 				}
 			};
 
-			std::list<point_wrapper_t> m_points;
+			std::vector<point_wrapper_t> m_points;
 
 			bool m_queue_curve_rebuild;
 			bool m_auto_extend, m_show_polygon, m_configured;
@@ -132,8 +132,8 @@ namespace mini {
 			curve_base (const curve_base &) = delete;
 			curve_base & operator=(const curve_base &) = delete;
 
-			const std::list<point_wrapper_t> & t_get_points () const;
-			std::list<point_wrapper_t> & t_get_points ();
+			const std::vector<point_wrapper_t> & t_get_points () const;
+			std::vector<point_wrapper_t> & t_get_points ();
 
 			virtual void configure () override;
 

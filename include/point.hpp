@@ -25,4 +25,7 @@ namespace mini {
 		protected:
 			virtual void t_on_selection (bool selected) override;
 	};
+
+	using point_ptr = std::shared_ptr<point_object>;
+	using point_wptr = std::weak_ptr<point_object>;
 }

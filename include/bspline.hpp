@@ -21,6 +21,7 @@ namespace mini {
 			struct point_wrapper {
 				point_ptr point;
 				bool selected;
+				int index;
 			};
 
 			std::vector<std::shared_ptr<bezier_segment_base>> m_segments;
@@ -30,6 +31,11 @@ namespace mini {
 			std::shared_ptr<texture_t> m_point_texture;
 
 			bool m_show_bezier;
+
+			// dragging points
+			bool m_drag;
+			int m_drag_index;
+			glm::vec3 m_drag_start;
 
 		public:
 			bspline_curve (scene_controller_base & scene, std::shared_ptr<shader_t> shader1, 
@@ -50,5 +56,9 @@ namespace mini {
 
 		private:
 			void m_select_point (point_wrapper & wrapper);
+			void m_begin_drag (point_wrapper & wrapper);
+			void m_end_drag ();
+
+			void m_calc_deboor_points (int segment);
 	};
 }

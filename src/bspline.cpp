@@ -19,6 +19,9 @@ namespace mini {
 
 		m_show_bezier = false;
 
+		m_drag = false;
+		m_drag_index = -1;
+
 		rebuild_curve ();
 	}
 
@@ -34,7 +37,6 @@ namespace mini {
 				// point list
 				if (ImGui::BeginListBox ("##bezierlist", ImVec2 (-1.0f, 0.0f))) {
 					std::stringstream name;
-					int index = 0;;
 
 					for (auto & point_wrapper : m_bezier_points) {
 						auto & point = point_wrapper.point;
@@ -46,7 +48,7 @@ namespace mini {
 							name << "*";
 						}
 
-						name << "point " << (index++) << " (" << std::setprecision (2) << pos.x << "; " << std::setprecision (2) << pos.y << ")";
+						name << "point " << (point_wrapper.index) << " (" << std::setprecision (2) << pos.x << "; " << std::setprecision (2) << pos.y << ")";
 						
 						if (ImGui::Selectable (name.str ().c_str (), &point_wrapper.selected)) {
 							m_select_point (point_wrapper);
@@ -74,6 +76,67 @@ namespace mini {
 				segment->integrate (delta_time);
 			}
 		}
+
+		if (m_drag && m_drag_index > 0 && m_drag_index < m_bezier_points.size ()) {
+			t_set_mouse_lock (true);
+
+			point_wrapper & wrapper = m_bezier_points[m_drag_index];
+			point_ptr point = wrapper.point;
+
+			const auto & camera = get_scene ().get_camera ();
+
+			glm::vec3 plane_normal = normalize (camera.get_position () - camera.get_target ());
+			glm::vec3 direction = get_scene ().get_mouse_direction ();
+
+			float nt = glm::dot ((m_drag_start - camera.get_position ()), plane_normal);
+			float dt = glm::dot (direction, plane_normal);
+
+			point->set_translation ((nt / dt) * direction + camera.get_position ());
+
+			// we need to calculate the new de boor points
+			// to do this we need to first know which segment this point belongs to
+			int left = (wrapper.index - 1) / 3;
+			int right = wrapper.index / 3;
+
+			if (left < 0) {
+				left = right;
+			} else if (right >= m_segments.size ()) {
+				right = left;
+			}
+
+			m_calc_deboor_points (left);
+
+			if (right != left) {
+				m_calc_deboor_points (right);
+			}
+		} else {
+			t_set_mouse_lock (false);
+		}
+	}
+
+	void bspline_curve::m_calc_deboor_points (int segment) {
+		int base = segment * 3;
+		glm::vec3 p0 = m_bezier_points[base + 0].point->get_translation ();
+		glm::vec3 p1 = m_bezier_points[base + 1].point->get_translation ();
+		glm::vec3 p2 = m_bezier_points[base + 2].point->get_translation ();
+		glm::vec3 p3 = m_bezier_points[base + 3].point->get_translation ();
+
+		glm::vec4 curve_x_bz = { p0.x, p1.x, p2.x, p3.x };
+		glm::vec4 curve_y_bz = { p0.y, p1.y, p2.y, p3.y };
+		glm::vec4 curve_z_bz = { p0.z, p1.z, p2.z, p3.z };
+
+		glm::vec4 curve_x_bs = BEZIER_TO_BSPLINE * curve_x_bz;
+		glm::vec4 curve_y_bs = BEZIER_TO_BSPLINE * curve_y_bz;
+		glm::vec4 curve_z_bs = BEZIER_TO_BSPLINE * curve_z_bz;
+
+		const auto & points = t_get_points ();
+
+		for (int i = 0; i < 4; ++i) {
+			auto point = points[segment + i].point.lock ();
+			if (point) {
+				point->set_translation ({ curve_x_bs[i], curve_y_bs[i], curve_z_bs[i] });
+			}
+		}
 	}
 
 	void bspline_curve::render (app_context & context, const glm::mat4x4 & world_matrix) const {
@@ -90,28 +153,36 @@ namespace mini {
 	}
 
 	bool bspline_curve::on_mouse_button (int button, int action, int mods) {
-		if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT) {
-			auto hit_data = get_scene ().get_hit_test_data ();
+		if (button == GLFW_MOUSE_BUTTON_LEFT) {
+			if (action == GLFW_PRESS) {
+				auto hit_data = get_scene ().get_hit_test_data ();
 
-			glm::vec3 cam_pos = get_scene ().get_camera ().get_position ();
-			glm::vec3 hit_pos;
-			float dist, best_dist = 1000000.0f;
+				glm::vec3 cam_pos = get_scene ().get_camera ().get_position ();
+				glm::vec3 hit_pos;
+				float dist, best_dist = 1000000.0f;
 
-			point_wrapper * sel = nullptr;
-			for (auto & point : m_bezier_points) {
-				if (point.point->hit_test (hit_data, hit_pos)) {
-					dist = glm::distance (cam_pos, hit_pos);
-					if (dist < best_dist) {
-						sel = &point;
+				point_wrapper * sel = nullptr;
+				for (auto & point : m_bezier_points) {
+					if (point.point->hit_test (hit_data, hit_pos)) {
+						dist = glm::distance (cam_pos, hit_pos);
+						if (dist < best_dist) {
+							sel = &point;
+						}
 					}
 				}
-			}
 
-			if (sel) {
-				m_select_point (*sel);
-			}
+				if (sel) {
+					m_select_point (*sel);
+					m_begin_drag (*sel);
+				}
 
-			return (sel != nullptr);
+				return (sel != nullptr);
+			} else if (action == GLFW_RELEASE) {
+				if (m_drag) {
+					m_end_drag ();
+					return true;
+				}
+			}
 		}
 
 		return false;
@@ -130,6 +201,7 @@ namespace mini {
 		std::shared_ptr<point_object> point;
 
 		point_ptr prev_end = nullptr;
+		int point_index = 0;
 
 		for (const auto& point_wrapper : points) {
 			point = point_wrapper.point.lock ();
@@ -166,7 +238,7 @@ namespace mini {
 					p1->set_color ({ 0.0f, 0.0f, 1.0f, 1.0f });
 					p1->set_select_color ({ 0.0f, 1.0f, 0.0f, 1.0f });
 
-					m_bezier_points.push_back ({ p1, false });
+					m_bezier_points.push_back ({ p1, false, point_index++ });
 				}
 
 				point_ptr p2 = std::make_shared<point_object>(get_scene (), m_point_shader, m_point_texture);
@@ -185,9 +257,9 @@ namespace mini {
 				p3->set_select_color ({ 0.0f, 1.0f, 0.0f, 1.0f });
 				p4->set_select_color ({ 0.0f, 1.0f, 0.0f, 1.0f });
 				
-				m_bezier_points.push_back ({p2, false});
-				m_bezier_points.push_back ({p3, false});
-				m_bezier_points.push_back ({p4, false});
+				m_bezier_points.push_back ({ p2, false, point_index++ });
+				m_bezier_points.push_back ({ p3, false, point_index++ });
+				m_bezier_points.push_back ({ p4, false, point_index++ });
 
 				prev_end = p4;
 
@@ -206,5 +278,16 @@ namespace mini {
 
 		wrapper.selected = true;
 		wrapper.point->set_selected (true);
+	}
+
+	void bspline_curve::m_begin_drag (point_wrapper & wrapper) {
+		m_drag = true;
+		m_drag_index = wrapper.index;
+		m_drag_start = wrapper.point->get_translation ();
+	}
+
+	void bspline_curve::m_end_drag () {
+		m_drag = false;
+		m_drag_index = -1;
 	}
 }

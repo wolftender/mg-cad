@@ -346,11 +346,11 @@ namespace mini {
 		}
 	}
 
-	const std::list<curve_base::point_wrapper_t> & curve_base::t_get_points () const {
+	const std::vector<curve_base::point_wrapper_t> & curve_base::t_get_points () const {
 		return m_points;
 	}
 
-	std::list<curve_base::point_wrapper_t> & curve_base::t_get_points () {
+	std::vector<curve_base::point_wrapper_t> & curve_base::t_get_points () {
 		return m_points;
 	}
 

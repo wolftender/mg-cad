@@ -22,7 +22,7 @@ namespace mini {
 	scene_obj_t::~scene_obj_t () { }
 
 	void scene_obj_t::t_set_mouse_lock (bool lock) {
-		m_mouse_lock = true;
+		m_mouse_lock = lock;
 	}
 
 	void scene_obj_t::m_listen (signal_event_t sig, std::shared_ptr<scene_obj_t> listener) {
