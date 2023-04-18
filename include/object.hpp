@@ -4,6 +4,8 @@
 #include <set>
 #include <list>
 
+#include <glm/gtx/quaternion.hpp>
+
 #include "context.hpp"
 #include "algebra.hpp"
 #include "event.hpp"
@@ -85,8 +87,10 @@ namespace mini {
 			std::string m_name;
 
 			glm::vec3 m_translation;
-			glm::vec3 m_euler_angles;
 			glm::vec3 m_scale;
+
+			glm::quat m_rotation;
+			glm::vec3 m_euler_angles;
 
 			bool m_rotatable, m_movable, m_scalable;
 			bool m_selected, m_disposed;
@@ -113,6 +117,7 @@ namespace mini {
 			const std::string & get_name () const;
 
 			const glm::vec3 & get_translation () const;
+			const glm::quat & get_rotation () const;
 			const glm::vec3 & get_euler_angles () const;
 			const glm::vec3 & get_scale () const;
 
@@ -129,12 +134,13 @@ namespace mini {
 			void dispose ();
 
 			void set_translation (const glm::vec3 & translation);
+			void set_rotation (const glm::quat & rotation);
 			void set_euler_angles (const glm::vec3 & euler_angles);
 			void set_scale (const glm::vec3 & scale);
 			void set_selected (bool selected);
 			void set_name (const std::string & name);
 
-			glm::mat4x4 compose_matrix (const glm::vec3 & translation, const glm::vec3 & euler_angles, const glm::vec3 & scale) const;
+			glm::mat4x4 compose_matrix (const glm::vec3 & translation, const glm::quat & quaternion, const glm::vec3 & scale) const;
 			glm::mat4x4 get_matrix () const;
 
 			scene_obj_t (scene_controller_base & scene, const std::string & type_name, bool movable = true, bool rotatable = true, bool scalable = true);

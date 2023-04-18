@@ -6,9 +6,10 @@ namespace mini {
 		m_scene (scene) {
 		m_type_name = type_name;
 
-		m_euler_angles = { 0.0f, 0.0f, 0.0f };
+		m_rotation = { 1.0f, 0.0f, 0.0f, 0.0f };
 		m_translation = { 0.0f, 0.0f, 0.0f };
 		m_scale = { 1.0f, 1.0f, 1.0f };
+		m_euler_angles = { 0.0f, 0.0f, 0.0f };
 
 		m_movable = movable;
 		m_rotatable = rotatable;
@@ -164,7 +165,15 @@ namespace mini {
 	}
 
 	void scene_obj_t::set_euler_angles (const glm::vec3 & euler_angles) {
+		glm::quat rotation = { 1.0f, 0.0f, 0.0f, 0.0f };
+
+		rotation = rotation * glm::angleAxis (euler_angles[2], glm::vec3 { 0.0f, 0.0f, 1.0f });
+		rotation = rotation * glm::angleAxis (euler_angles[1], glm::vec3 { 0.0f, 1.0f, 0.0f });
+		rotation = rotation * glm::angleAxis (euler_angles[0], glm::vec3 { 1.0f, 0.0f, 0.0f });
+
 		m_euler_angles = euler_angles;
+		m_rotation = rotation;
+
 		m_notify (signal_event_t::rotated);
 	}
 
@@ -186,7 +195,7 @@ namespace mini {
 		m_name = name;
 	}
 
-	glm::mat4x4 scene_obj_t::compose_matrix (const glm::vec3 & translation, const glm::vec3 & euler_angles, const glm::vec3 & scale) const {
+	glm::mat4x4 scene_obj_t::compose_matrix (const glm::vec3 & translation, const glm::quat & quaternion, const glm::vec3 & scale) const {
 		glm::mat4x4 world (1.0f);
 
 		if (m_movable) {
@@ -195,12 +204,7 @@ namespace mini {
 		}
 
 		if (m_rotatable) {
-			//world = glm::rotate (world, euler_angles[2], { 0.0f, 0.0f, 1.0f });
-			//world = glm::rotate (world, euler_angles[1], { 0.0f, 1.0f, 0.0f });
-			//world = glm::rotate (world, euler_angles[0], { 1.0f, 0.0f, 0.0f });
-			world = world * make_rotation_z (euler_angles[2]);
-			world = world * make_rotation_y (euler_angles[1]);
-			world = world * make_rotation_x (euler_angles[0]);
+			world = world * glm::toMat4 (m_rotation);
 		}
 
 		if (m_scalable) {
@@ -212,7 +216,7 @@ namespace mini {
 	}
 
 	glm::mat4x4 scene_obj_t::get_matrix () const {
-		return compose_matrix (m_translation, m_euler_angles, m_scale);
+		return compose_matrix (m_translation, m_rotation, m_scale);
 	}
 
 	void scene_obj_t::integrate (float delta_time) { }
@@ -228,6 +232,7 @@ namespace mini {
 			if (m_rotatable) {
 				if (gui::vector_editor ("Rotation", m_euler_angles)) {
 					m_notify (signal_event_t::rotated);
+					set_euler_angles (m_euler_angles);
 				}
 			}
 			
@@ -243,8 +248,19 @@ namespace mini {
 		return false;
 	}
 
+	const glm::quat & scene_obj_t::get_rotation () const {
+		return m_rotation;
+	}
+
 	bool scene_obj_t::is_mouse_lock () const {
 		return m_mouse_lock;
+	}
+
+	void scene_obj_t::set_rotation (const glm::quat & rotation) {
+		m_rotation = rotation;
+		m_euler_angles = glm::eulerAngles (m_rotation);
+
+		m_notify (signal_event_t::rotated);
 	}
 
 	const object_serializer_base & scene_obj_t::get_serializer () const {

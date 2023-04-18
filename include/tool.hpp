@@ -87,7 +87,7 @@ namespace mini {
 
 	class rotation_tool : public tool_base {
 		private:
-			glm::vec3 m_original_rotation;
+			glm::quat m_original_rotation;
 			std::shared_ptr<scene_obj_t> m_selection;
 
 			axis_t m_axis_lock;

@@ -164,10 +164,10 @@ namespace mini {
 		auto selection = get_app ().get_group_selection ();
 
 		if (selection) {
-			m_original_rotation = selection->get_euler_angles ();
+			m_original_rotation = selection->get_rotation ();
 			m_selection = selection;
 		} else {
-			m_original_rotation = { 0.0f, 0.0f, 0.0f };
+			m_original_rotation = { 1.0f, 0.0f, 0.0f, 0.0f };
 			t_dispose ();
 		}
 
@@ -177,7 +177,7 @@ namespace mini {
 
 	rotation_tool::~rotation_tool () {
 		if (m_selection && !m_apply) {
-			m_selection->set_euler_angles (m_original_rotation);
+			m_selection->set_rotation (m_original_rotation);
 		}
 	}
 
@@ -189,17 +189,17 @@ namespace mini {
 		if (action == GLFW_RELEASE) {
 			switch (key) {
 			case KEY_AXIS_X:
-				m_selection->set_euler_angles (m_original_rotation);
+				m_selection->set_rotation (m_original_rotation);
 				m_axis_lock = axis_t::x;
 				break;
 
 			case KEY_AXIS_Y:
-				m_selection->set_euler_angles (m_original_rotation);
+				m_selection->set_rotation (m_original_rotation);
 				m_axis_lock = axis_t::y;
 				break;
 
 			case KEY_AXIS_Z:
-				m_selection->set_euler_angles (m_original_rotation);
+				m_selection->set_rotation (m_original_rotation);
 				m_axis_lock = axis_t::z;
 				break;
 
@@ -244,25 +244,31 @@ namespace mini {
 		float dx = static_cast<float>(curr_pos.x) - static_cast<float>(last_pos.x);
 		float dy = static_cast<float>(curr_pos.y) - static_cast<float>(last_pos.y);
 
-		auto t = m_selection->get_euler_angles ();
+		glm::quat delta_rotation = { 1.0f, 0.0f, 0.0f, 0.0f };
 		constexpr float ang_speed = (1.0f / 360.0f) * glm::pi<float> ();
 
 		switch (m_axis_lock) {
-			case axis_t::x: t[0] += ang_speed * dx; break;
-			case axis_t::y: t[1] += ang_speed * dx; break;
-			case axis_t::z: t[2] += ang_speed * dx; break;
+			case axis_t::x: 
+				delta_rotation = delta_rotation * glm::angleAxis (ang_speed * dx, glm::vec3 { 1.0f, 0.0f, 0.0f }); 
+				break;
+
+			case axis_t::y:
+				delta_rotation = delta_rotation * glm::angleAxis (ang_speed * dx, glm::vec3{ 0.0f, 1.0f, 0.0f });
+				break;
+
+			case axis_t::z: 
+				delta_rotation = delta_rotation * glm::angleAxis (ang_speed * dx, glm::vec3{ 0.0f, 0.0f, 1.0f });
+				break;
+
 			default:
-				t[0] += ang_speed * dx;
-				t[1] -= ang_speed * dy;
+				const auto & camera = get_app ().get_camera ();
+				glm::vec3 axis = glm::normalize (camera.get_target () - camera.get_position ());
+
+				delta_rotation = delta_rotation * glm::angleAxis (ang_speed * dx, axis);
 				break;
 		}
 
-		loop_angle (t[0]);
-		loop_angle (t[1]);
-		loop_angle (t[2]);
-
-		m_selection->set_euler_angles (t);
-
+		m_selection->set_rotation (glm::normalize (delta_rotation) * m_selection->get_rotation ());
 		return true;
 	}
 

@@ -110,7 +110,7 @@ namespace mini {
 
 	void application::group_logic_object::m_reset_group_transforms () {
 		set_translation (glm::vec3 (0.0f));
-		set_euler_angles (glm::vec3 (0.0f));
+		set_rotation (glm::quat {1.0f, 0.0f, 0.0f, 0.0f});
 		set_scale (glm::vec3 (1.0f));
 	}
 
@@ -170,11 +170,11 @@ namespace mini {
 		glm::quat w_orientation;
 
 		glm::decompose (world_matrix, w_scale, w_orientation, w_translate, w_skew, w_projection);
-		w_euler_angles = glm::eulerAngles (w_orientation); // todo: migrate the whole program to quaternions because euler angles are dumb and doodoo
+		// w_euler_angles = glm::eulerAngles (w_orientation); // todo: migrate the whole program to quaternions because euler angles are dumb and doodoo
 
 		// apply all world space transforms
 		item.ptr->object->set_translation (w_translate);
-		item.ptr->object->set_euler_angles (w_euler_angles);
+		item.ptr->object->set_rotation (w_orientation);
 		item.ptr->object->set_scale (w_scale);
 	}
 
