@@ -123,6 +123,10 @@ namespace mini {
 			glm::vec3 m_camera_target;
 			offset_t m_vp_mouse_offset;
 
+			// currently saved project
+			std::string m_project_path;
+			bool m_is_saved;
+
 		public:
 			// api for tools
 			float get_cam_yaw () const;
@@ -212,6 +216,15 @@ namespace mini {
 			void m_select_object (std::shared_ptr<object_wrapper_t> object_wrapper);
 			void m_group_select_add (std::shared_ptr<object_wrapper_t> object_wrapper);
 			void m_reset_selection ();
+
+			// serialize/deserialize
+			bool m_serialize_scene (std::string & serialized) const;
+			bool m_deserialize_scene (const std::string & data);
+
+			void m_new_project ();
+			void m_save_scene_as ();
+			void m_save_scene ();
+			void m_load_scene ();
 
 };
 }

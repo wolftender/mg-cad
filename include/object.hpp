@@ -7,6 +7,7 @@
 #include "context.hpp"
 #include "algebra.hpp"
 #include "event.hpp"
+#include "serializer.hpp"
 
 namespace mini {
 	struct hit_test_data_t {
@@ -64,7 +65,8 @@ namespace mini {
 			virtual selected_object_iter_ptr get_selected_objects () = 0;
 	};
 
-	class scene_obj_t : public graphics_obj_t, public event_listener_base, public std::enable_shared_from_this<scene_obj_t> {
+	class scene_obj_t : 
+		public graphics_obj_t, public event_listener_base, public std::enable_shared_from_this<scene_obj_t> {
 		public:
 			enum class signal_event_t {
 				moved		= 0,
@@ -147,6 +149,9 @@ namespace mini {
 			virtual void integrate (float delta_time);
 			virtual void configure ();
 			virtual bool hit_test (const hit_test_data_t & data, glm::vec3 & hit_pos) const;
+			
+			// object serialization
+			virtual const object_serializer_base & get_serializer () const;
 
 		protected:
 			virtual void t_on_selection (bool select) { }

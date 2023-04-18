@@ -149,6 +149,7 @@
     <ClInclude Include="include\gui.hpp" />
     <ClInclude Include="include\object.hpp" />
     <ClInclude Include="include\point.hpp" />
+    <ClInclude Include="include\serializer.hpp" />
     <ClInclude Include="include\shader.hpp" />
     <ClInclude Include="include\store.hpp" />
     <ClInclude Include="include\texture.hpp" />
@@ -172,6 +173,7 @@
     <ClCompile Include="src\grid.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\point.cpp" />
+    <ClCompile Include="src\serializer.cpp" />
     <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\store.cpp" />
     <ClCompile Include="src\texture.cpp" />

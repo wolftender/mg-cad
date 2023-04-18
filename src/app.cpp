@@ -2,10 +2,15 @@
 #include <iostream>
 #include <sstream>
 
+#include <nfd.h>
+
 #include "gui.hpp"
 #include "app.hpp"
+#include "serializer.hpp"
 
 namespace mini {
+	constexpr const std::string_view app_title = "modelowanie geometryczne 1";
+
 	application::object_wrapper_t::object_wrapper_t (std::shared_ptr<scene_obj_t> o, const std::string & name) : object (o), name (name), selected (false) {
 		tmp_name = name;
 		destroy = false;
@@ -453,7 +458,7 @@ namespace mini {
 	}
 
 	application::application () : 
-		app_window (1200, 800, "modelowanie geometryczne 1"), 
+		app_window (1200, 800, std::string (app_title)),
 		m_context (video_mode_t (1200, 800)) {
 
 		m_cam_pitch = 0.0f;
@@ -484,7 +489,8 @@ namespace mini {
 		m_selected_object = nullptr;
 		m_selected_group = std::make_shared<group_logic_object> (*this);
 
-		// m_add_object ("torus", std::make_shared<torus_object> (m_mesh_shader, m_alt_mesh_shader, 1.0f, 3.0f));
+		// default is not saved
+		m_is_saved = false;
 	}
 
 	void application::t_integrate (float delta_time) {
@@ -618,14 +624,64 @@ namespace mini {
 	}
 
 	void application::m_draw_main_menu () {
+		ImGui::PushStyleVar (ImGuiStyleVar_WindowPadding, ImVec2 (10.0f, 10.0f));
+
 		if (ImGui::BeginMenuBar ()) {
 			if (ImGui::BeginMenu ("File")) {
-				ImGui::MenuItem ("Open");
+				if (ImGui::MenuItem ("New", "Ctrl + N", nullptr, true)) {
+					m_new_project ();
+				}
+
+				ImGui::Separator ();
+
+				if (ImGui::MenuItem ("Open", "Ctrl + O", nullptr, true)) {
+					m_load_scene ();
+				}
+
+				ImGui::Separator ();
+
+				if (ImGui::MenuItem ("Save As...", "Ctrl + Shift + S", nullptr, true)) {
+					m_save_scene_as ();
+				}
+
+				if (ImGui::MenuItem ("Save", "Ctrl + S", nullptr, m_is_saved)) {
+					m_save_scene ();
+				}
+
+				ImGui::EndMenu ();
+			}
+
+			if (ImGui::BeginMenu ("Edit")) {
+				if (ImGui::MenuItem ("Clear Selection", "Esc", nullptr, true)) {
+					m_reset_selection ();
+				}
+
+				bool selected_objects = (m_selected_group->group_size () > 0);
+
+				if (ImGui::MenuItem ("Delete Objects", "Delete", nullptr, selected_objects)) {
+					m_destroy_object ();
+				}
+
+				ImGui::Separator ();
+
+				if (ImGui::MenuItem ("Translate", "T", nullptr, selected_objects)) {
+					m_selected_tool = std::make_shared<translation_tool> (*this);
+				}
+
+				if (ImGui::MenuItem ("Rotate", "R", nullptr, selected_objects)) {
+					m_selected_tool = std::make_shared<rotation_tool> (*this);
+				}
+
+				if (ImGui::MenuItem ("Scale", "S", nullptr, selected_objects)) {
+					m_selected_tool = std::make_shared<scale_tool> (*this);
+				}
+
 				ImGui::EndMenu ();
 			}
 		}
 
 		ImGui::EndMenuBar ();
+		ImGui::PopStyleVar (1);
 	}
 
 	void application::m_draw_main_window () {
@@ -997,6 +1053,80 @@ namespace mini {
 		for (auto & object : m_objects) {
 			object->selected = false;
 		}
+	}
+
+	bool application::m_serialize_scene (std::string & serialized) const {
+		scene_serializer serializer;
+
+		for (int i = 0; i < m_objects.size (); ++i) {
+			serializer.add_object (i, m_objects[i]->object);
+		}
+
+		serialized = serializer.get_data ();
+		return true;
+	}
+
+	bool application::m_deserialize_scene (const std::string & data) {
+		return false;
+	}
+
+	void application::m_new_project () {
+		m_reset_selection ();
+		m_selected_tool = nullptr;
+		
+		m_objects.clear ();
+		m_project_path.clear ();
+
+		set_cursor_pos ({ 0.0f, 0.0f, 0.0f });
+
+		m_is_saved = false;
+		m_cam_pitch = 0.0f;
+		m_cam_yaw = 0.0f;
+		m_distance = 10.0f;
+		m_grid_spacing = 1.0f;
+		m_grid_enabled = true;
+
+		set_title (std::string (app_title));
+	}
+
+	void application::m_save_scene_as () {
+		constexpr const nfdchar_t* filters = "json";
+		nfdchar_t * out_path = nullptr;
+
+		nfdresult_t result = NFD_SaveDialog (filters, nullptr, &out_path);
+
+		if (result == NFD_OKAY) {
+			std::string path = std::string (out_path, strlen(out_path));
+			
+			m_is_saved = true;
+			m_project_path = path;
+
+			set_title (std::string (app_title) + " - " + m_project_path);
+
+			m_save_scene ();
+			free (out_path);
+		}
+	}
+
+	void application::m_save_scene () {
+		if (m_is_saved) {
+			std::string serialized;
+			
+			if (m_serialize_scene (serialized)) {
+				std::ofstream fs (m_project_path);
+
+				if (fs) {
+					fs << serialized;
+				} else {
+					std::cerr << "failed to open file " << m_project_path << std::endl;
+				}
+			} else {
+				std::cerr << "failed to serialize scene" << std::endl;
+			}
+		}
+	}
+
+	void application::m_load_scene () {
 	}
 
 	void application::add_object (const std::string & name, std::shared_ptr<scene_obj_t> object) {

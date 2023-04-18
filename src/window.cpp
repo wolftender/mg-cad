@@ -80,6 +80,7 @@ namespace mini {
 
 	void app_window::set_title (const std::string & title) {
 		m_title = title;
+		glfwSetWindowTitle (m_window.get (), m_title.c_str ());
 	}
 
 	app_window::app_window (uint32_t width, uint32_t height, const std::string & title) {

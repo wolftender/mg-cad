@@ -247,6 +247,10 @@ namespace mini {
 		return m_mouse_lock;
 	}
 
+	const object_serializer_base & scene_obj_t::get_serializer () const {
+		return empty_object_serializer::get_instance ();
+	}
+
 	hit_test_data_t::hit_test_data_t (const mini::camera & cam, const glm::vec2 & mouse_screen, 
 		const glm::vec2 & screen_res, const glm::vec3 & mouse_ray) :
 		camera (cam), 
