@@ -248,7 +248,7 @@ namespace mini {
 	}
 
 	const object_serializer_base & scene_obj_t::get_serializer () const {
-		return empty_object_serializer::get_instance ();
+		return generic_object_serializer::get_instance ();
 	}
 
 	hit_test_data_t::hit_test_data_t (const mini::camera & cam, const glm::vec2 & mouse_screen, 

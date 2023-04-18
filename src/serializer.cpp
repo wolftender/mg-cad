@@ -5,6 +5,15 @@
 #include "point.hpp"
 
 namespace mini {
+	inline json s_serialize_data (const glm::vec3 & vec) {
+		json v;
+		v["x"] = vec.x;
+		v["y"] = vec.y;
+		v["z"] = vec.z;
+
+		return v;
+	}
+
 	scene_serializer::scene_serializer () { }
 	scene_serializer::~scene_serializer () { }
 
@@ -17,7 +26,7 @@ namespace mini {
 				json point_s;
 				
 				point_s["id"] = point.id;
-				point_s["position"] = m_serialize_data (point.object->get_translation ());
+				point_s["position"] = s_serialize_data (point.object->get_translation ());
 
 				points.push_back (point_s);
 			}
@@ -63,15 +72,6 @@ namespace mini {
 		m_points.clear ();
 	}
 
-	json scene_serializer::m_serialize_data (const glm::vec3 & vec) const {
-		json v;
-		v["x"] = vec.x;
-		v["y"] = vec.y;
-		v["z"] = vec.z;
-
-		return v;
-	}
-
 	// basic serializer
 	json empty_object_serializer::serialize (int id, std::shared_ptr<scene_obj_t> object) const {
 		json j;
@@ -79,6 +79,28 @@ namespace mini {
 		j["id"] = id;
 		j["objectType"] = "unknown";
 		j["name"] = object->get_name ();
+
+		return j;
+	}
+
+	json generic_object_serializer::serialize (int id, std::shared_ptr<scene_obj_t> object) const {
+		json j;
+
+		j[id] = id;
+		j["objectType"] = "unknown";
+		j["name"] = object->get_name ();
+		
+		if (object->is_movable ()) {
+			j["position"] = s_serialize_data (object->get_translation ());
+		}
+
+		if (object->is_rotatable ()) {
+			j["rotation"] = s_serialize_data (object->get_euler_angles ());
+		}
+		
+		if (object->is_scalable ()) {
+			j["scale"] = s_serialize_data (object->get_scale ());
+		}
 
 		return j;
 	}

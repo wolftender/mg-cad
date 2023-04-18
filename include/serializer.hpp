@@ -43,9 +43,6 @@ namespace mini {
 			bool add_object (int id, std::shared_ptr<scene_obj_t> object);
 
 			void reset ();
-
-		private:
-			json m_serialize_data (const glm::vec3 & vec) const;
 	};
 
 	class scene_deserializer {
@@ -69,6 +66,16 @@ namespace mini {
 		public:
 			static const empty_object_serializer & get_instance () {
 				static empty_object_serializer serializer;
+				return serializer;
+			}
+
+			virtual json serialize (int id, std::shared_ptr<scene_obj_t> object) const override;
+	};
+
+	class generic_object_serializer : public object_serializer_base {
+		public:
+			static const generic_object_serializer & get_instance () {
+				static generic_object_serializer serializer;
 				return serializer;
 			}
 
