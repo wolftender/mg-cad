@@ -19,5 +19,6 @@ namespace mini {
 
 			virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override;
 			virtual void configure () override;
+			virtual const object_serializer_base & get_serializer () const;
 	};
 }

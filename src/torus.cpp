@@ -1,5 +1,6 @@
 #include "torus.hpp"
 #include "gui.hpp"
+#include "serializer.hpp"
 
 #include <iostream>
 
@@ -71,13 +72,57 @@ namespace mini {
 		}
 
 		if (changed) {
-			gui::clamp (m_outer_radius, 0.2f, 30.0f);
-			gui::clamp (m_inner_radius, 0.1f, m_outer_radius - 0.5f);
-			gui::clamp (m_div_u, 4, 100);
-			gui::clamp (m_div_v, 4, 100);
-
-			m_generate_geometry ();
+			m_rebuild ();
 		}
+	}
+
+	const object_serializer_base & torus_object::get_serializer () const {
+		return generic_object_serializer<torus_object>::get_instance ();
+	}
+
+	int torus_object::get_div_u () const {
+		return m_div_u;
+	}
+
+	int torus_object::get_div_v () const {
+		return m_div_v;
+	}
+
+	float torus_object::get_inner_radius () const {
+		return m_inner_radius;
+	}
+
+	float torus_object::get_outer_radius () const {
+		return m_outer_radius;
+	}
+
+	void torus_object::set_div_u (int div_u) {
+		m_div_u = div_u;
+		m_rebuild ();
+	}
+
+	void torus_object::set_div_v (int div_v) {
+		m_div_v = div_v;
+		m_rebuild ();
+	}
+
+	void torus_object::set_inner_radius (float r) {
+		m_inner_radius = r;
+		m_rebuild ();
+	}
+
+	void torus_object::set_outer_radius (float r) {
+		m_outer_radius = r;
+		m_rebuild ();
+	}
+
+	void torus_object::m_rebuild () {
+		gui::clamp (m_outer_radius, 0.2f, 30.0f);
+		gui::clamp (m_inner_radius, 0.1f, m_outer_radius - 0.5f);
+		gui::clamp (m_div_u, 4, 100);
+		gui::clamp (m_div_v, 4, 100);
+
+		m_generate_geometry ();
 	}
 
 	void torus_object::m_generate_geometry () {

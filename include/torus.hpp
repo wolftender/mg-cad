@@ -31,8 +31,22 @@ namespace mini {
 
 			virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override;
 			virtual void configure () override;
+			virtual const object_serializer_base & get_serializer () const;
+
+			int get_div_u () const;
+			int get_div_v () const;
+
+			float get_inner_radius () const;
+			float get_outer_radius () const;
+
+			void set_div_u (int div_u);
+			void set_div_v (int div_v);
+
+			void set_inner_radius (float r);
+			void set_outer_radius (float r);
 
 		private:
+			void m_rebuild ();
 			void m_generate_geometry ();
 			void m_build_geometry (const std::vector<float> & positions, const std::vector<float> & uv, const std::vector<GLuint> & indices);
 			void m_free_geometry ();

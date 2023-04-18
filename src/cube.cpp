@@ -1,4 +1,5 @@
 #include "cube.hpp"
+#include "serializer.hpp"
 
 namespace mini {
 	constexpr std::array<float, 72> cube_positions = { 
@@ -175,5 +176,9 @@ namespace mini {
 	void cube_object::configure () {
 		// basic configuration properties
 		scene_obj_t::configure ();
+	}
+
+	const object_serializer_base & cube_object::get_serializer () const {
+		return generic_object_serializer<cube_object>::get_instance ();
 	}
 }
