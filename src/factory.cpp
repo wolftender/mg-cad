@@ -7,6 +7,7 @@
 #include "point.hpp"
 #include "bezier.hpp"
 #include "bspline.hpp"
+#include "interpolate.hpp"
 
 namespace mini {
 	object_factory::object_factory_impl_t::object_factory_impl_t (object_ctor_t c, const std::string & n, const std::string & d) :
@@ -39,6 +40,10 @@ namespace mini {
 
 		m_factories.push_back ({
 			&object_factory::make_bspline_c2, "curve c2", "a c2 bspline curve"
+		});
+
+		m_factories.push_back ({
+			&object_factory::make_interpolating_c2, "interpolating c2", "an interpolating c2 spline curve"
 		});
 	}
 
@@ -114,6 +119,14 @@ namespace mini {
 			store->get_line_shader (),
 			store->get_billboard_s_shader (),
 			store->get_point_texture ()
+		);
+	}
+
+	std::shared_ptr<scene_obj_t> object_factory::make_interpolating_c2 (scene_controller_base & scene, std::shared_ptr<const resource_store> store) {
+		return std::make_shared<interpolating_curve> (
+			scene,
+			store->get_line_shader (),
+			store->get_line_shader ()
 		);
 	}
 }

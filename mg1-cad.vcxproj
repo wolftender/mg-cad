@@ -147,6 +147,7 @@
     <ClInclude Include="include\factory.hpp" />
     <ClInclude Include="include\grid.hpp" />
     <ClInclude Include="include\gui.hpp" />
+    <ClInclude Include="include\interpolate.hpp" />
     <ClInclude Include="include\object.hpp" />
     <ClInclude Include="include\point.hpp" />
     <ClInclude Include="include\serializer.hpp" />
@@ -164,6 +165,7 @@
     <ClCompile Include="src\factory.cpp" />
     <ClCompile Include="src\group.cpp" />
     <ClCompile Include="src\gui.cpp" />
+    <ClCompile Include="src\interpolate.cpp" />
     <ClCompile Include="src\object.cpp" />
     <ClCompile Include="src\algebra.cpp" />
     <ClCompile Include="src\app.cpp" />
