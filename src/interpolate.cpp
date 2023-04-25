@@ -7,6 +7,12 @@ namespace mini {
 		m_shader1 = shader1;
 		m_shader2 = shader2;
 
+		m_vao_poly = 0;
+		m_vao = 0;
+		m_pos_buffer_poly = 0;
+		m_pos_buffer = 0;
+		m_ready = false;
+
 		rebuild_curve ();
 	}
 
@@ -23,20 +29,38 @@ namespace mini {
 	}
 
 	void interpolating_curve::render (app_context & context, const glm::mat4x4 & world_matrix) const {
-		
+		if (m_ready) {
+			glBindVertexArray (m_vao);
+			m_bind_shader (context, m_shader1, world_matrix);
+
+			m_shader1->set_uniform ("u_start_t", 0.0f);
+			m_shader1->set_uniform ("u_end_t", 0.5f);
+			glDrawArrays (GL_LINES_ADJACENCY, 0, m_bezier_buffer.size ());
+
+			m_shader1->set_uniform ("u_start_t", 0.5f);
+			m_shader1->set_uniform ("u_end_t", 1.0f);
+			glDrawArrays (GL_LINES_ADJACENCY, 0, m_bezier_buffer.size ());
+
+			if (is_show_polygon ()) {
+				glBindVertexArray (m_vao_poly);
+				m_bind_shader (context, m_shader2, world_matrix);
+				glDrawArrays (GL_LINES, 0, m_bezier_buffer_poly.size ());
+			}
+
+			glBindVertexArray (0);
+		}
 	}
 
 	void interpolating_curve::t_rebuild_curve () {
-		/*float_array_t w1 = {0, 1, 2, 3, 4};
-		float_array_t w2 = { 10, 20, 30, 40, 50 };
-		float_array_t w3 = { 33, 44, 55, 66, 0 };
-		float_array_t w4 = { 77, 88, 99, 111, 222 };
-		auto w5 = m_solve_tridiag (w1, w2, w3, w4);*/
-
 		const auto & points = t_get_points ();
-		m_bezier_points.clear ();
 
-		if (points.size () < 2) {
+		m_bezier_buffer_poly.clear ();
+		m_bezier_buffer.clear ();
+
+		m_destroy_buffers ();
+		m_ready = false;
+
+		if (points.size () < 4) {
 			return;
 		}
 
@@ -75,9 +99,16 @@ namespace mini {
 			P[i] = ptr->get_translation ();
 		}
 
+		/*P[0] = {0, 1, 0};
+		P[1] = { 1, 0, 0 };
+		P[2] = { 3, -1, 0 };
+		P[3] = { 4, 1, 0 };
+		P[4] = { 2, 2, 0 };*/
+
 		// calculate d coefficients
 		for (int i = 0; i < n + 1; ++i) {
-			d[i] = glm::length (P[i + 1] - P[i]);
+			//d[i] = glm::length (P[i + 1] - P[i]);
+			d[i] = 1.0f;
 		}
 
 		// remember that now d_i from lecture is actually d[i+1] in the code!! :D
@@ -92,7 +123,7 @@ namespace mini {
 
 		// the d coefficients are vector equation
 		for (int dim = 0; dim < 3; ++dim) {
-			for (int i = 0; i < n - 1; ++i) {
+			for (int i = 0; i < n; ++i) {
 				float num1 = (P[i + 2][dim] - P[i + 1][dim]) / d[i + 1];
 				float num2 = (P[i + 1][dim] - P[i + 0][dim]) / d[i + 0];
 				float den = d[i] + d[i + 1];
@@ -106,10 +137,88 @@ namespace mini {
 		}
 
 		// calculate remaining power basis coordinates
-		for (int i = 0; i < n; ++i) {
+		for (int i = 0; i < n + 1; ++i) {
 			power[i][0] = P[i];
-
 		}
+
+		int i = 0;
+		for (;i < n; ++i) {
+			float di = d[i];
+			power[i][3] = (power[i + 1][2] - power[i][2]) / (3.0f * di);
+			power[i][1] = ((power[i+1][0] - power[i][0]) / di) - (power[i][2] * di) - (power[i][3] * di * di);
+		}
+
+		float di = d[i];
+		power[i][3] = (0.0f - power[i][2]) / (3.0f * di);
+		power[i][1] = ((P[i+1] - power[i][0]) / di) - (power[i][2] * di) - (power[i][3] * di * di);
+
+		// convert to bernstein basis and we're done
+		constexpr const glm::mat4x4 POWER_TO_BERNSTEIN = {
+			1.0f, 1.0f, 1.0f, 1.0f, 
+			0.0f, 1.0f / 3.0f, 2.0f / 3.0f, 1.0f, 
+			0.0f, 0.0f, 1.0f / 3.0f, 1.0f, 
+			0.0f, 0.0f, 0.0f, 1.0f
+		};
+
+		for (int i = 0; i < n + 1; ++i) {
+			for (int dim = 0; dim < 3; ++dim) {
+				glm::vec4 pow_w = { power[i][0][dim], power[i][1][dim], power[i][2][dim], power[i][3][dim] };
+				glm::vec4 bern_w = POWER_TO_BERNSTEIN * pow_w;
+
+				bernstein[i][0][dim] = bern_w[0];
+				bernstein[i][1][dim] = bern_w[1];
+				bernstein[i][2][dim] = bern_w[2];
+				bernstein[i][3][dim] = bern_w[3];
+			}
+		}
+
+		m_bezier_buffer.resize ((n + 1) * 12);
+		m_bezier_buffer_poly.resize ((n + 1) * 18);
+
+		for (int i = 0; i < n + 1; ++i) {
+			m_bezier_buffer[i * 12 + 0] = bernstein[i][0].x;
+			m_bezier_buffer[i * 12 + 1] = bernstein[i][0].y;
+			m_bezier_buffer[i * 12 + 2] = bernstein[i][0].z;
+
+			m_bezier_buffer[i * 12 + 3] = bernstein[i][1].x;
+			m_bezier_buffer[i * 12 + 4] = bernstein[i][1].y;
+			m_bezier_buffer[i * 12 + 5] = bernstein[i][1].z;
+
+			m_bezier_buffer[i * 12 + 6] = bernstein[i][2].x;
+			m_bezier_buffer[i * 12 + 7] = bernstein[i][2].y;
+			m_bezier_buffer[i * 12 + 8] = bernstein[i][2].z;
+
+			m_bezier_buffer[i * 12 + 9] = bernstein[i][3].x;
+			m_bezier_buffer[i * 12 + 10] = bernstein[i][3].y;
+			m_bezier_buffer[i * 12 + 11] = bernstein[i][3].z;
+
+			// now for the polygon
+			m_bezier_buffer_poly[i * 18 + 0] = bernstein[i][0].x;
+			m_bezier_buffer_poly[i * 18 + 1] = bernstein[i][0].y;
+			m_bezier_buffer_poly[i * 18 + 2] = bernstein[i][0].z;
+
+			m_bezier_buffer_poly[i * 18 + 3] = bernstein[i][1].x;
+			m_bezier_buffer_poly[i * 18 + 4] = bernstein[i][1].y;
+			m_bezier_buffer_poly[i * 18 + 5] = bernstein[i][1].z;
+
+			m_bezier_buffer_poly[i * 18 + 6] = bernstein[i][1].x;
+			m_bezier_buffer_poly[i * 18 + 7] = bernstein[i][1].y;
+			m_bezier_buffer_poly[i * 18 + 8] = bernstein[i][1].z;
+
+			m_bezier_buffer_poly[i * 18 + 9] = bernstein[i][2].x;
+			m_bezier_buffer_poly[i * 18 + 10] = bernstein[i][2].y;
+			m_bezier_buffer_poly[i * 18 + 11] = bernstein[i][2].z;
+
+			m_bezier_buffer_poly[i * 18 + 12] = bernstein[i][2].x;
+			m_bezier_buffer_poly[i * 18 + 13] = bernstein[i][2].y;
+			m_bezier_buffer_poly[i * 18 + 14] = bernstein[i][2].z;
+
+			m_bezier_buffer_poly[i * 18 + 15] = bernstein[i][3].x;
+			m_bezier_buffer_poly[i * 18 + 16] = bernstein[i][3].y;
+			m_bezier_buffer_poly[i * 18 + 17] = bernstein[i][3].z;
+		}
+
+		m_init_buffers ();
 	}
 
 	interpolating_curve::float_array_t interpolating_curve::m_solve_tridiag (
@@ -141,5 +250,77 @@ namespace mini {
 		}
 
 		return x;
+	}
+
+	void interpolating_curve::m_init_buffers () {
+		constexpr GLuint a_position = 0;
+
+		glGenVertexArrays (1, &m_vao);
+		glGenBuffers (1, &m_pos_buffer);
+
+		glBindVertexArray (m_vao);
+
+		glBindBuffer (GL_ARRAY_BUFFER, m_pos_buffer);
+		glBufferData (GL_ARRAY_BUFFER, sizeof (float) * m_bezier_buffer.size (), reinterpret_cast<void *> (m_bezier_buffer.data ()), GL_DYNAMIC_DRAW);
+		glVertexAttribPointer (a_position, 3, GL_FLOAT, false, sizeof (float) * 3, (void *)0);
+		glEnableVertexAttribArray (a_position);
+
+		glGenVertexArrays (1, &m_vao_poly);
+		glBindVertexArray (m_vao_poly);
+
+		glGenBuffers (1, &m_pos_buffer_poly);
+		glBindBuffer (GL_ARRAY_BUFFER, m_pos_buffer_poly);
+		glBufferData (GL_ARRAY_BUFFER, sizeof (float) * m_bezier_buffer_poly.size (), reinterpret_cast<void *> (m_bezier_buffer_poly.data ()), GL_DYNAMIC_DRAW);
+		glVertexAttribPointer (a_position, 3, GL_FLOAT, false, sizeof (float) * 3, (void *)0);
+		glEnableVertexAttribArray (a_position);
+
+		glBindVertexArray (static_cast<GLuint> (NULL));
+
+		m_ready = true;
+	}
+
+	void interpolating_curve::m_destroy_buffers () {
+		if (m_pos_buffer_poly != 0) {
+			glDeleteVertexArrays (1, &m_pos_buffer_poly);
+		}
+
+		if (m_pos_buffer != 0) {
+			glDeleteVertexArrays (1, &m_pos_buffer);
+		}
+
+		if (m_vao_poly != 0) {
+			glDeleteVertexArrays (1, &m_vao_poly);
+		}
+
+		if (m_vao != 0) {
+			glDeleteVertexArrays (1, &m_vao);
+		}
+
+		m_vao_poly = 0;
+		m_vao = 0;
+		m_pos_buffer_poly = 0;
+		m_pos_buffer = 0;
+
+		m_ready = false;
+	}
+
+	void interpolating_curve::m_bind_shader (app_context & context, std::shared_ptr<shader_t> shader, const glm::mat4x4 & world_matrix) const {
+		shader->bind ();
+
+		const auto & view_matrix = context.get_view_matrix ();
+		const auto & proj_matrix = context.get_projection_matrix ();
+
+		const auto & video_mode = context.get_video_mode ();
+
+		glm::vec2 resolution = {
+			static_cast<float> (video_mode.get_buffer_width ()),
+			static_cast<float> (video_mode.get_buffer_height ())
+		};
+
+		shader->set_uniform ("u_world", world_matrix);
+		shader->set_uniform ("u_view", view_matrix);
+		shader->set_uniform ("u_projection", proj_matrix);
+		shader->set_uniform ("u_resolution", resolution);
+		shader->set_uniform ("u_line_width", 2.0f);
 	}
 }
