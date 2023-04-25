@@ -35,16 +35,16 @@ namespace mini {
 
 			m_shader1->set_uniform ("u_start_t", 0.0f);
 			m_shader1->set_uniform ("u_end_t", 0.5f);
-			glDrawArrays (GL_LINES_ADJACENCY, 0, m_bezier_buffer.size ());
+			glDrawArrays (GL_LINES_ADJACENCY, 0, static_cast<GLsizei>(m_bezier_buffer.size ()));
 
 			m_shader1->set_uniform ("u_start_t", 0.5f);
 			m_shader1->set_uniform ("u_end_t", 1.0f);
-			glDrawArrays (GL_LINES_ADJACENCY, 0, m_bezier_buffer.size ());
+			glDrawArrays (GL_LINES_ADJACENCY, 0, static_cast<GLsizei>(m_bezier_buffer.size ()));
 
 			if (is_show_polygon ()) {
 				glBindVertexArray (m_vao_poly);
 				m_bind_shader (context, m_shader2, world_matrix);
-				glDrawArrays (GL_LINES, 0, m_bezier_buffer_poly.size ());
+				glDrawArrays (GL_LINES, 0, static_cast<GLsizei> (m_bezier_buffer_poly.size ()));
 			}
 
 			glBindVertexArray (0);
@@ -67,7 +67,7 @@ namespace mini {
 		using spline_segment_t = std::array<glm::vec3, 4>;
 
 		// at least four bspline points
-		const unsigned int n = points.size () - 2;
+		const int n = static_cast<int> (points.size () - 2);
 
 		// n+2 points so n+1 segments
 		std::vector<spline_segment_t> power (n + 1);
@@ -98,12 +98,6 @@ namespace mini {
 
 			P[i] = ptr->get_translation ();
 		}
-
-		/*P[0] = {0, 1, 0};
-		P[1] = { 1, 0, 0 };
-		P[2] = { 3, -1, 0 };
-		P[3] = { 4, 1, 0 };
-		P[4] = { 2, 2, 0 };*/
 
 		// calculate d coefficients
 		for (int i = 0; i < n + 1; ++i) {
@@ -227,7 +221,7 @@ namespace mini {
 		const float_array_t & c,
 		const float_array_t & d) {
 
-		const int n = b.size ();
+		const int n = static_cast<int> (b.size ());
 		float_array_t cp (n);
 		float_array_t dp (n);
 
