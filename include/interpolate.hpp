@@ -14,6 +14,7 @@ namespace mini {
 			GLuint m_pos_buffer, m_pos_buffer_poly;
 
 			bool m_ready;
+			bool m_chord_length;
 
 		public:
 			interpolating_curve (scene_controller_base & scene, std::shared_ptr<shader_t> shader1,

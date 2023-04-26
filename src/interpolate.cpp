@@ -1,4 +1,5 @@
 #include "interpolate.hpp"
+#include "gui.hpp"
 
 namespace mini {
 	interpolating_curve::interpolating_curve (scene_controller_base & scene, std::shared_ptr<shader_t> shader1, std::shared_ptr<shader_t> shader2)
@@ -12,6 +13,7 @@ namespace mini {
 		m_pos_buffer_poly = 0;
 		m_pos_buffer = 0;
 		m_ready = false;
+		m_chord_length = true;
 
 		rebuild_curve ();
 	}
@@ -19,6 +21,16 @@ namespace mini {
 	interpolating_curve::~interpolating_curve () { }
 
 	void interpolating_curve::configure () {
+		if (ImGui::CollapsingHeader ("Interpolating Curve")) {
+			gui::prefix_label ("Chord Length: ", 250.0f);
+			
+			if (ImGui::Checkbox ("##show_bezier", &m_chord_length)) {
+				rebuild_curve ();
+			}
+
+			ImGui::NewLine ();
+		}
+
 		curve_base::configure ();
 	}
 
@@ -101,8 +113,11 @@ namespace mini {
 
 		// calculate d coefficients
 		for (int i = 0; i < n + 1; ++i) {
-			//d[i] = glm::length (P[i + 1] - P[i]);
-			d[i] = 1.0f;
+			if (m_chord_length) {
+				d[i] = glm::length (P[i + 1] - P[i]);
+			} else {
+				d[i] = 1.0f;
+			}
 		}
 
 		// remember that now d_i from lecture is actually d[i+1] in the code!! :D
@@ -140,11 +155,19 @@ namespace mini {
 			float di = d[i];
 			power[i][3] = (power[i + 1][2] - power[i][2]) / (3.0f * di);
 			power[i][1] = ((power[i+1][0] - power[i][0]) / di) - (power[i][2] * di) - (power[i][3] * di * di);
+
+			power[i][1] *= di;
+			power[i][2] *= di * di;
+			power[i][3] *= di * di * di;
 		}
 
 		float di = d[i];
 		power[i][3] = (0.0f - power[i][2]) / (3.0f * di);
 		power[i][1] = ((P[i+1] - power[i][0]) / di) - (power[i][2] * di) - (power[i][3] * di * di);
+
+		power[i][1] *= di;
+		power[i][2] *= di * di;
+		power[i][3] *= di * di * di;
 
 		// convert to bernstein basis and we're done
 		constexpr const glm::mat4x4 POWER_TO_BERNSTEIN = {
