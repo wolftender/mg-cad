@@ -72,18 +72,35 @@ namespace mini {
 		m_destroy_buffers ();
 		m_ready = false;
 
-		if (points.size () < 4) {
+		if (points.size () < 3) {
 			return;
 		}
 
 		using spline_segment_t = std::array<glm::vec3, 4>;
 
 		// at least four bspline points
-		const int n = static_cast<int> (points.size () - 2);
+		int n = static_cast<int> (points.size () - 2);
 
 		// n+2 points so n+1 segments
 		std::vector<spline_segment_t> power (n + 1);
 		std::vector<spline_segment_t> bernstein (n + 1);
+
+		std::vector<glm::vec3> P; // [0 .. n+1] = [0 .. N-1]
+		P.reserve (n + 2);
+
+		for (int i = 0; i < n + 2; ++i) {
+			const auto ptr = points[i].point.lock ();
+			if (!ptr) {
+				return;
+			}
+
+			auto pt = ptr->get_translation ();
+			if (i == 0 || glm::distance(pt, P.back ()) > 0.0001f) {
+				P.push_back (pt);
+			}
+		}
+
+		n = P.size() - 2;
 
 		// fill all with zeroes
 		for (int i = 0; i < n + 1; ++i) {
@@ -99,17 +116,6 @@ namespace mini {
 		float_array_t m (n);
 		float_array_t R (n); 
 		float_array_t d (n + 1); // [0 .. n] = [0 .. N-2]
-
-		std::vector<glm::vec3> P(n + 2); // [0 .. n+1] = [0 .. N-1]
-
-		for (int i = 0; i < n + 2; ++i) {
-			const auto ptr = points[i].point.lock ();
-			if (!ptr) {
-				return;
-			}
-
-			P[i] = ptr->get_translation ();
-		}
 
 		// calculate d coefficients
 		for (int i = 0; i < n + 1; ++i) {
