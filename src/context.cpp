@@ -26,63 +26,6 @@ namespace mini {
 		}
 	)";
 
-	int32_t video_mode_t::get_viewport_width () const {
-		return m_viewport_width;
-	}
-
-	int32_t video_mode_t::get_viewport_height () const {
-		return m_viewport_height;
-	}
-
-	int32_t video_mode_t::get_buffer_width () const {
-		return m_buffer_width;
-	}
-
-	int32_t video_mode_t::get_buffer_height () const {
-		return m_buffer_height;
-	}
-
-	void video_mode_t::set_viewport_width (int32_t vp_width) {
-		assert (vp_width >= 8 && vp_width <= 8192);
-		m_viewport_width = vp_width;
-	}
-
-	void video_mode_t::set_viewport_height (int32_t vp_height) {
-		assert (vp_height > 8 && vp_height <= 8192);
-		m_viewport_height = vp_height;
-	}
-
-	void video_mode_t::set_buffer_width (int32_t buf_width) {
-		assert (buf_width >= 8 && buf_width <= 8192);
-		m_buffer_width = buf_width;
-	}
-
-	void video_mode_t::set_buffer_height (int32_t buf_height) {
-		assert (buf_height > 8 && buf_height <= 8192);
-		m_buffer_height = buf_height;
-	}
-
-	video_mode_t::video_mode_t () {
-		set_viewport_width (640);
-		set_viewport_height (480);
-		set_buffer_width (640);
-		set_buffer_height (480);
-	}
-
-	video_mode_t::video_mode_t (int32_t width, int32_t height) {
-		set_viewport_width (width);
-		set_viewport_height (height);
-		set_buffer_width (width);
-		set_buffer_height (height);
-	}
-
-	video_mode_t::video_mode_t (int32_t vp_width, int32_t vp_height, int32_t buf_width, int32_t buf_height) {
-		set_viewport_width (vp_width);
-		set_viewport_height (vp_height);
-		set_buffer_width (buf_width);
-		set_buffer_height (buf_height);
-	}
-
 	app_context::app_context (const video_mode_t & video_mode) {
 		m_colorbuffer[0] = 0;
 		m_colorbuffer[1] = 0;
@@ -98,10 +41,8 @@ namespace mini {
 		m_video_mode = video_mode;
 		m_switch_mode = false;
 
-		float width = video_mode.get_buffer_width ();
-		float height = video_mode.get_buffer_height ();
-
-		m_camera.set_aspect (width / height);
+		m_camera = std::make_unique<default_camera> ();
+		m_camera->video_mode_change (m_video_mode);
 
 		// initialize default screen shader
 		m_screen_shader = std::make_unique<shader_t> (screen_vertex_source, screen_fragment_source);
@@ -117,21 +58,16 @@ namespace mini {
 	}
 
 	void app_context::set_camera_pos (const glm::vec3 & position) {
-		m_camera_pos = position;
+		m_camera->set_position (position);
 	}
 
 	void app_context::set_camera_target (const glm::vec3 & target) {
-		m_camera_target = target;
+		m_camera->set_target (target);
 	}
 
 	void app_context::set_video_mode (const video_mode_t & video_mode) {
 		m_new_mode = video_mode;
 		m_switch_mode = true;
-
-		float width = video_mode.get_buffer_width ();
-		float height = video_mode.get_buffer_height ();
-
-		m_camera.set_aspect (width / height);
 	}
 
 	const video_mode_t & app_context::get_video_mode () const {
@@ -143,19 +79,26 @@ namespace mini {
 	}
 
 	camera & app_context::get_camera () {
-		return m_camera;
+		return *m_camera.get ();
 	}
 
 	const camera & app_context::get_camera () const {
-		return m_camera;
+		return *m_camera.get ();
+	}
+
+	std::unique_ptr<camera> app_context::set_camera (std::unique_ptr<camera> camera) {
+		auto old_camera = std::move (m_camera);
+		m_camera = std::move (camera);
+
+		return std::move (old_camera);
 	}
 
 	const glm::mat4x4 & app_context::get_view_matrix () const {
-		return m_camera.get_view_matrix ();
+		return m_camera->get_view_matrix ();
 	}
 
 	const glm::mat4x4 & app_context::get_projection_matrix () const {
-		return m_camera.get_projection_matrix ();
+		return m_camera->get_projection_matrix ();
 	}
 
 	void app_context::draw (std::weak_ptr<graphics_obj_t> object, glm::mat4x4 world_matrix) {
@@ -262,6 +205,8 @@ namespace mini {
 		m_video_mode = m_new_mode;
 
 		if (old_width != new_width || old_height != new_height) {
+			m_camera->video_mode_change (m_video_mode);
+
 			m_destroy_frame_buffer ();
 			m_init_frame_buffer ();
 		}

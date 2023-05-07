@@ -40,34 +40,6 @@ namespace mini {
 			virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const = 0;
 	};
 
-	/// <summary>
-	/// This class represents the video mode of the context. Add context settings here.
-	/// </summary>
-	class video_mode_t {
-		private:
-			int32_t m_viewport_width, m_viewport_height;
-			int32_t m_buffer_width, m_buffer_height;
-
-		public:
-			int32_t get_viewport_width () const;
-			int32_t get_viewport_height () const;
-			int32_t get_buffer_width () const;
-			int32_t get_buffer_height () const;
-
-			void set_viewport_width (int32_t vp_width);
-			void set_viewport_height (int32_t vp_height);
-			void set_buffer_width (int32_t buf_width);
-			void set_buffer_height (int32_t buf_height);
-
-			video_mode_t ();
-			video_mode_t (int32_t width, int32_t height);
-			video_mode_t (int32_t vp_width, int32_t vp_height, int32_t buf_width, int32_t buf_height);
-
-			video_mode_t (const video_mode_t &) = default;
-			video_mode_t & operator= (const video_mode_t &) = default;
-			~video_mode_t () = default;
-	};
-
 	constexpr const uint64_t RENDER_QUEUE_SIZE = 1024;
 
 	/// <summary>
@@ -84,12 +56,6 @@ namespace mini {
 			std::array<enqueued_renderable_t, RENDER_QUEUE_SIZE> m_queue;
 			uint64_t m_last_queue_index;
 
-			glm::vec3 m_camera_pos;
-			glm::vec3 m_camera_target;
-
-			glm::mat4x4 m_view_matrix;
-			glm::mat4x4 m_projection_matrix;
-
 			// opengl framebuffer objects
 			GLuint m_framebuffer[2], m_colorbuffer[2];
 			GLuint m_renderbuffer;
@@ -101,7 +67,7 @@ namespace mini {
 			video_mode_t m_video_mode, m_new_mode;
 			bool m_switch_mode;
 
-			camera m_camera;
+			std::unique_ptr<camera> m_camera;
 
 		public:
 			app_context (const video_mode_t & video_mode);
@@ -120,6 +86,8 @@ namespace mini {
 
 			camera & get_camera ();
 			const camera & get_camera () const;
+
+			std::unique_ptr<camera> set_camera (std::unique_ptr<camera> camera);
 
 			const glm::mat4x4 & get_view_matrix () const;
 			const glm::mat4x4 & get_projection_matrix () const;

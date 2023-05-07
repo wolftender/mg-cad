@@ -701,7 +701,8 @@ namespace mini {
 			ImGuiWindowFlags_NoTitleBar |
 			ImGuiWindowFlags_MenuBar |
 			ImGuiWindowFlags_NoMove |
-			ImGuiWindowFlags_NoDocking);
+			ImGuiWindowFlags_NoDocking |
+			ImGuiWindowFlags_NoResize);
 
 		ImGui::SetWindowPos (ImVec2 (0, 0));
 		ImGui::SetWindowSize (ImVec2 (vp_width, vp_height));
