@@ -11,6 +11,7 @@
 #include "tool.hpp"
 #include "factory.hpp"
 #include "store.hpp"
+#include "anaglyph.hpp"
 
 namespace mini {
 	class application : public app_window, public scene_controller_base {
@@ -87,6 +88,7 @@ namespace mini {
 			};
 
 			app_context m_context;
+			anaglyph_controller m_anaglyph;
 
 			std::shared_ptr<resource_store> m_store;
 			std::shared_ptr<object_factory> m_factory;

@@ -136,6 +136,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="include\algebra.hpp" />
+    <ClInclude Include="include\anaglyph.hpp" />
     <ClInclude Include="include\app.hpp" />
     <ClInclude Include="include\bezier.hpp" />
     <ClInclude Include="include\bspline.hpp" />
@@ -160,6 +161,7 @@
     <ClInclude Include="include\window.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\anaglyph.cpp" />
     <ClCompile Include="src\bezier.cpp" />
     <ClCompile Include="src\billboard.cpp" />
     <ClCompile Include="src\bspline.cpp" />

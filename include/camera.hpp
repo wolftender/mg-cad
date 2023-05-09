@@ -51,6 +51,7 @@ namespace mini {
 
 			camera ();
 			camera (const glm::vec3 & position, const glm::vec3 & target);
+			virtual ~camera () { }
 
 		private:
 			void m_recalculate_view ();

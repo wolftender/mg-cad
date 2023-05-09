@@ -372,6 +372,7 @@ namespace mini {
 			new_vm.set_viewport_width (height);
 
 			m_context.set_video_mode (new_vm);
+			m_anaglyph.set_video_mode (new_vm);
 		}
 
 		app_window::t_on_resize (width, height);
@@ -459,7 +460,8 @@ namespace mini {
 
 	application::application () : 
 		app_window (1200, 800, std::string (app_title)),
-		m_context (video_mode_t (1200, 800)) {
+		m_context (video_mode_t (1200, 800)),
+		m_anaglyph (m_context.get_video_mode ()) {
 
 		m_cam_pitch = 0.0f;
 		m_cam_yaw = 0.0f;
@@ -594,6 +596,7 @@ namespace mini {
 			m_context.draw (m_grid_xz, glm::mat4x4 (1.0f));
 		}
 
+		
 		m_context.draw (m_cursor_object, make_translation (m_cursor_position));
 		
 		if (m_selected_group && m_selected_group->group_size () >= 1) {
@@ -794,6 +797,8 @@ namespace mini {
 			}
 		}
 
+		m_anaglyph.configure ();
+
 		ImGui::End ();
 		ImGui::PopStyleVar (1);
 	}
@@ -930,7 +935,10 @@ namespace mini {
 		gui::clamp (m_vp_mouse_offset.y, 0, height);
 
 		if ((width != m_last_vp_width || height != m_last_vp_height) && width > 8 && height > 8) {
-			m_context.set_video_mode (video_mode_t (width, height));
+			video_mode_t mode (width, height);
+
+			m_context.set_video_mode (mode);
+			m_anaglyph.set_video_mode (mode);
 
 			m_last_vp_width = width;
 			m_last_vp_height = height;
