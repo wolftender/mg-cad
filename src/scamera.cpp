@@ -56,7 +56,7 @@ namespace mini {
 	}
 
 	anaglyph_camera::anaglyph_camera () {
-		m_near = 0.1f;
+		m_near = 1.0f;
 		m_far = 100.0f;
 		m_left = -1.0f;
 		m_right = 1.0f;
@@ -67,7 +67,7 @@ namespace mini {
 	}
 
 	anaglyph_camera::anaglyph_camera (const glm::vec3 & position, const glm::vec3 & target) : camera (position, target) {
-		m_near = 0.1f;
+		m_near = 1.0f;
 		m_far = 100.0f;
 		m_left = -1.0f;
 		m_right = 1.0f;
@@ -85,9 +85,7 @@ namespace mini {
 		return m_projection_inv;
 	}
 
-	void anaglyph_camera::video_mode_change (const video_mode_t & mode) {
-		// todo
-	}
+	void anaglyph_camera::video_mode_change (const video_mode_t & mode) { }
 
 	void anaglyph_camera::m_recalculate_projection () {
 		float m00 = 2.0f * m_near / (m_right - m_left);
@@ -100,7 +98,7 @@ namespace mini {
 
 		m_projection = {
 			 m00,  0.0f,  0.0f,  0.0f,
-			0.0f,   m11,  1.0f,  0.0f,
+			0.0f,   m11,  0.0f,  0.0f,
 			 m20,   m21,   m22, -1.0f,
 			0.0f,  0.0f,   m32,  0.0f
 		};

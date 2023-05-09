@@ -10,7 +10,15 @@ namespace mini {
 			video_mode_t m_mode;
 			bool m_anaglyph_enabled;
 
-			GLuint m_left_buffer, m_right_buffer, m_buffer;
+			GLuint m_buffer[3];
+			GLuint m_texture[3];
+			GLuint m_vao, m_posbuffer;
+
+			float m_eyes_distance;
+
+			std::unique_ptr<shader_t> m_left_shader;
+			std::unique_ptr<shader_t> m_right_shader;
+			std::unique_ptr<shader_t> m_front_shader;
 
 		public:
 			const anaglyph_camera & get_right_cam () const;

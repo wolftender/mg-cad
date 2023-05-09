@@ -110,12 +110,12 @@ namespace mini {
 		}
 	}
 
-	void app_context::render () {
+	void app_context::render (bool clear) {
 		// bind the framebuffers
 		glBindFramebuffer (GL_FRAMEBUFFER, m_framebuffer[back]);
 
 		// raw render
-		display_scene ();
+		display_scene (clear);
 
 		// blit the back buffer on the front buffer
 		glBindFramebuffer (GL_READ_FRAMEBUFFER, m_framebuffer[back]);
@@ -132,7 +132,7 @@ namespace mini {
 		glBindFramebuffer (GL_DRAW_FRAMEBUFFER, static_cast<GLuint>(NULL));
 	}
 
-	void app_context::display (bool present) {
+	void app_context::display (bool present, bool clear) {
 		// setup viewport
 		glEnable (GL_DEPTH_TEST);
 		glEnable (GL_BLEND);
@@ -140,7 +140,7 @@ namespace mini {
 
 		glViewport (0, 0, m_video_mode.get_viewport_width (), m_video_mode.get_viewport_height ());
 
-		render ();
+		render (clear);
 
 		// draw the screen quad
 		glViewport (0, 0, m_video_mode.get_viewport_width (), m_video_mode.get_viewport_height ());
@@ -171,7 +171,7 @@ namespace mini {
 		}
 	}
 
-	void app_context::display_scene () {
+	void app_context::display_scene (bool clear) {
 		glViewport (0, 0, m_video_mode.get_buffer_width (), m_video_mode.get_buffer_height ());
 
 		// clear screen
@@ -188,11 +188,13 @@ namespace mini {
 
 		// clear the rendering queue
 		// this reset pass has to be done to not persist renderables
-		for (uint32_t index = 0; index < m_last_queue_index; ++index) {
-			m_queue[index].object.reset ();
-		}
+		if (clear) {
+			for (uint32_t index = 0; index < m_last_queue_index; ++index) {
+				m_queue[index].object.reset ();
+			}
 
-		m_last_queue_index = 0;
+			m_last_queue_index = 0;
+		}
 	}
 
 	void app_context::m_try_switch_mode () {

@@ -93,9 +93,9 @@ namespace mini {
 			const glm::mat4x4 & get_projection_matrix () const;
 
 			void draw (std::weak_ptr<graphics_obj_t> object, glm::mat4x4 world_matrix);
-			void render ();
-			void display (bool present);
-			void display_scene ();
+			void render (bool clear);
+			void display (bool present, bool clear);
+			void display_scene (bool clear);
 
 		private:
 			void m_try_switch_mode ();

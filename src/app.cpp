@@ -603,7 +603,11 @@ namespace mini {
 			m_context.draw (m_origin_object, make_translation (m_selected_group->get_origin ()));
 		}
 
-		m_context.display (false);
+		if (m_anaglyph.is_enabled ()) {
+			m_anaglyph.render (m_context);
+		} else {
+			m_context.display (false, true);
+		}
 
 		// rendering above is done to a buffer
 		// now we can render ui to the window
@@ -944,7 +948,11 @@ namespace mini {
 			m_last_vp_height = height;
 		}
 
-		ImGui::ImageButton (reinterpret_cast<ImTextureID> (m_context.get_front_buffer ()), ImVec2 (width, height), ImVec2 (0, 0), ImVec2 (1, 1), 0);
+		if (m_anaglyph.is_enabled ()) {
+			ImGui::ImageButton (reinterpret_cast<ImTextureID> (m_anaglyph.get_buffer_handle ()), ImVec2 (width, height), ImVec2 (0, 0), ImVec2 (1, 1), 0);
+		} else {
+			ImGui::ImageButton (reinterpret_cast<ImTextureID> (m_context.get_front_buffer ()), ImVec2 (width, height), ImVec2 (0, 0), ImVec2 (1, 1), 0);
+		}
 
 		ImGui::End ();
 		ImGui::PopStyleVar (1);
