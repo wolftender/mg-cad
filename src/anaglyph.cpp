@@ -2,7 +2,7 @@
 #include "gui.hpp"
 
 namespace mini {
-	constexpr const std::string_view screen_vertex_source = R"(
+	constexpr const std::string_view camera_vertex_source = R"(
 		#version 330
 		layout (location = 0) in vec3 a_position;
 
@@ -14,18 +14,55 @@ namespace mini {
 		}
 	)";
 
-	constexpr const std::string_view screen_fragment_source = R"(
+	constexpr const std::string_view eye_fragment_source = R"(
 		#version 330
 		in vec2 v_texcoords;
 
 		layout (location = 0) out vec4 v_color;
 
-		uniform sampler2D u_texture_right;
-		uniform sampler2D u_texture_left;
+		uniform float u_gamma;
+		uniform float u_cutoff;
+		uniform sampler2D u_texture;
 
 		void main () {
-			vec4 frag_color = texture (u_texture_right, v_texcoords);
+			vec4 frag_color = texture (u_texture, v_texcoords);
+			//float gs = 0.299 * frag_color.x + 0.587 * frag_color.y + 0.114 * frag_color.z;
+
+			//gs = pow(gs, u_gamma);
+			//v_color = vec4 (gs, gs, gs, 1.0);
 			v_color = frag_color;
+			v_color.x = pow(v_color.x, u_gamma);
+			v_color.y = pow(v_color.y, u_gamma);
+			v_color.z = pow(v_color.z, u_gamma);
+		}
+	)";
+
+	constexpr const std::string_view front_fragment_source = R"(
+		#version 330
+		in vec2 v_texcoords;
+
+		layout (location = 0) out vec4 v_color;
+
+		uniform sampler2D u_left_texture;
+		uniform sampler2D u_right_texture;
+
+		void main () {
+			vec4 left_color = texture (u_left_texture, v_texcoords);
+			vec4 right_color = texture (u_right_texture, v_texcoords);
+
+			float Lr = left_color.x;
+			float Lg = left_color.y;
+			float Lb = left_color.z;
+
+			float Rr = right_color.x;
+			float Rg = right_color.y;
+			float Rb = right_color.z;
+
+			float Ar = 0.4561 * Lr + 0.500484 * Lg + 0.176381 * Lb - 0.0434706 * Rr - 0.0879388 * Rg - 0.00155529 * Rb;
+			float Ag = -0.0400822 * Lr - 0.0378246 * Lg - 0.0157589 * Lb + 0.378476 * Rr + 0.73364 * Rg - 0.0184503 * Rb;
+			float Ab = -0.0152161 * Lr - 0.0205971 * Lg - 0.00546856 * Lb - 0.0721527 * Rr - 0.112961 * Rg + 1.2264 * Rb;
+
+			v_color = vec4 (Ar, Ag, Ab, 1.0);
 		}
 	)";
 
@@ -70,18 +107,24 @@ namespace mini {
 		memset (m_buffer, 0, sizeof (m_buffer));
 		memset (m_texture, 0, sizeof (m_buffer));
 
-		m_eyes_distance = 0.5f;
+		m_eyes_distance = 0.15f;
 
 		m_left_cam = std::make_unique<anaglyph_camera> ();
 		m_right_cam = std::make_unique<anaglyph_camera> ();
 
-		m_left_shader = std::make_unique<shader_t> (std::string (screen_vertex_source), std::string (screen_fragment_source));
-		m_right_shader = std::make_unique<shader_t> (std::string (screen_vertex_source), std::string (screen_fragment_source));
-		m_front_shader = std::make_unique<shader_t> (std::string (screen_vertex_source), std::string (screen_fragment_source));
+		m_left_shader = std::make_unique<shader_t> (std::string (camera_vertex_source), std::string (eye_fragment_source));
+		m_right_shader = std::make_unique<shader_t> (std::string (camera_vertex_source), std::string (eye_fragment_source));
+		m_front_shader = std::make_unique<shader_t> (std::string (camera_vertex_source), std::string (front_fragment_source));
 
 		m_left_shader->compile ();
 		m_right_shader->compile ();
 		m_front_shader->compile ();
+		
+		m_near = 0.1f;
+		m_far = 100.0f;
+
+		m_gamma = 1.41f;
+		m_cutoff = 0.25f;
 
 		m_initialize_buffers ();
 	}
@@ -104,19 +147,7 @@ namespace mini {
 		m_destroy_buffers ();
 		m_initialize_buffers ();
 
-		// camera adjustments
-		float width = static_cast<float> (mode.get_buffer_width ());
-		float height = static_cast<float> (mode.get_buffer_height ());
-
-		float aspect = width / height;
-		float right = aspect - m_eyes_distance;
-		float left = -aspect + m_eyes_distance;
-
-		m_right_cam->set_right (right);
-		m_right_cam->set_left (left);
-
-		m_left_cam->set_left (-right);
-		m_left_cam->set_right (-left);
+		m_adjust_camera ();
 	}
 
 	void anaglyph_controller::set_enabled (bool enabled) {
@@ -137,7 +168,6 @@ namespace mini {
 		glBindVertexArray (m_vao);
 		
 		// render with left eye
-		auto left_cam = dynamic_cast<anaglyph_camera*> (context.set_camera (std::move (m_right_cam)).release ());
 		context.display (false, false);
 
 		glBindFramebuffer (GL_FRAMEBUFFER, m_buffer[anaglyph_right]);
@@ -145,13 +175,15 @@ namespace mini {
 		glBindTexture (GL_TEXTURE_2D, context.get_front_buffer ());
 
 		m_right_shader->bind ();
+		m_right_shader->set_uniform ("u_gamma", m_gamma);
+		m_right_shader->set_uniform ("u_cutoff", m_cutoff);
 
 		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glBindVertexArray (m_vao);
 		glDrawArrays (GL_TRIANGLES, 0, 6);
 
 		// render with right eye
-		auto right_cam = dynamic_cast<anaglyph_camera*> (context.set_camera (std::move (original_camera)).release ());
+		auto left_cam = dynamic_cast<anaglyph_camera *> (context.set_camera (std::move (m_right_cam)).release ());
 		context.display (false, true);
 
 		glBindFramebuffer (GL_FRAMEBUFFER, m_buffer[anaglyph_left]);
@@ -159,11 +191,14 @@ namespace mini {
 		glBindTexture (GL_TEXTURE_2D, context.get_front_buffer ());
 
 		m_left_shader->bind ();
+		m_left_shader->set_uniform ("u_gamma", m_gamma);
+		m_left_shader->set_uniform ("u_cutoff", m_cutoff);
 
 		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glBindVertexArray (m_vao);
 		glDrawArrays (GL_TRIANGLES, 0, 6);
 
+		auto right_cam = dynamic_cast<anaglyph_camera *> (context.set_camera (std::move (original_camera)).release ());
 		m_left_cam.reset (left_cam);
 		m_right_cam.reset (right_cam);
 
@@ -171,10 +206,12 @@ namespace mini {
 		glBindFramebuffer (GL_FRAMEBUFFER, m_buffer[anaglyph_front]);
 		glActiveTexture (GL_TEXTURE0);
 		glBindTexture (GL_TEXTURE_2D, m_texture[anaglyph_right]);
-		//glActiveTexture (GL_TEXTURE1);
-		//glBindTexture (GL_TEXTURE_2D, m_texture[anaglyph_left]);
+		glActiveTexture (GL_TEXTURE1);
+		glBindTexture (GL_TEXTURE_2D, m_texture[anaglyph_left]);
 
 		m_front_shader->bind ();
+		m_front_shader->set_uniform_sampler ("u_right_texture", 0U);
+		m_front_shader->set_uniform_sampler ("u_left_texture", 1U);
 
 		glClearColor (1.0f, 0.0f, 0.0f, 1.0f);
 		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -193,11 +230,68 @@ namespace mini {
 
 	void anaglyph_controller::configure () {
 		ImGui::NewLine ();
+		bool adjust_cam = false;
 
 		if (ImGui::CollapsingHeader ("Anaglyph Options")) {
 			gui::prefix_label ("Enabled: ", 100.0f);
 			ImGui::Checkbox ("##anaglyphenable", &m_anaglyph_enabled);
+			
+			gui::prefix_label ("Near Z: ", 100.0f);
+			if (ImGui::InputFloat ("##nearz", &m_near)) {
+				adjust_cam = true;
+			}
+
+			gui::prefix_label ("Far Z: ", 100.0f);
+			if (ImGui::InputFloat ("##farz", &m_far)) {
+				adjust_cam = true;
+			}
+
+			gui::prefix_label ("Eye Dist.: ", 100.0f);
+			if (ImGui::InputFloat ("##eyedist", &m_eyes_distance)) {
+				adjust_cam = true;
+			}
+
+			gui::prefix_label ("Gamma: ", 100.0f);
+			ImGui::InputFloat ("##gamma", &m_gamma);
+
+			gui::prefix_label ("Cutoff: ", 100.0f);
+			ImGui::InputFloat ("##cutoff", &m_cutoff);
 		}
+
+		if (adjust_cam) {
+			m_adjust_camera ();
+		}
+	}
+
+	void anaglyph_controller::m_adjust_camera () {
+		// camera adjustments
+		constexpr const float fovy = glm::pi<float> () / 3.0f;
+
+		float width = static_cast<float> (m_mode.get_buffer_width ());
+		float height = static_cast<float> (m_mode.get_buffer_height ());
+
+		float aspect = width / height;
+		float h = m_near * glm::tan (fovy / 2.0f);
+		float w = aspect * h;
+
+		float right = w * (1.0f - m_eyes_distance);
+		float left = -w * (1.0f + m_eyes_distance);
+		float top = h;
+		float bottom = -h;
+
+		m_right_cam->set_right (right);
+		m_right_cam->set_left (left);
+		m_right_cam->set_top (top);
+		m_right_cam->set_bottom (bottom);
+		m_right_cam->set_near (m_near);
+		m_right_cam->set_far (m_far);
+
+		m_left_cam->set_left (-right);
+		m_left_cam->set_right (-left);
+		m_left_cam->set_top (top);
+		m_left_cam->set_bottom (bottom);
+		m_left_cam->set_near (m_near);
+		m_left_cam->set_far (m_far);
 	}
 
 	void anaglyph_controller::m_initialize_buffers () {

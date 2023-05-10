@@ -55,6 +55,7 @@ namespace mini {
 
 			int get_uniform_location (const std::string & name);
 
+			void set_uniform_sampler (const std::string & name, const GLint value);
 			void set_uniform (const std::string & name, const float value);
 			void set_uniform (const std::string & name, const glm::vec2 & vector);
 			void set_uniform (const std::string & name, const glm::vec3 & vector);

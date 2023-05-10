@@ -95,7 +95,6 @@ namespace mini {
 		float m21 = (m_top + m_bottom) / (m_top - m_bottom);
 		float m32 = (-2.0f * m_near * m_far) / (m_far - m_near);
 
-
 		m_projection = {
 			 m00,  0.0f,  0.0f,  0.0f,
 			0.0f,   m11,  0.0f,  0.0f,

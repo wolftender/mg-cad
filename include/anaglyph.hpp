@@ -15,6 +15,8 @@ namespace mini {
 			GLuint m_vao, m_posbuffer;
 
 			float m_eyes_distance;
+			float m_near, m_far;
+			float m_gamma, m_cutoff;
 
 			std::unique_ptr<shader_t> m_left_shader;
 			std::unique_ptr<shader_t> m_right_shader;
@@ -44,6 +46,7 @@ namespace mini {
 			void configure ();
 
 		private:
+			void m_adjust_camera ();
 			void m_initialize_buffers ();
 			void m_destroy_buffers ();
 	};

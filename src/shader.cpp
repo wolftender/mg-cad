@@ -176,6 +176,14 @@ namespace mini {
 		return location;
 	}
 
+	void shader_t::set_uniform_sampler (const std::string & name, const GLint value) {
+		const int location = get_uniform_location (name);
+
+		if (location >= 0) {
+			glUniform1i (location, value);
+		}
+	}
+
 	void shader_t::set_uniform (const std::string & name, const float value) {
 		const int location = get_uniform_location (name);
 
