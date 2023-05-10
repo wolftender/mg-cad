@@ -122,6 +122,7 @@ namespace mini {
 		
 		m_near = 0.1f;
 		m_far = 100.0f;
+		m_convergence = 1.0f;
 
 		m_gamma = 1.41f;
 		m_cutoff = 0.25f;
@@ -251,6 +252,11 @@ namespace mini {
 				adjust_cam = true;
 			}
 
+			gui::prefix_label ("Convergence.: ", 100.0f);
+			if (ImGui::InputFloat ("##convergence", &m_convergence)) {
+				adjust_cam = true;
+			}
+
 			gui::prefix_label ("Gamma: ", 100.0f);
 			ImGui::InputFloat ("##gamma", &m_gamma);
 
@@ -271,14 +277,19 @@ namespace mini {
 		float height = static_cast<float> (m_mode.get_buffer_height ());
 
 		float aspect = width / height;
-		float h = m_near * glm::tan (fovy / 2.0f);
-		float w = aspect * h;
+		float top = m_near * glm::tan (fovy / 2.0f);
+		float bottom = -top;
 
-		float right = w * (1.0f - m_eyes_distance);
-		float left = -w * (1.0f + m_eyes_distance);
-		float top = h;
-		float bottom = -h;
+		float a = aspect * m_convergence * glm::tan (fovy / 2.0f);
+		float b, c, left, right;
 
+		b = a - m_eyes_distance / 2.0f;
+		c = a + m_eyes_distance / 2.0f;
+
+		left = -c * m_near / m_convergence;
+		right = b * m_near / m_convergence;
+
+		m_right_cam->set_x_offset (-m_eyes_distance);
 		m_right_cam->set_right (right);
 		m_right_cam->set_left (left);
 		m_right_cam->set_top (top);
@@ -286,8 +297,12 @@ namespace mini {
 		m_right_cam->set_near (m_near);
 		m_right_cam->set_far (m_far);
 
-		m_left_cam->set_left (-right);
-		m_left_cam->set_right (-left);
+		left = -b * m_near / m_convergence;
+		right = c * m_near / m_convergence;
+
+		m_left_cam->set_x_offset (m_eyes_distance);
+		m_left_cam->set_left (left);
+		m_left_cam->set_right (right);
 		m_left_cam->set_top (top);
 		m_left_cam->set_bottom (bottom);
 		m_left_cam->set_near (m_near);

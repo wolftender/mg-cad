@@ -14,7 +14,7 @@ namespace mini {
 			GLuint m_texture[3];
 			GLuint m_vao, m_posbuffer;
 
-			float m_eyes_distance;
+			float m_eyes_distance, m_convergence;
 			float m_near, m_far;
 			float m_gamma, m_cutoff;
 

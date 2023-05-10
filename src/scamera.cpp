@@ -25,6 +25,10 @@ namespace mini {
 		return m_top;
 	}
 
+	float anaglyph_camera::get_x_offset () const {
+		return m_x_offset;
+	}
+
 	void anaglyph_camera::set_near (float near) {
 		m_near = near;
 		m_recalculate_projection ();
@@ -53,6 +57,10 @@ namespace mini {
 	void anaglyph_camera::set_top (float top) {
 		m_top = top;
 		m_recalculate_projection ();
+	}
+
+	void anaglyph_camera::set_x_offset (float offset) {
+		m_x_offset = offset;
 	}
 
 	anaglyph_camera::anaglyph_camera () {
@@ -103,5 +111,14 @@ namespace mini {
 		};
 
 		m_projection_inv = glm::inverse (m_projection);
+		
+		glm::mat4x4 translation {
+			1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			m_x_offset, 0.0f, 0.0f, 1.0f
+		};
+
+		m_projection = m_projection * translation;
 	}
 }
