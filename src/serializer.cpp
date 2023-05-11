@@ -109,10 +109,12 @@ namespace mini {
 		return j;
 	}
 
+	template<>
 	json generic_object_serializer<scene_obj_t>::serialize (int id, std::shared_ptr<scene_obj_t> object, const cache_object_id_t & cache) const {
 		return s_serialize_base (id, object);
 	}
 
+	template<>
 	json generic_object_serializer<cube_object>::serialize (int id, std::shared_ptr<scene_obj_t> object, const cache_object_id_t & cache) const {
 		json j = s_serialize_base (id, object);
 		j["objectType"] = "ext.eter.cube";
@@ -120,6 +122,7 @@ namespace mini {
 		return j;
 	}
 
+	template<>
 	json generic_object_serializer<torus_object>::serialize (int id, std::shared_ptr<scene_obj_t> object, const cache_object_id_t & cache) const {
 		json j = s_serialize_base (id, object);
 

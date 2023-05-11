@@ -13,10 +13,13 @@ OBJ := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRC)) $(OBJ_DIR)/glad.o $(
 IMGUI_SRC := $(wildcard $(IMGUI_SRC_DIR)/*.cpp)
 IMGUI_OBJ := $(patsubst $(IMGUI_SRC_DIR)/%.cpp, $(IMGUI_OBJ_DIR)/%.o, $(IMGUI_SRC))
 
-CPPFLAGS := -Iinclude -Ilibs/lodepng `pkg-config --cflags glfw3` -Ilibs/glad/include -Ilibs/imgui --std=c++17
+NFD_INC_DIR := libs/nativefiledialog/src/include
+NFD_LIB_DIR := libs/nativefiledialog/build/lib/Release/x64
+
+CPPFLAGS := -Iinclude -I$(NFD_INC_DIR) -Ilibs/lodepng `pkg-config --cflags glfw3` -Ilibs/glad/include -Ilibs/imgui --std=c++17
 CFLAGS := -Wall -g
 LDFLAGS :=
-LDLIBS := `pkg-config --libs glfw3` -ldl -lpthread
+LDLIBS := `pkg-config --libs glfw3` `pkg-config --libs gtk+-3.0` -L$(NFD_LIB_DIR) -lnfd -ldl -lpthread
 
 all: $(EXECUTABLE)
 .PHONY: all
