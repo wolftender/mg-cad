@@ -107,7 +107,7 @@ namespace mini {
 		memset (m_buffer, 0, sizeof (m_buffer));
 		memset (m_texture, 0, sizeof (m_buffer));
 
-		m_eyes_distance = 0.15f;
+		m_eyes_distance = 0.025f;
 
 		m_left_cam = std::make_unique<anaglyph_camera> ();
 		m_right_cam = std::make_unique<anaglyph_camera> ();
@@ -262,6 +262,12 @@ namespace mini {
 
 			gui::prefix_label ("Cutoff: ", 100.0f);
 			ImGui::InputFloat ("##cutoff", &m_cutoff);
+
+			gui::clamp (m_near, 0.1f, 10.0f);
+			gui::clamp (m_far, m_near, 1000.0f);
+			gui::clamp (m_convergence, m_near, m_far);
+			gui::clamp (m_eyes_distance, 0.0f, 1.0f);
+			gui::clamp (m_gamma, 0.1f, 5.0f);
 		}
 
 		if (adjust_cam) {
