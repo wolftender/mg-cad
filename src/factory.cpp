@@ -138,8 +138,8 @@ namespace mini {
 	std::shared_ptr<scene_obj_t> object_factory::make_bezier_surf_c0 (scene_controller_base & scene, std::shared_ptr<const resource_store> store) {
 		return std::make_shared<bezier_patch_c0_template> (
 			scene, 
-			nullptr, 
-			nullptr, 
+			store->get_bezier_surf_shader (),
+			store->get_line_shader (),
 			store->get_billboard_s_shader (), 
 			store->get_point_texture (), 
 			3, 3

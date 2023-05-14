@@ -112,6 +112,11 @@ namespace mini {
 			glAttachShader (m_program, m_gs);
 		}
 
+		if (m_has_tesselation) {
+			glAttachShader (m_program, m_tes);
+			glAttachShader (m_program, m_tcs);
+		}
+
 		m_try_link ();
 
 		// linker success, delete shaders as they are no longer needed
@@ -122,7 +127,12 @@ namespace mini {
 			glDeleteShader (m_gs);
 		}
 
-		m_vs = m_ps = m_gs = 0;
+		if (m_has_tesselation) {
+			glDeleteShader (m_tcs);
+			glDeleteShader (m_tes);
+		}
+
+		m_vs = m_ps = m_gs = m_tes = m_tcs = 0;
 		return true;
 	}
 

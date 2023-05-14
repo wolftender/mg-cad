@@ -5,6 +5,8 @@
 namespace mini {
 	class bezier_patch_c0 : public scene_obj_t {
 		private:
+			static constexpr unsigned int num_control_points = 16;
+
 			std::vector<point_wptr> m_points;
 
 			std::shared_ptr<shader_t> m_shader;
@@ -13,6 +15,12 @@ namespace mini {
 			const unsigned int m_patches_x;
 			const unsigned int m_patches_y;
 			bool m_show_polygon;
+
+			GLuint m_vao;
+			GLuint m_pos_buffer, m_index_buffer;
+
+			std::vector<float> m_positions;
+			std::vector<GLuint> m_indices;
 
 		protected:
 			const std::vector<point_wptr> & t_get_points () const;
@@ -24,11 +32,25 @@ namespace mini {
 			unsigned int get_patches_x () const;
 			unsigned int get_patches_y () const;
 
+			unsigned int get_num_points () const;
+			unsigned int get_num_patches () const;
+
 			bezier_patch_c0 (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> grid_shader, 
 				unsigned int patches_x, unsigned int patches_y, const std::vector<point_ptr> & points);
+			~bezier_patch_c0 ();
 
 			bezier_patch_c0 (const bezier_patch_c0 &) = delete;
 			bezier_patch_c0 & operator= (const bezier_patch_c0 &) = delete;
+
+			virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override;
+
+		private:
+			void m_bind_shader (app_context & context, shader_t & shader, const glm::mat4x4 & world_matrix) const;
+			void m_rebuild_buffers ();
+			void m_calc_pos_buffer ();
+			void m_calc_idx_buffer ();
+			void m_update_buffers ();
+			void m_destroy_buffers ();
 	};
 
 	class bezier_patch_c0_template : public scene_obj_t {

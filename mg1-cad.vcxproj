@@ -212,6 +212,7 @@
     <None Include="shaders\vs_billboard_s.glsl" />
     <None Include="shaders\vs_grid.glsl" />
     <None Include="shaders\vs_meshgrid.glsl" />
+    <None Include="shaders\vs_pass.glsl" />
     <None Include="shaders\vs_position.glsl" />
   </ItemGroup>
   <ItemGroup>
