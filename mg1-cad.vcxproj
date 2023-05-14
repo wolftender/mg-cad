@@ -205,8 +205,10 @@
     <None Include="shaders\gs_lines.glsl" />
     <None Include="shaders\gs_polyline1.glsl" />
     <None Include="shaders\gs_polyline2.glsl" />
-    <None Include="shaders\tcs_bezier.glsl" />
-    <None Include="shaders\tes_bezier.glsl" />
+    <None Include="shaders\tcs_bezier_isolines.glsl" />
+    <None Include="shaders\tcs_bezier_quads.glsl" />
+    <None Include="shaders\tes_bezier_isolines.glsl" />
+    <None Include="shaders\tes_bezier_quads.glsl" />
     <None Include="shaders\vs_basic.glsl" />
     <None Include="shaders\vs_billboard.glsl" />
     <None Include="shaders\vs_billboard_s.glsl" />

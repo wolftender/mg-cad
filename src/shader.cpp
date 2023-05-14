@@ -251,6 +251,22 @@ namespace mini {
 		}
 	}
 
+	void shader_t::set_uniform_int (const std::string & name, const GLint value) {
+		const int location = get_uniform_location (name);
+
+		if (location >= 0) {
+			glUniform1i (location, value);
+		}
+	}
+
+	void shader_t::set_uniform_uint (const std::string & name, const GLuint value) {
+		const int location = get_uniform_location (name);
+
+		if (location >= 0) {
+			glUniform1ui (location, value);
+		}
+	}
+
 	void shader_t::set_uniform (const std::string & name, const float value) {
 		const int location = get_uniform_location (name);
 

@@ -139,6 +139,7 @@ namespace mini {
 		return std::make_shared<bezier_patch_c0_template> (
 			scene, 
 			store->get_bezier_surf_shader (),
+			store->get_bezier_surf_solid_shader (),
 			store->get_line_shader (),
 			store->get_billboard_s_shader (), 
 			store->get_point_texture (), 

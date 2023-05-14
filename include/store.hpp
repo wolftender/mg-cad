@@ -13,7 +13,7 @@ namespace mini {
 			std::shared_ptr<shader_t> m_mesh_shader, m_alt_mesh_shader;
 			std::shared_ptr<shader_t> m_bezier_shader, m_bezier_poly_shader;
 			std::shared_ptr<shader_t> m_line_shader;
-			std::shared_ptr<shader_t> m_bezier_surf_shader;
+			std::shared_ptr<shader_t> m_bezier_surf_shader, m_bezier_surf_solid_shader;
 
 			std::shared_ptr<texture_t> m_cursor_texture, m_point_texture;
 
@@ -29,6 +29,7 @@ namespace mini {
 			std::shared_ptr<shader_t> get_bezier_poly_shader () const;
 			std::shared_ptr<shader_t> get_line_shader () const;
 			std::shared_ptr<shader_t> get_bezier_surf_shader () const;
+			std::shared_ptr<shader_t> get_bezier_surf_solid_shader () const;
 
 			std::shared_ptr<texture_t> get_cursor_texture () const;
 			std::shared_ptr<texture_t> get_point_texture () const;
@@ -46,5 +47,7 @@ namespace mini {
 			std::shared_ptr<shader_t> m_load_shader (const std::string & vs_file, const std::string & ps_file, const std::string & gs_file) const;
 			std::shared_ptr<shader_t> m_load_shader (const std::string & vs_file, const std::string & ps_file, 
 				const std::string & tcs_file, const std::string & tes_file) const;
+			std::shared_ptr<shader_t> m_load_shader (const std::string & vs_file, const std::string & ps_file,
+				const std::string & tcs_file, const std::string & tes_file, const std::string & gs_file) const;
 	};
 }

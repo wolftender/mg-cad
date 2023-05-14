@@ -10,11 +10,20 @@ namespace mini {
 			std::vector<point_wptr> m_points;
 
 			std::shared_ptr<shader_t> m_shader;
+			std::shared_ptr<shader_t> m_solid_shader;
 			std::shared_ptr<shader_t> m_grid_shader;
 
 			const unsigned int m_patches_x;
 			const unsigned int m_patches_y;
+
+			int m_res_u;
+			int m_res_v;
+
+			bool m_use_solid;
+			bool m_use_wireframe;
+
 			bool m_show_polygon;
+			bool m_ready;
 
 			GLuint m_vao;
 			GLuint m_pos_buffer, m_index_buffer;
@@ -35,13 +44,14 @@ namespace mini {
 			unsigned int get_num_points () const;
 			unsigned int get_num_patches () const;
 
-			bezier_patch_c0 (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> grid_shader, 
-				unsigned int patches_x, unsigned int patches_y, const std::vector<point_ptr> & points);
+			bezier_patch_c0 (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> solid_shader, 
+				std::shared_ptr<shader_t> grid_shader, unsigned int patches_x, unsigned int patches_y, const std::vector<point_ptr> & points);
 			~bezier_patch_c0 ();
 
 			bezier_patch_c0 (const bezier_patch_c0 &) = delete;
 			bezier_patch_c0 & operator= (const bezier_patch_c0 &) = delete;
 
+			virtual void configure () override;
 			virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override;
 
 		private:
@@ -59,6 +69,7 @@ namespace mini {
 			std::vector<point_ptr> m_points;
 
 			std::shared_ptr<shader_t> m_shader;
+			std::shared_ptr<shader_t> m_solid_shader;
 			std::shared_ptr<shader_t> m_grid_shader;
 			std::shared_ptr<shader_t> m_point_shader;
 			std::shared_ptr<texture_t> m_point_texture;
@@ -67,8 +78,9 @@ namespace mini {
 			unsigned int m_patches_y;
 
 		public:
-			bezier_patch_c0_template (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> grid_shader, 
-				std::shared_ptr<shader_t> point_shader, std::shared_ptr<texture_t> point_texture, unsigned int patches_x, unsigned int patches_y);
+			bezier_patch_c0_template (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> solid_shader, 
+				std::shared_ptr<shader_t> grid_shader, std::shared_ptr<shader_t> point_shader, std::shared_ptr<texture_t> point_texture, 
+				unsigned int patches_x, unsigned int patches_y);
 
 			bezier_patch_c0_template (const bezier_patch_c0_template &) = delete;
 			bezier_patch_c0_template & operator= (const bezier_patch_c0_template &) = delete;

@@ -58,6 +58,28 @@ namespace mini {
 		return shader;
 	}
 
+	std::shared_ptr<shader_t> resource_store::m_load_shader (const std::string & vs_file, const std::string & ps_file, const std::string & tcs_file, const std::string & tes_file, const std::string & gs_file) const {
+		const std::string vs_source = m_read_file_content (vs_file);
+		const std::string ps_source = m_read_file_content (ps_file);
+		const std::string tes_source = m_read_file_content (tes_file);
+		const std::string tcs_source = m_read_file_content (tcs_file);
+		const std::string gs_source = m_read_file_content (gs_file);
+
+		auto shader = std::make_shared<shader_t> (vs_source, ps_source);
+
+		shader->set_tesselation_source (tcs_source, tes_source);
+		shader->set_geometry_source (gs_source);
+
+		try {
+			shader->compile ();
+		} catch (const shader_error_t & error) {
+			std::cerr << error.what () << " log: " << std::endl << error.get_log () << std::endl;
+			return nullptr;
+		}
+
+		return shader;
+	}
+
 	std::string resource_store::m_read_file_content (const std::string & path) const {
 		std::ifstream stream (path);
 
@@ -115,6 +137,10 @@ namespace mini {
 		return m_bezier_surf_shader;
 	}
 
+	std::shared_ptr<shader_t> resource_store::get_bezier_surf_solid_shader () const {
+		return m_bezier_surf_solid_shader;
+	}
+
 	std::shared_ptr<texture_t> resource_store::get_cursor_texture () const {
 		return m_cursor_texture;
 	}
@@ -147,7 +173,10 @@ namespace mini {
 
 		// surface teselation shaders
 		m_bezier_surf_shader = m_load_shader ("shaders/vs_pass.glsl", "shaders/fs_white.glsl", 
-			"shaders/tcs_bezier.glsl", "shaders/tes_bezier.glsl");
+			"shaders/tcs_bezier_isolines.glsl", "shaders/tes_bezier_isolines.glsl", "shaders/gs_lines.glsl");
+
+		m_bezier_surf_solid_shader = m_load_shader ("shaders/vs_pass.glsl", "shaders/fs_white.glsl",
+			"shaders/tcs_bezier_quads.glsl", "shaders/tes_bezier_quads.glsl");
 
 		// textures
 		m_cursor_texture = texture_t::load_from_file ("assets/cursor.png");

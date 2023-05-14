@@ -1,4 +1,5 @@
 #include "beziersurf.hpp"
+#include "gui.hpp"
 
 namespace mini {
 	const std::vector<point_wptr> & bezier_patch_c0::t_get_points () const {
@@ -29,17 +30,27 @@ namespace mini {
 		return m_patches_x * m_patches_y;
 	}
 
-	bezier_patch_c0::bezier_patch_c0 (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> grid_shader,
-		unsigned int patches_x, unsigned int patches_y, const std::vector<point_ptr> & points) :
+	bezier_patch_c0::bezier_patch_c0 (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> solid_shader, 
+		std::shared_ptr<shader_t> grid_shader, unsigned int patches_x, unsigned int patches_y, const std::vector<point_ptr> & points) :
 		scene_obj_t (scene, "bezier_surf_c0", false, false, false), m_patches_x (patches_x), m_patches_y (patches_y) {
 
 		// validity check
-		assert ((patches_y * patches_x * 9 + patches_x * 3 + patches_y * 3 + 1) == points.size ());
+		if ((patches_y * patches_x * 9 + patches_x * 3 + patches_y * 3 + 1) != points.size ()) {
+			throw std::runtime_error ("invalid input data for a bezier surface patch");
+		}
+
+		m_res_u = 25;
+		m_res_v = 25;
+
+		m_ready = false;
+		m_use_solid = false;
+		m_use_wireframe = true;
 
 		m_vao = 0;
 		m_pos_buffer = m_index_buffer = 0;
 
 		m_shader = shader;
+		m_solid_shader = solid_shader;
 		m_grid_shader = grid_shader;
 
 		m_points.reserve (points.size ());
@@ -54,20 +65,76 @@ namespace mini {
 		m_destroy_buffers ();
 	}
 
+	void bezier_patch_c0::configure () {
+		if (ImGui::CollapsingHeader ("Surface Settings")) {
+			gui::prefix_label ("Show Polygon: ", 250.0f);
+			ImGui::Checkbox ("##surf_show_polygon", &m_show_polygon);
+
+			gui::prefix_label ("Show Solid: ", 250.0f);
+			ImGui::Checkbox ("##surf_show_solid", &m_use_solid);
+
+			gui::prefix_label ("Show Wireframe: ", 250.0f);
+			ImGui::Checkbox ("##surf_show_frame", &m_use_wireframe);
+
+			gui::prefix_label ("Draw Res. U: ", 250.0f);
+			ImGui::InputInt ("##surf_res_u", &m_res_u);
+
+			gui::prefix_label ("Draw Res. V: ", 250.0f);
+			ImGui::InputInt ("##surf_res_v", &m_res_v);
+		}
+
+		gui::clamp (m_res_u, 4, 64);
+		gui::clamp (m_res_v, 4, 64);
+	}
+
 	void bezier_patch_c0::render (app_context & context, const glm::mat4x4 & world_matrix) const {
-		glBindVertexArray (m_vao);
-		m_bind_shader (context, *m_shader.get (), world_matrix);
+		if (m_ready) {
+			glBindVertexArray (m_vao);
+			
+			if (m_use_solid) {
+				const auto & view_matrix = context.get_view_matrix ();
+				const auto & proj_matrix = context.get_projection_matrix ();
 
-		m_shader->set_uniform_sampler ("u_vertical", true);
-		glPatchParameteri (GL_PATCH_VERTICES, 16);
-		glDrawElements (GL_PATCHES, m_indices.size (), GL_UNSIGNED_INT, 0);
+				if (m_use_wireframe) {
+					glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
+				}
 
-		m_shader->set_uniform_sampler ("u_vertical", false);
-		glPatchParameteri (GL_PATCH_VERTICES, 16);
-		glDrawElements (GL_PATCHES, m_indices.size (), GL_UNSIGNED_INT, 0);
+				m_solid_shader->bind ();
+				m_solid_shader->set_uniform ("u_world", world_matrix);
+				m_solid_shader->set_uniform ("u_view", view_matrix);
+				m_solid_shader->set_uniform ("u_projection", proj_matrix);
 
-		glUseProgram (0);
-		glBindVertexArray (0);
+				// first render pass - u,v
+				m_solid_shader->set_uniform_uint ("u_resolution_v", static_cast<GLuint> (m_res_v));
+				m_solid_shader->set_uniform_uint ("u_resolution_u", static_cast<GLuint> (m_res_u));
+
+				glPatchParameteri (GL_PATCH_VERTICES, 16);
+				glDrawElements (GL_PATCHES, m_indices.size (), GL_UNSIGNED_INT, 0);
+
+				glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
+			} else {
+				m_bind_shader (context, *m_shader.get (), world_matrix);
+
+				// first render pass - u,v
+				m_shader->set_uniform_int ("u_vertical", true);
+				m_shader->set_uniform_uint ("u_resolution_v", static_cast<GLuint> (m_res_v));
+				m_shader->set_uniform_uint ("u_resolution_u", static_cast<GLuint> (m_res_u));
+
+				glPatchParameteri (GL_PATCH_VERTICES, 16);
+				glDrawElements (GL_PATCHES, m_indices.size (), GL_UNSIGNED_INT, 0);
+
+				// second render pass = v,u
+				m_shader->set_uniform_int ("u_vertical", false);
+				m_shader->set_uniform_uint ("u_resolution_v", static_cast<GLuint> (m_res_u));
+				m_shader->set_uniform_uint ("u_resolution_u", static_cast<GLuint> (m_res_v));
+
+				glPatchParameteri (GL_PATCH_VERTICES, 16);
+				glDrawElements (GL_PATCHES, m_indices.size (), GL_UNSIGNED_INT, 0);
+			}
+
+			glUseProgram (0);
+			glBindVertexArray (0);
+		}
 	}
 
 	constexpr GLuint a_position = 0;
@@ -93,6 +160,7 @@ namespace mini {
 	}
 
 	void bezier_patch_c0::m_rebuild_buffers () {
+		m_ready = false;
 		m_destroy_buffers ();
 
 		// allocate new buffers
@@ -121,6 +189,7 @@ namespace mini {
 		glBufferData (GL_ELEMENT_ARRAY_BUFFER, sizeof (GLuint) * m_indices.size (), m_indices.data (), GL_STATIC_DRAW);
 
 		glBindVertexArray (0);
+		m_ready = true;
 	}
 
 	void bezier_patch_c0::m_calc_pos_buffer () {
@@ -182,13 +251,21 @@ namespace mini {
 			glDeleteBuffers (1, &m_index_buffer);
 			m_index_buffer = 0;
 		}
+
+		m_ready = false;
 	}
 
-	bezier_patch_c0_template::bezier_patch_c0_template (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> grid_shader, 
-		std::shared_ptr<shader_t> point_shader, std::shared_ptr<texture_t> point_texture, unsigned int patches_x, unsigned int patches_y) : 
+
+	//////////////////////////////////////////////////////////
+
+
+	bezier_patch_c0_template::bezier_patch_c0_template (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> solid_shader, 
+		std::shared_ptr<shader_t> grid_shader, std::shared_ptr<shader_t> point_shader, std::shared_ptr<texture_t> point_texture, 
+		unsigned int patches_x, unsigned int patches_y) : 
 		scene_obj_t (scene, "bezier_surf_c0", true, true, true) {
 
 		m_shader = shader;
+		m_solid_shader = solid_shader;
 		m_grid_shader = grid_shader;
 		m_point_shader = point_shader;
 		m_point_texture = point_texture;
@@ -200,18 +277,21 @@ namespace mini {
 	}
 
 	void bezier_patch_c0_template::configure () {
+		if (m_patch) {
+			m_patch->configure ();
+		}
 	}
 
 	void bezier_patch_c0_template::integrate (float delta_time) {
 	}
 
 	void bezier_patch_c0_template::render (app_context & context, const glm::mat4x4 & world_matrix) const {
-		for (const auto & point : m_points) {
-			point->render (context, point->get_matrix ());
-		}
-
 		if (m_patch) {
 			m_patch->render (context, world_matrix);
+		}
+
+		for (const auto & point : m_points) {
+			point->render (context, point->get_matrix ());
 		}
 	}
 
@@ -256,6 +336,6 @@ namespace mini {
 			}
 		}
 
-		m_patch = std::make_unique<bezier_patch_c0> (get_scene (), m_shader, m_grid_shader, m_patches_x, m_patches_y, m_points);
+		m_patch = std::make_unique<bezier_patch_c0> (get_scene (), m_shader, m_solid_shader, m_grid_shader, m_patches_x, m_patches_y, m_points);
 	}
 }
