@@ -4,6 +4,10 @@
 
 namespace mini {
 	class point_object : public scene_obj_t {
+		public:
+			static constexpr glm::vec4 s_color_default = { 1.0f, 1.0f, 1.0f, 1.0f };
+			static constexpr glm::vec4 s_select_default = { 0.960f, 0.646f, 0.0192f, 1.0f };
+
 		private:
 			billboard_object m_billboard;
 			glm::vec4 m_color, m_selected_color;

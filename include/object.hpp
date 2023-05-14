@@ -95,6 +95,7 @@ namespace mini {
 			bool m_rotatable, m_movable, m_scalable;
 			bool m_selected, m_disposed;
 			bool m_mouse_lock;
+			bool m_is_deletable;
 
 			std::array<std::list<std::weak_ptr<scene_obj_t>>, static_cast<int> (signal_event_t::MAX)> m_listeners;
 			std::array<signal_handler_t, static_cast<int> (signal_event_t::MAX) + 1> m_handlers;
@@ -126,6 +127,7 @@ namespace mini {
 			bool is_scalable () const;
 			bool is_movable () const;
 			bool is_disposed () const;
+			bool is_deletabe () const;
 
 			bool is_mouse_lock () const;
 
@@ -139,6 +141,7 @@ namespace mini {
 			void set_scale (const glm::vec3 & scale);
 			void set_selected (bool selected);
 			void set_name (const std::string & name);
+			void set_deletable (bool deletable);
 
 			glm::mat4x4 compose_matrix (const glm::vec3 & translation, const glm::quat & quaternion, const glm::vec3 & scale) const;
 			glm::mat4x4 get_matrix () const;

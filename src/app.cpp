@@ -514,7 +514,7 @@ namespace mini {
 				(*iter)->destroy = true;
 			}
 
-			if ((*iter)->destroy) {
+			if ((*iter)->destroy && (*iter)->object->is_deletabe ()) {
 				if (m_selected_object && m_selected_object == *iter) {
 					m_selected_object = m_selected_group->group_pop ();
 				}
@@ -985,6 +985,13 @@ namespace mini {
 	}
 
 	void application::m_add_object (const std::string & name, std::shared_ptr<scene_obj_t> object, bool select) {
+		// dont allow duplicate objects
+		for (const auto & wrapper : m_objects) {
+			if (wrapper->object == object) {
+				return;
+			}
+		}
+
 		auto real_name = m_get_free_name (name);
 
 		std::shared_ptr<object_wrapper_t> wrapper = std::shared_ptr<object_wrapper_t> (new object_wrapper_t (object, real_name));

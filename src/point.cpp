@@ -29,8 +29,8 @@ namespace mini {
 		scene_obj_t (scene, "point", true, false, false),
 		m_billboard (shader, texture) { 
 
-		m_color = { 1.0f, 1.0f, 1.0f, 1.0f };
-		m_selected_color = { 0.960f, 0.646f, 0.0192f, 1.0f };
+		m_color = s_color_default;
+		m_selected_color = s_select_default;
 
 		m_billboard.set_size ({ 16.0f, 16.0f });
 	}

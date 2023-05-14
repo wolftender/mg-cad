@@ -7,7 +7,7 @@ namespace mini {
 		private:
 			static constexpr unsigned int num_control_points = 16;
 
-			std::vector<point_wptr> m_points;
+			std::vector<point_ptr> m_points;
 
 			std::shared_ptr<shader_t> m_shader;
 			std::shared_ptr<shader_t> m_solid_shader;
@@ -21,9 +21,11 @@ namespace mini {
 
 			bool m_use_solid;
 			bool m_use_wireframe;
+			bool m_queued_update;
 
 			bool m_show_polygon;
 			bool m_ready;
+			bool m_signals_setup;
 
 			GLuint m_vao;
 			GLuint m_pos_buffer, m_index_buffer;
@@ -32,7 +34,7 @@ namespace mini {
 			std::vector<GLuint> m_indices;
 
 		protected:
-			const std::vector<point_wptr> & t_get_points () const;
+			const std::vector<point_ptr> & t_get_points () const;
 
 		public: 
 			bool is_showing_polygon () const;
@@ -52,20 +54,29 @@ namespace mini {
 			bezier_patch_c0 & operator= (const bezier_patch_c0 &) = delete;
 
 			virtual void configure () override;
+			virtual void integrate (float delta_time) override;
 			virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override;
 
 		private:
 			void m_bind_shader (app_context & context, shader_t & shader, const glm::mat4x4 & world_matrix) const;
 			void m_rebuild_buffers ();
-			void m_calc_pos_buffer ();
+			bool m_calc_pos_buffer ();
 			void m_calc_idx_buffer ();
 			void m_update_buffers ();
 			void m_destroy_buffers ();
+			void m_moved_sighandler (signal_event_t sig, scene_obj_t & sender);
+			void m_setup_signals ();
 	};
 
 	class bezier_patch_c0_template : public scene_obj_t {
 		private:
-			std::unique_ptr<bezier_patch_c0> m_patch;
+			enum class build_mode_t {
+				mode_default,
+				mode_cylinder,
+				mode_hat
+			};
+
+			std::shared_ptr<bezier_patch_c0> m_patch;
 			std::vector<point_ptr> m_points;
 
 			std::shared_ptr<shader_t> m_shader;
@@ -74,8 +85,12 @@ namespace mini {
 			std::shared_ptr<shader_t> m_point_shader;
 			std::shared_ptr<texture_t> m_point_texture;
 
-			unsigned int m_patches_x;
-			unsigned int m_patches_y;
+			int m_patches_x;
+			int m_patches_y;
+
+			build_mode_t m_build_mode;
+			int m_combo_item;
+			bool m_rebuild, m_added;
 
 		public:
 			bezier_patch_c0_template (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> solid_shader, 
@@ -90,6 +105,7 @@ namespace mini {
 			virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override;
 
 		private:
-			void m_rebuild_surface ();
+			void m_add_to_scene ();
+			void m_rebuild_surface (build_mode_t mode);
 	};
 }

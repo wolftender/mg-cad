@@ -143,7 +143,7 @@ namespace mini {
 			store->get_line_shader (),
 			store->get_billboard_s_shader (), 
 			store->get_point_texture (), 
-			3, 3
+			1, 1
 		);
 	}
 }

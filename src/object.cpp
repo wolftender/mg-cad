@@ -18,6 +18,7 @@ namespace mini {
 		m_selected = false;
 		m_disposed = false;
 		m_mouse_lock = false;
+		m_is_deletable = true;
 	}
 
 	scene_obj_t::~scene_obj_t () { }
@@ -151,6 +152,10 @@ namespace mini {
 		return m_disposed;
 	}
 
+	bool scene_obj_t::is_deletabe () const {
+		return m_is_deletable;
+	}
+
 	scene_controller_base & scene_obj_t::get_scene () const {
 		return m_scene;
 	}
@@ -193,6 +198,10 @@ namespace mini {
 
 	void scene_obj_t::set_name (const std::string & name) {
 		m_name = name;
+	}
+
+	void scene_obj_t::set_deletable (bool deletable) {
+		m_is_deletable = deletable;
 	}
 
 	glm::mat4x4 scene_obj_t::compose_matrix (const glm::vec3 & translation, const glm::quat & quaternion, const glm::vec3 & scale) const {
