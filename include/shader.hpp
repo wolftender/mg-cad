@@ -30,14 +30,15 @@ namespace mini {
 	/// </summary>
 	class shader_t {
 		private:
-			std::string m_vs_source, m_ps_source, m_gs_source;
-			GLuint m_program, m_ps, m_vs, m_gs;
-			bool m_is_ready, m_has_geometry;
+			std::string m_vs_source, m_ps_source, m_gs_source, m_tcs_source, m_tes_source;
+			GLuint m_program, m_ps, m_vs, m_gs, m_tcs, m_tes;
+			bool m_is_ready, m_has_geometry, m_has_tesselation;
 
 		public:
 			void set_vertex_source (const std::string & source);
 			void set_fragment_source (const std::string & source);
 			void set_geometry_source (const std::string & source);
+			void set_tesselation_source (const std::string & tcs, const std::string & tes);
 			bool compile ();
 
 			bool is_ready () const;

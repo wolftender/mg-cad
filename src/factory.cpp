@@ -8,6 +8,7 @@
 #include "bezier.hpp"
 #include "bspline.hpp"
 #include "interpolate.hpp"
+#include "beziersurf.hpp"
 
 namespace mini {
 	object_factory::object_factory_impl_t::object_factory_impl_t (object_ctor_t c, const std::string & n, const std::string & d) :
@@ -44,6 +45,10 @@ namespace mini {
 
 		m_factories.push_back ({
 			&object_factory::make_interpolating_c2, "interpolating c2", "an interpolating c2 spline curve"
+		});
+
+		m_factories.push_back ({
+			&object_factory::make_bezier_surf_c0, "bezier surface c0", "a bezier surface patch with c0 continuity between its patches"
 		});
 	}
 
@@ -127,6 +132,17 @@ namespace mini {
 			scene,
 			store->get_bezier_shader (),
 			store->get_line_shader ()
+		);
+	}
+
+	std::shared_ptr<scene_obj_t> object_factory::make_bezier_surf_c0 (scene_controller_base & scene, std::shared_ptr<const resource_store> store) {
+		return std::make_shared<bezier_patch_c0_template> (
+			scene, 
+			nullptr, 
+			nullptr, 
+			store->get_billboard_s_shader (), 
+			store->get_point_texture (), 
+			3, 3
 		);
 	}
 }

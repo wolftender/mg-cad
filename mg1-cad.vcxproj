@@ -159,10 +159,12 @@
     <ClInclude Include="include\tool.hpp" />
     <ClInclude Include="include\torus.hpp" />
     <ClInclude Include="include\window.hpp" />
+    <ClInclude Include="include\beziersurf.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\anaglyph.cpp" />
     <ClCompile Include="src\bezier.cpp" />
+    <ClCompile Include="src\beziersurf.cpp" />
     <ClCompile Include="src\billboard.cpp" />
     <ClCompile Include="src\bspline.cpp" />
     <ClCompile Include="src\factory.cpp" />
@@ -203,6 +205,8 @@
     <None Include="shaders\gs_lines.glsl" />
     <None Include="shaders\gs_polyline1.glsl" />
     <None Include="shaders\gs_polyline2.glsl" />
+    <None Include="shaders\tcs_bezier.glsl" />
+    <None Include="shaders\tes_bezier.glsl" />
     <None Include="shaders\vs_basic.glsl" />
     <None Include="shaders\vs_billboard.glsl" />
     <None Include="shaders\vs_billboard_s.glsl" />

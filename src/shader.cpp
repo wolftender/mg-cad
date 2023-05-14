@@ -37,11 +37,20 @@ namespace mini {
 		}
 	}
 
+	void shader_t::set_tesselation_source (const std::string & tcs, const std::string & tes) {
+		if (!m_is_ready) {
+			m_tcs_source = tcs;
+			m_tes_source = tes;
+		}
+	}
+
 	bool shader_t::compile () {
 		// compile and link
 		GLuint vs = 0;
 		GLuint ps = 0;
 		GLuint gs = 0;
+		GLuint tcs = 0;
+		GLuint tes = 0;
 
 		// theese will throw exceptions if any fails
 		try {
@@ -52,6 +61,12 @@ namespace mini {
 				m_has_geometry = true;
 				m_try_compile (GL_GEOMETRY_SHADER, m_gs_source, &gs);
 			}
+
+			if (m_tcs_source.size () > 0 && m_tes_source.size () > 0) {
+				m_has_tesselation = true;
+				m_try_compile (GL_TESS_CONTROL_SHADER, m_tcs_source, &tcs);
+				m_try_compile (GL_TESS_EVALUATION_SHADER, m_tes_source, &tes);
+			}
 		} catch (const std::exception & e) {
 			if (vs) {
 				glDeleteShader (vs);
@@ -61,6 +76,18 @@ namespace mini {
 				glDeleteShader (ps);
 			}
 
+			if (gs) {
+				glDeleteShader (gs);
+			}
+
+			if (tcs) {
+				glDeleteShader (tcs);
+			}
+
+			if (tes) {
+				glDeleteShader (tes);
+			}
+
 			// propagate the error
 			throw e;
 		}
@@ -68,6 +95,8 @@ namespace mini {
 		m_ps = ps;
 		m_vs = vs;
 		m_gs = gs;
+		m_tcs = tcs;
+		m_tes = tes;
 
 		const GLuint program_object = glCreateProgram ();
 
@@ -104,13 +133,17 @@ namespace mini {
 	shader_t::shader_t () {
 		m_is_ready = false;
 		m_has_geometry = false;
-		m_program = m_ps = m_vs = m_gs = 0;
+		m_has_tesselation = false;
+
+		m_program = m_ps = m_vs = m_gs = m_tcs = m_tes = 0;
 	}
 
 	shader_t::shader_t (const std::string & vs_source, const std::string & ps_source) {
 		m_is_ready = false;
 		m_has_geometry = false;
-		m_program = m_ps = m_vs = m_gs = 0;
+		m_has_tesselation = false;
+
+		m_program = m_ps = m_vs = m_gs = m_tcs = m_tes = 0;
 
 		set_vertex_source (vs_source);
 		set_fragment_source (ps_source);
@@ -119,7 +152,9 @@ namespace mini {
 	shader_t::shader_t (const shader_t & shader) {
 		m_is_ready = false;
 		m_has_geometry = false;
-		m_program = m_ps = m_vs = m_gs = 0;
+		m_has_tesselation = false;
+
+		m_program = m_ps = m_vs = m_gs = m_tcs = m_tes = 0;
 
 		m_vs_source = shader.m_vs_source;
 		m_ps_source = shader.m_ps_source;
@@ -129,10 +164,24 @@ namespace mini {
 
 	shader_t & shader_t::operator= (const shader_t & shader) {
 		m_is_ready = false;
+		m_has_geometry = false;
+		m_has_tesselation = false;
+
 		m_program = m_ps = m_vs = 0;
 
 		m_vs_source = shader.m_vs_source;
 		m_ps_source = shader.m_ps_source;
+
+		if (shader.m_has_geometry) {
+			m_has_geometry = true;
+			m_gs_source = shader.m_gs_source;
+		}
+
+		if (shader.m_has_tesselation) {
+			m_has_tesselation = true;
+			m_tes_source = shader.m_tes_source;
+			m_tcs_source = shader.m_tcs_source;
+		}
 
 		compile ();
 
@@ -154,6 +203,14 @@ namespace mini {
 
 		if (m_gs) {
 			glDeleteShader (m_gs);
+		}
+
+		if (m_tcs) {
+			glDeleteShader (m_tcs);
+		}
+
+		if (m_tes) {
+			glDeleteShader (m_tes);
 		}
 	}
 
