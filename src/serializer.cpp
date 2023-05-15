@@ -11,11 +11,25 @@
 #include "beziersurf.hpp"
 
 namespace mini {
+#define DESERIALIZER(T) template<> \
+		std::shared_ptr<scene_obj_t> generic_object_deserializer<T>::deserialize
+
+#define SERIALIZER(T) template<> json generic_object_serializer<T>::serialize
+
 	inline json s_serialize_data (const glm::vec3 & vec) {
 		json v;
 		v["x"] = vec.x;
 		v["y"] = vec.y;
 		v["z"] = vec.z;
+
+		return v;
+	}
+
+	inline json s_serialize_color (const glm::vec4 & vec) {
+		json v;
+		v["r"] = vec.x;
+		v["g"] = vec.y;
+		v["b"] = vec.z;
 
 		return v;
 	}
@@ -111,21 +125,18 @@ namespace mini {
 		return j;
 	}
 
-	template<>
-	json generic_object_serializer<scene_obj_t>::serialize (int id, std::shared_ptr<scene_obj_t> object, const cache_object_id_t & cache) const {
+	SERIALIZER (scene_obj_t) (int id, std::shared_ptr<scene_obj_t> object, const cache_object_id_t & cache) const {
 		return s_serialize_base (id, object);
 	}
 
-	template<>
-	json generic_object_serializer<cube_object>::serialize (int id, std::shared_ptr<scene_obj_t> object, const cache_object_id_t & cache) const {
+	SERIALIZER (cube_object) (int id, std::shared_ptr<scene_obj_t> object, const cache_object_id_t & cache) const {
 		json j = s_serialize_base (id, object);
 		j["objectType"] = "ext.eter.cube";
 
 		return j;
 	}
 
-	template<>
-	json generic_object_serializer<torus_object>::serialize (int id, std::shared_ptr<scene_obj_t> object, const cache_object_id_t & cache) const {
+	SERIALIZER (torus_object) (int id, std::shared_ptr<scene_obj_t> object, const cache_object_id_t & cache) const {
 		json j = s_serialize_base (id, object);
 
 		std::shared_ptr<mini::torus_object> torus = std::dynamic_pointer_cast<mini::torus_object> (object);
@@ -164,45 +175,228 @@ namespace mini {
 		return serialized;
 	}
 
-	template<>
-	json generic_object_serializer<bezier_curve_c0>::serialize (int id, std::shared_ptr<scene_obj_t> object, const cache_object_id_t & cache) const {
+	SERIALIZER (bezier_curve_c0) (int id, std::shared_ptr<scene_obj_t> object, const cache_object_id_t & cache) const {
 		json j = s_serialize_base (id, object);
 
 		std::shared_ptr<bezier_curve_c0> segment = std::dynamic_pointer_cast<mini::bezier_curve_c0> (object);
 
 		if (segment) {
 			j["objectType"] = "bezierC0";
+			j["color"] = s_serialize_color (segment->get_color ());
 			j["controlPoints"] = s_serialize_control_points (segment.get (), cache);
 		}
 
 		return j;
 	}
 
-	template<>
-	json generic_object_serializer<bspline_curve>::serialize (int id, std::shared_ptr<scene_obj_t> object, const cache_object_id_t & cache) const {
+	SERIALIZER (bspline_curve) (int id, std::shared_ptr<scene_obj_t> object, const cache_object_id_t & cache) const {
 		json j = s_serialize_base (id, object);
 
 		std::shared_ptr<bspline_curve> segment = std::dynamic_pointer_cast<mini::bspline_curve> (object);
 
 		if (segment) {
 			j["objectType"] = "bezierC2";
+			j["color"] = s_serialize_color (segment->get_color ());
 			j["controlPoints"] = s_serialize_control_points (segment.get (), cache);
 		}
 
 		return j;
 	}
 
-	template<>
-	json generic_object_serializer<interpolating_curve>::serialize (int id, std::shared_ptr<scene_obj_t> object, const cache_object_id_t & cache) const {
+	SERIALIZER (interpolating_curve) (int id, std::shared_ptr<scene_obj_t> object, const cache_object_id_t & cache) const {
 		json j = s_serialize_base (id, object);
 
 		std::shared_ptr<interpolating_curve> segment = std::dynamic_pointer_cast<mini::interpolating_curve> (object);
 
 		if (segment) {
 			j["objectType"] = "interpolatingC2";
+			j["color"] = s_serialize_color (segment->get_color ());
 			j["controlPoints"] = s_serialize_control_points (segment.get (), cache);
 		}
 
 		return j;
+	}
+
+
+	///////////////////////////////////////////
+
+
+	inline glm::vec3 s_deserialize_vector (const json & data) {
+		glm::vec3 v;
+
+		v.x = data["x"];
+		v.y = data["y"];
+		v.z = data["z"];
+
+		return v;
+	}
+
+	inline glm::vec3 s_deserialize_color (const json & data) {
+		glm::vec3 c;
+
+		c.r = data["r"];
+		c.g = data["g"];
+		c.b = data["b"];
+
+		return c;
+	}
+
+	scene_deserializer::scene_deserializer (scene_controller_base & scene, std::shared_ptr<resource_store> store) : 
+		m_scene (scene) {
+
+		m_store = store;
+		m_ready = false;
+		m_init_deserializers ();
+	}
+
+	scene_deserializer::scene_deserializer (scene_controller_base & scene, std::shared_ptr<resource_store> store, const std::string & data) :
+		m_scene (scene) {
+
+		m_store = store;
+		m_ready = false;
+		m_init_deserializers ();
+		load (data);
+	}
+
+	scene_deserializer::~scene_deserializer () { }
+
+	bool scene_deserializer::load (const std::string & data) {
+		try {
+			json j = json::parse (data);
+
+			for (const auto & point : j["points"]) {
+				m_deserialize_object (point);
+			}
+
+			for (const auto & geometry : j["geometry"]) {
+				m_deserialize_object (geometry);
+			}
+		} catch (const std::exception &) {
+			return false;
+		}
+
+		return true;
+	}
+
+	void scene_deserializer::reset () {
+		m_objects.clear ();
+		m_cache.clear ();
+	}
+
+	bool scene_deserializer::has_next () {
+		return !m_objects.empty ();
+	}
+
+	std::shared_ptr<scene_obj_t> scene_deserializer::get_next () {
+		auto next = m_objects.front ();
+		m_objects.pop_front ();
+
+		return next;
+	}
+
+	void scene_deserializer::m_init_deserializers () {
+		m_deserializers.insert ({ "torus", &generic_object_deserializer<torus_object>::get_instance () });
+		m_deserializers.insert ({ "ext.eter.cube", &generic_object_deserializer<cube_object>::get_instance () });
+		m_deserializers.insert ({ "bezierC0", &generic_object_deserializer<bezier_curve_c0>::get_instance () });
+		m_deserializers.insert ({ "bezierC2", &generic_object_deserializer<bspline_curve>::get_instance () });
+		m_deserializers.insert ({ "interpolatingC2", &generic_object_deserializer<interpolating_curve>::get_instance () });
+	}
+
+	void scene_deserializer::m_deserialize_object (const json & data) {
+		std::string type = data["objectType"].get<std::string> ();
+		int id = data["id"].get<int> ();
+
+		auto deserializer = m_deserializers.find (type);
+		if (deserializer != m_deserializers.end ()) {
+			auto object = deserializer->second->deserialize (m_scene, m_store, data, m_cache);
+
+			if (object) {
+				m_cache.insert ({id, object});
+				m_objects.push_back (object);
+			}
+		}
+	}
+
+	inline void s_deserialize_transform (scene_obj_t & obj, const json & data) {
+		if (obj.is_movable ()) {
+			obj.set_translation (s_deserialize_vector (data["position"]));
+		}
+
+		if (obj.is_scalable ()) {
+			obj.set_scale (s_deserialize_vector (data["scale"]));
+		}
+
+		if (obj.is_rotatable ()) {
+			obj.set_euler_angles (s_deserialize_vector (data["rotation"]));
+		}
+	}
+
+	DESERIALIZER (point_object) (scene_controller_base & scene, std::shared_ptr<resource_store> store,
+		const json & data, const cache_id_object_t & cache) const {
+
+		auto point = std::make_shared<point_object> (
+			scene,
+			store->get_billboard_s_shader (),
+			store->get_point_texture ()
+		);
+
+		point->set_name (data["name"].get<std::string> ());
+		s_deserialize_transform (*point, data);
+		return point;
+	}
+
+	DESERIALIZER (torus_object) (scene_controller_base & scene, std::shared_ptr<resource_store> store,
+		const json & data, const cache_id_object_t & cache) const {
+
+		unsigned int div_u = data["samples"]["x"].get<unsigned int> ();
+		unsigned int div_v = data["samples"]["y"].get<unsigned int> ();
+
+		float small_r = data["smallRadius"].get<float> ();
+		float large_r = data["largeRadius"].get<float> ();
+		
+		auto torus = std::make_shared<torus_object> (
+			scene,
+			store->get_mesh_shader (),
+			store->get_alt_mesh_shader (),
+			small_r, large_r
+		);
+
+		torus->set_name (data["name"].get<std::string>());
+		torus->set_div_u (div_u);
+		torus->set_div_v (div_v);
+
+		s_deserialize_transform (*torus, data);
+		return torus;
+	}
+
+	DESERIALIZER (cube_object) (scene_controller_base & scene, std::shared_ptr<resource_store> store, 
+		const json & data, const cache_id_object_t & cache) const {
+
+		auto cube = std::make_shared<cube_object> (
+			scene,
+			store->get_basic_shader ()
+		);
+
+		cube->set_name (data["name"].get<std::string> ());
+		s_deserialize_transform (*cube, data);
+		return cube;
+	}
+
+	DESERIALIZER (bezier_curve_c0) (scene_controller_base & scene, std::shared_ptr<resource_store> store,
+		const json & data, const cache_id_object_t & cache) const {
+
+		return nullptr;
+	}
+
+	DESERIALIZER (bspline_curve) (scene_controller_base & scene, std::shared_ptr<resource_store> store,
+		const json & data, const cache_id_object_t & cache) const {
+
+		return nullptr;
+	}
+
+	DESERIALIZER (interpolating_curve) (scene_controller_base & scene, std::shared_ptr<resource_store> store,
+		const json & data, const cache_id_object_t & cache) const {
+
+		return nullptr;
 	}
 }

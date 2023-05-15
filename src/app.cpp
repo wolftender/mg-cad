@@ -1187,6 +1187,42 @@ namespace mini {
 	}
 
 	void application::m_load_scene () {
+		constexpr const nfdchar_t * filters = "json";
+		nfdchar_t * in_path = nullptr;
+
+		nfdresult_t result = NFD_OpenDialog (filters, nullptr, &in_path);
+
+		if (result == NFD_OKAY) {
+			std::string path = std::string (in_path, strlen (in_path));
+			std::ifstream stream (path);
+
+			if (!stream) {
+				std::cerr << "failed to open file " << path << std::endl;
+				return;
+			}
+
+			std::stringstream ss;
+			ss << stream.rdbuf ();
+			stream.close ();
+
+			scene_deserializer deserializer (*this, m_store);
+
+			try {
+				deserializer.load (ss.str ());
+			} catch (const std::runtime_error & error) {
+				std::cerr << error.what () << std::endl;
+				return;
+			}
+
+			while (deserializer.has_next ()) {
+				auto object = deserializer.get_next ();
+				add_object (object->get_name (), object);
+			}
+
+			m_is_saved = true;
+			m_project_path = path;
+			set_title (std::string (app_title) + " - " + m_project_path);
+		}
 	}
 
 	void application::add_object (const std::string & name, std::shared_ptr<scene_obj_t> object) {
