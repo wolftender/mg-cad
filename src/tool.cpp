@@ -123,31 +123,22 @@ namespace mini {
 			return false;
 		}
 
-		if (m_axis_lock == axis_t::none) {
-			const auto & camera = get_app ().get_context ().get_camera ();
+		const auto & camera = get_app ().get_context ().get_camera ();
 
-			glm::vec3 plane_normal = normalize (camera.get_position () - camera.get_target ());
-			glm::vec3 direction = calculate_mouse_dir (m_offset_x, m_offset_y);
+		glm::vec3 plane_normal = normalize (camera.get_position () - camera.get_target ());
+		glm::vec3 direction = calculate_mouse_dir (m_offset_x, m_offset_y);
 
-			float nt = glm::dot ((m_original_transform - camera.get_position ()), plane_normal);
-			float dt = glm::dot (direction, plane_normal);
+		float nt = glm::dot ((m_original_transform - camera.get_position ()), plane_normal);
+		float dt = glm::dot (direction, plane_normal);
 
-			m_selection->set_translation ((nt / dt) * direction + camera.get_position ());
-			return true;
-		}
-
-		const offset_t & last_pos = get_app ().get_last_mouse_offset ();
-		const offset_t & curr_pos = get_app ().get_mouse_offset ();
-
-		float dx = static_cast<float>(curr_pos.x) - static_cast<float>(last_pos.x);
-		float dy = static_cast<float>(curr_pos.y) - static_cast<float>(last_pos.y);
-
+		auto new_pos = (nt / dt) * direction + camera.get_position ();
 		auto t = m_selection->get_translation ();
 
 		switch (m_axis_lock) {
-			case axis_t::x: t[0] += 0.1f * dx; break;
-			case axis_t::y: t[1] += 0.1f * dy; break;
-			case axis_t::z: t[2] += 0.1f * dx; break;
+			case axis_t::x: t.x = new_pos.x; break;
+			case axis_t::y: t.y = new_pos.y; break;
+			case axis_t::z: t.z = new_pos.z; break;
+			case axis_t::none: t = new_pos; break;
 			default: break;
 		}
 
