@@ -50,6 +50,7 @@ namespace mini {
 
 		m_vao = 0;
 		m_pos_buffer = m_index_buffer = 0;
+		m_color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 		m_shader = shader;
 		m_solid_shader = solid_shader;
@@ -91,6 +92,9 @@ namespace mini {
 
 			gui::prefix_label ("Draw Res. V: ", 250.0f);
 			ImGui::InputInt ("##surf_res_v", &m_res_v);
+
+			gui::prefix_label ("Color: ", 250.0f);
+			gui::color_editor ("##surf_Color", m_color);
 			ImGui::NewLine ();
 		}
 
@@ -121,10 +125,7 @@ namespace mini {
 					glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
 				}
 
-				m_solid_shader->bind ();
-				m_solid_shader->set_uniform ("u_world", world_matrix);
-				m_solid_shader->set_uniform ("u_view", view_matrix);
-				m_solid_shader->set_uniform ("u_projection", proj_matrix);
+				m_bind_shader (context, *m_solid_shader.get (), world_matrix);
 
 				// first render pass - u,v
 				m_solid_shader->set_uniform_uint ("u_resolution_v", static_cast<GLuint> (m_res_v));
@@ -179,6 +180,7 @@ namespace mini {
 		shader.set_uniform ("u_projection", proj_matrix);
 		shader.set_uniform ("u_resolution", resolution);
 		shader.set_uniform ("u_line_width", 2.0f);
+		shader.set_uniform ("u_color", m_color);
 	}
 
 	void bezier_patch_c0::m_rebuild_buffers () {

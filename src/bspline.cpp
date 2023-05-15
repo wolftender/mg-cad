@@ -76,6 +76,7 @@ namespace mini {
 
 			for (auto & segment : m_segments) {
 				segment->set_showing_polygon (is_show_polygon ());
+				segment->set_color (get_color ());
 				segment->integrate (delta_time);
 			}
 		}
@@ -269,9 +270,14 @@ namespace mini {
 
 				prev_end = p4;
 
-				m_segments.push_back (std::make_shared<bezier_segment_gpu> (
+				auto segment = std::make_shared<bezier_segment_gpu> (
 					m_shader1, m_shader2, p1, p2, p3, p4
-				));
+				);
+
+				segment->set_showing_polygon (is_show_polygon ());
+				segment->set_color (get_color ());
+
+				m_segments.push_back (std::move (segment));
 			}
 		}
 	}

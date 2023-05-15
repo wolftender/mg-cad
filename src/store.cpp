@@ -165,17 +165,17 @@ namespace mini {
 		m_billboard_shader_s = m_load_shader ("shaders/vs_billboard_s.glsl", "shaders/fs_billboard.glsl");
 
 		// shaders used for gpu bezier
-		m_bezier_shader = m_load_shader ("shaders/vs_position.glsl", "shaders/fs_white.glsl", "shaders/gs_bezier.glsl");
-		m_bezier_poly_shader = m_load_shader ("shaders/vs_position.glsl", "shaders/fs_white.glsl", "shaders/gs_bezier2.glsl");
+		m_bezier_shader = m_load_shader ("shaders/vs_position.glsl", "shaders/fs_solidcolor.glsl", "shaders/gs_bezier.glsl");
+		m_bezier_poly_shader = m_load_shader ("shaders/vs_position.glsl", "shaders/fs_solidcolor.glsl", "shaders/gs_bezier2.glsl");
 
 		// shader that draws nice polygon lines
-		m_line_shader = m_load_shader ("shaders/vs_basic.glsl", "shaders/fs_white.glsl", "shaders/gs_lines.glsl");
+		m_line_shader = m_load_shader ("shaders/vs_basic.glsl", "shaders/fs_solidcolor.glsl", "shaders/gs_lines.glsl");
 
 		// surface teselation shaders
-		m_bezier_surf_shader = m_load_shader ("shaders/vs_pass.glsl", "shaders/fs_white.glsl", 
+		m_bezier_surf_shader = m_load_shader ("shaders/vs_pass.glsl", "shaders/fs_solidcolor.glsl", 
 			"shaders/tcs_bezier_isolines.glsl", "shaders/tes_bezier_isolines.glsl", "shaders/gs_lines.glsl");
 
-		m_bezier_surf_solid_shader = m_load_shader ("shaders/vs_pass.glsl", "shaders/fs_white.glsl",
+		m_bezier_surf_solid_shader = m_load_shader ("shaders/vs_pass.glsl", "shaders/fs_solidcolor.glsl",
 			"shaders/tcs_bezier_quads.glsl", "shaders/tes_bezier_quads.glsl");
 
 		// textures

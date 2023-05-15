@@ -194,6 +194,7 @@
     <None Include="Makefile" />
     <None Include="README.md" />
     <None Include="shaders\fs_basic.glsl" />
+    <None Include="shaders\fs_solidcolor.glsl" />
     <None Include="shaders\fs_white.glsl" />
     <None Include="shaders\fs_billboard.glsl" />
     <None Include="shaders\fs_grid_xy.glsl" />

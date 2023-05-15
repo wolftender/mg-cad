@@ -217,6 +217,7 @@ namespace mini {
 			void m_mark_object (std::shared_ptr<object_wrapper_t> object_wrapper);
 			void m_select_object (std::shared_ptr<object_wrapper_t> object_wrapper);
 			void m_group_select_add (std::shared_ptr<object_wrapper_t> object_wrapper);
+			void m_select_all ();
 			void m_reset_selection ();
 
 			// serialize/deserialize

@@ -20,5 +20,7 @@ namespace mini {
 				value = max;
 			}
 		}
+
+		bool color_editor (const std::string & label, glm::vec4 & color);
 	}
 }

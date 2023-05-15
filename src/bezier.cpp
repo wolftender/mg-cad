@@ -19,6 +19,14 @@ namespace mini {
 		m_show_polygon = show;
 	}
 
+	const glm::vec4 & bezier_segment_base::get_color () const {
+		return m_color;
+	}
+
+	void bezier_segment_base::set_color (const glm::vec4 & color) {
+		m_color = color;
+	}
+
 	bezier_segment_base::bezier_segment_base (point_wptr p0, point_wptr p1, point_wptr p2, point_wptr p3) {
 		m_points[0] = p0;
 		m_points[1] = p1;
@@ -26,6 +34,7 @@ namespace mini {
 		m_points[3] = p3;
 
 		m_show_polygon = false;
+		m_color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	}
 	
 	/***********************/
@@ -132,6 +141,7 @@ namespace mini {
 			static_cast<float> (video_mode.get_buffer_height ())
 		};
 
+		shader->set_uniform ("u_color", get_color ());
 		shader->set_uniform ("u_world", world_matrix);
 		shader->set_uniform ("u_view", view_matrix);
 		shader->set_uniform ("u_projection", proj_matrix);
@@ -316,6 +326,10 @@ namespace mini {
 		return m_show_polygon;
 	}
 
+	const glm::vec4 & curve_base::get_color () const {
+		return m_color;
+	}
+
 	void curve_base::set_rebuild_queued (bool rebuild) {
 		m_queue_curve_rebuild = rebuild;
 	}
@@ -328,11 +342,16 @@ namespace mini {
 		m_show_polygon = show;
 	}
 
+	void curve_base::set_color (const glm::vec4 & color) {
+		m_color = color;
+	}
+
 	curve_base::curve_base (scene_controller_base & scene, const std::string & name) : scene_obj_t (scene, name, false, false, false) {
 		m_auto_extend = false;
 		m_show_polygon = false;
 		m_queue_curve_rebuild = false;
 		m_configured = false;
+		m_color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 		t_set_handler (signal_event_t::moved, std::bind (&curve_base::m_moved_sighandler,
 			this, std::placeholders::_1, std::placeholders::_2));
@@ -373,6 +392,9 @@ namespace mini {
 
 			gui::prefix_label ("Show Polygon: ", 250.0f);
 			ImGui::Checkbox ("##show_polygon", &m_show_polygon);
+
+			gui::prefix_label ("Color: ", 250.0f);
+			gui::color_editor ("##curve_color", m_color);
 
 			ImGui::Text ("Control Points:");
 			// point list
@@ -507,6 +529,7 @@ namespace mini {
 		} else {
 			for (auto & segment : m_segments) {
 				segment->set_showing_polygon (is_show_polygon ());
+				segment->set_color (get_color ());
 				segment->integrate (delta_time);
 			}
 		}
@@ -574,6 +597,11 @@ namespace mini {
 				}
 			}
 		}
+
+		for (auto & segment : m_segments) {
+			segment->set_showing_polygon (is_show_polygon ());
+			segment->set_color (get_color ());
+		}
 	}
 
 	/***********************/
@@ -618,6 +646,7 @@ namespace mini {
 			static_cast<float> (video_mode.get_buffer_height ())
 		};
 
+		m_shader->set_uniform ("u_color", get_color ());
 		m_shader->set_uniform ("u_world", world_matrix);
 		m_shader->set_uniform ("u_view", view_matrix);
 		m_shader->set_uniform ("u_projection", proj_matrix);
@@ -631,6 +660,7 @@ namespace mini {
 		if (is_showing_polygon () && m_degree > 1) {
 			m_poly_shader->bind ();
 
+			m_poly_shader->set_uniform ("u_color", get_color ());
 			m_poly_shader->set_uniform ("u_world", world_matrix);
 			m_poly_shader->set_uniform ("u_view", view_matrix);
 			m_poly_shader->set_uniform ("u_projection", proj_matrix);

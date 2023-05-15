@@ -165,8 +165,12 @@ namespace mini {
 	}
 
 	void scene_obj_t::set_translation (const glm::vec3 & translation) {
+		auto old_translation = m_translation;
 		m_translation = translation;
-		m_notify (signal_event_t::moved);
+		
+		if (old_translation != translation) {
+			m_notify (signal_event_t::moved);
+		}
 	}
 
 	void scene_obj_t::set_euler_angles (const glm::vec3 & euler_angles) {
@@ -176,15 +180,23 @@ namespace mini {
 		rotation = rotation * glm::angleAxis (euler_angles[1], glm::vec3 { 0.0f, 1.0f, 0.0f });
 		rotation = rotation * glm::angleAxis (euler_angles[0], glm::vec3 { 1.0f, 0.0f, 0.0f });
 
+		auto old_rotation = m_rotation;
+
 		m_euler_angles = euler_angles;
 		m_rotation = rotation;
 
-		m_notify (signal_event_t::rotated);
+		if (m_rotation != old_rotation) {
+			m_notify (signal_event_t::rotated);
+		}
 	}
 
 	void scene_obj_t::set_scale (const glm::vec3 & scale) {
+		auto old_scale = m_scale;
 		m_scale = scale;
-		m_notify (signal_event_t::scaled);
+		
+		if (old_scale != scale) {
+			m_notify (signal_event_t::scaled);
+		}
 	}
 
 	void scene_obj_t::set_selected (bool selected) {
@@ -266,10 +278,14 @@ namespace mini {
 	}
 
 	void scene_obj_t::set_rotation (const glm::quat & rotation) {
+		auto old_rotation = m_rotation;
+
 		m_rotation = rotation;
 		m_euler_angles = glm::eulerAngles (m_rotation);
 
-		m_notify (signal_event_t::rotated);
+		if (old_rotation != rotation) {
+			m_notify (signal_event_t::rotated);
+		}
 	}
 
 	const object_serializer_base & scene_obj_t::get_serializer () const {

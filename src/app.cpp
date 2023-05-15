@@ -279,6 +279,10 @@ namespace mini {
 					m_destroy_object ();
 					break;
 
+				case KEY_SELECT_ALL:
+					m_select_all ();
+					break;
+
 				default:
 					break;
 			}
@@ -448,6 +452,7 @@ namespace mini {
 		if (m_selected_object) {
 			if (m_selected_group->group_size () > 1) {
 				m_selected_group->group_destroy_all ();
+				m_reset_selection ();
 			} else {
 				m_selected_object->destroy = true;
 			}
@@ -512,9 +517,11 @@ namespace mini {
 		for (auto iter = m_objects.begin (); iter != m_objects.end (); ) {
 			if ((*iter)->object->is_disposed ()) {
 				(*iter)->destroy = true;
+			} else if (!(*iter)->object->is_deletabe ()) {
+				(*iter)->destroy = false;
 			}
 
-			if ((*iter)->destroy && (*iter)->object->is_deletabe ()) {
+			if ((*iter)->destroy) {
 				if (m_selected_object && m_selected_object == *iter) {
 					m_selected_object = m_selected_group->group_pop ();
 				}
@@ -1064,6 +1071,14 @@ namespace mini {
 			for (auto & o : m_objects) {
 				o->object->notify_object_selected (m_selected_object->object);
 			}
+		}
+	}
+
+	void application::m_select_all () {
+		m_reset_selection ();
+
+		for (auto & object : m_objects) {
+			m_group_select_add (object);
 		}
 	}
 

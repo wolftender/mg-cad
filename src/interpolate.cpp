@@ -24,7 +24,7 @@ namespace mini {
 		if (ImGui::CollapsingHeader ("Interpolating Curve")) {
 			gui::prefix_label ("Chord Length: ", 250.0f);
 			
-			if (ImGui::Checkbox ("##show_bezier", &m_chord_length)) {
+			if (ImGui::Checkbox ("##chord_length_p", &m_chord_length)) {
 				rebuild_curve ();
 			}
 
@@ -345,5 +345,6 @@ namespace mini {
 		shader->set_uniform ("u_projection", proj_matrix);
 		shader->set_uniform ("u_resolution", resolution);
 		shader->set_uniform ("u_line_width", 2.0f);
+		shader->set_uniform ("u_color", get_color ());
 	}
 }

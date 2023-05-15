@@ -11,6 +11,8 @@ namespace mini {
 	class bezier_segment_base : public graphics_obj_t {
 		private:
 			std::array<point_wptr, 4> m_points;
+			glm::vec4 m_color;
+
 			bool m_show_polygon;
 
 		protected:
@@ -19,6 +21,9 @@ namespace mini {
 		public:
 			bool is_showing_polygon () const;
 			void set_showing_polygon (bool show);
+
+			const glm::vec4 & get_color () const;
+			void set_color (const glm::vec4 & color);
 
 			bezier_segment_base (point_wptr p0, point_wptr p1, point_wptr p2, point_wptr p3);
 			virtual ~bezier_segment_base () {}
@@ -111,6 +116,8 @@ namespace mini {
 			bool m_queue_curve_rebuild;
 			bool m_auto_extend, m_show_polygon, m_configured;
 
+			glm::vec4 m_color;
+
 		private:
 			void m_moved_sighandler (signal_event_t sig, scene_obj_t & sender);
 
@@ -120,10 +127,12 @@ namespace mini {
 			bool is_rebuild_queued () const;
 			bool is_auto_extend () const;
 			bool is_show_polygon () const;
+			const glm::vec4 & get_color () const;
 
 			void set_rebuild_queued (bool rebuild);
 			void set_auto_extend (bool extend);
 			void set_show_polygon (bool show);
+			void set_color (const glm::vec4 & color);
 
 		protected:
 			curve_base (scene_controller_base & scene, const std::string & name);

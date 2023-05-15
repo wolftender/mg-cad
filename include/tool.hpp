@@ -14,6 +14,7 @@ namespace mini {
 	constexpr const int KEY_AXIS_X = GLFW_KEY_X;
 	constexpr const int KEY_AXIS_Y = GLFW_KEY_Y;
 	constexpr const int KEY_AXIS_Z = GLFW_KEY_Z;
+	constexpr const int KEY_SELECT_ALL = GLFW_KEY_A;
 
 	enum class axis_t {
 		none, x, y, z

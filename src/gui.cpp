@@ -57,5 +57,20 @@ namespace mini {
 
 			return changed;
 		}
+
+		bool color_editor (const std::string & label, glm::vec4 & color) {
+			float c[3] = { color.r, color.g, color.b };
+
+			if (ImGui::ColorEdit3 (label.c_str (), c)) {
+				color.r = c[0];
+				color.g = c[1];
+				color.b = c[2];
+				color.a = 1.0f;
+
+				return true;
+			}
+
+			return false;
+		}
 	}
 }

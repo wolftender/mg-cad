@@ -30,6 +30,8 @@ namespace mini {
 			GLuint m_vao;
 			GLuint m_pos_buffer, m_index_buffer;
 
+			glm::vec4 m_color;
+
 			std::vector<float> m_positions;
 			std::vector<GLuint> m_indices;
 
