@@ -1,5 +1,6 @@
 #include "bezier.hpp"
 #include "gui.hpp"
+#include "serializer.hpp"
 
 #include <algorithm>
 
@@ -346,6 +347,22 @@ namespace mini {
 		m_color = color;
 	}
 
+	std::vector<uint64_t> curve_base::serialize_points () const {
+		std::vector<uint64_t> serialized;
+		serialized.reserve (m_points.size ());
+
+		for (const auto & point_wrapper : m_points) {
+			auto point = point_wrapper.point.lock ();
+			if (point) {
+				serialized.push_back (point->get_id ());
+			} else {
+				serialized.push_back (0UL);
+			}
+		}
+
+		return serialized;
+	}
+
 	curve_base::curve_base (scene_controller_base & scene, const std::string & name) : scene_obj_t (scene, name, false, false, false) {
 		m_auto_extend = false;
 		m_show_polygon = false;
@@ -539,6 +556,10 @@ namespace mini {
 		for (auto segment : m_segments) {
 			context.draw (segment, world_matrix);
 		}
+	}
+
+	const object_serializer_base & bezier_curve_c0::get_serializer () const {
+		return generic_object_serializer<bezier_curve_c0>::get_instance ();
 	}
 
 	void bezier_curve_c0::t_rebuild_curve () {

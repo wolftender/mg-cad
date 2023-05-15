@@ -11,7 +11,7 @@ using namespace nlohmann;
 namespace mini {
 	class scene_obj_t;
 
-	using cache_object_id_t = std::unordered_map<scene_obj_t *, int>;
+	using cache_object_id_t = std::unordered_map<uint64_t, int>;
 	using cache_id_object_t = std::unordered_map<int, std::shared_ptr<scene_obj_t>>;
 
 	class object_serializer_base {

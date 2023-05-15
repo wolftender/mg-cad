@@ -48,6 +48,7 @@ namespace mini {
 			virtual void configure () override;
 			virtual void integrate (float delta_time) override;
 			virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override;
+			virtual const object_serializer_base & get_serializer () const;
 
 			virtual bool on_mouse_button (int button, int action, int mods) override;
 

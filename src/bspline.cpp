@@ -4,6 +4,7 @@
 
 #include "bspline.hpp"
 #include "gui.hpp"
+#include "serializer.hpp"
 
 #include <GLFW/glfw3.h>
 
@@ -157,6 +158,10 @@ namespace mini {
 				context.draw (point.point, point.point->get_matrix ());
 			}
 		}
+	}
+
+	const object_serializer_base & bspline_curve::get_serializer () const {
+		return generic_object_serializer<bspline_curve>::get_instance ();
 	}
 
 	bool bspline_curve::on_mouse_button (int button, int action, int mods) {

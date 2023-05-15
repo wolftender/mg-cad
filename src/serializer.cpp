@@ -7,6 +7,8 @@
 #include "torus.hpp"
 #include "bezier.hpp"
 #include "bspline.hpp"
+#include "interpolate.hpp"
+#include "beziersurf.hpp"
 
 namespace mini {
 	inline json s_serialize_data (const glm::vec3 & vec) {
@@ -66,7 +68,7 @@ namespace mini {
 			m_geometry.push_back (node);
 		}
 
-		m_cache[object.get()] = id;
+		m_cache[object->get_id ()] = id;
 		return true;
 	}
 
@@ -138,6 +140,67 @@ namespace mini {
 			j["largeRadius"] = torus->get_outer_radius ();
 
 			j["objectType"] = "torus";
+		}
+
+		return j;
+	}
+
+	json s_serialize_control_points (curve_base * curve, const cache_object_id_t & cache) {
+		auto control_points = curve->serialize_points ();
+		json serialized;
+
+		for (const auto point_id : control_points) {
+			json point_data;
+			auto it = cache.find (point_id);
+
+			if (it == cache.end ()) {
+				throw std::runtime_error ("failed to serialize, incorrect relationship");
+			}
+
+			point_data["id"] = it->second;
+			serialized.push_back (point_data);
+		}
+
+		return serialized;
+	}
+
+	template<>
+	json generic_object_serializer<bezier_curve_c0>::serialize (int id, std::shared_ptr<scene_obj_t> object, const cache_object_id_t & cache) const {
+		json j = s_serialize_base (id, object);
+
+		std::shared_ptr<bezier_curve_c0> segment = std::dynamic_pointer_cast<mini::bezier_curve_c0> (object);
+
+		if (segment) {
+			j["objectType"] = "bezierC0";
+			j["controlPoints"] = s_serialize_control_points (segment.get (), cache);
+		}
+
+		return j;
+	}
+
+	template<>
+	json generic_object_serializer<bspline_curve>::serialize (int id, std::shared_ptr<scene_obj_t> object, const cache_object_id_t & cache) const {
+		json j = s_serialize_base (id, object);
+
+		std::shared_ptr<bspline_curve> segment = std::dynamic_pointer_cast<mini::bspline_curve> (object);
+
+		if (segment) {
+			j["objectType"] = "bezierC2";
+			j["controlPoints"] = s_serialize_control_points (segment.get (), cache);
+		}
+
+		return j;
+	}
+
+	template<>
+	json generic_object_serializer<interpolating_curve>::serialize (int id, std::shared_ptr<scene_obj_t> object, const cache_object_id_t & cache) const {
+		json j = s_serialize_base (id, object);
+
+		std::shared_ptr<interpolating_curve> segment = std::dynamic_pointer_cast<mini::interpolating_curve> (object);
+
+		if (segment) {
+			j["objectType"] = "interpolatingC2";
+			j["controlPoints"] = s_serialize_control_points (segment.get (), cache);
 		}
 
 		return j;

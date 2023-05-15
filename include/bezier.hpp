@@ -134,6 +134,8 @@ namespace mini {
 			void set_show_polygon (bool show);
 			void set_color (const glm::vec4 & color);
 
+			std::vector<uint64_t> serialize_points () const;
+
 		protected:
 			curve_base (scene_controller_base & scene, const std::string & name);
 			virtual ~curve_base () { }
@@ -168,6 +170,7 @@ namespace mini {
 
 			virtual void integrate (float delta_time) override;
 			virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override;
+			virtual const object_serializer_base & get_serializer () const;
 
 		protected:
 			virtual void t_rebuild_curve () override;

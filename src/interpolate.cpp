@@ -1,5 +1,6 @@
 #include "interpolate.hpp"
 #include "gui.hpp"
+#include "serializer.hpp"
 
 namespace mini {
 	interpolating_curve::interpolating_curve (scene_controller_base & scene, std::shared_ptr<shader_t> shader1, std::shared_ptr<shader_t> shader2)
@@ -61,6 +62,10 @@ namespace mini {
 
 			glBindVertexArray (0);
 		}
+	}
+
+	const object_serializer_base & interpolating_curve::get_serializer () const {
+		return generic_object_serializer<interpolating_curve>::get_instance ();
 	}
 
 	void interpolating_curve::t_rebuild_curve () {
