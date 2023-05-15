@@ -1012,10 +1012,8 @@ namespace mini {
 
 	void application::m_add_object (const std::string & name, std::shared_ptr<scene_obj_t> object, bool select) {
 		// dont allow duplicate objects
-		for (const auto & wrapper : m_objects) {
-			if (wrapper->object == object) {
-				return;
-			}
+		if (object->get_id () != 0UL) {
+			return;
 		}
 
 		auto real_name = m_get_free_name (name);
