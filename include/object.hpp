@@ -26,6 +26,13 @@ namespace mini {
 	class scene_obj_t;
 
 	class scene_controller_base {
+		private:
+			uint64_t m_next_id;
+
+		protected:
+			uint64_t t_parent_object (scene_obj_t & object);
+			uint64_t t_unparent_object (scene_obj_t & object);
+
 		public:
 			class selected_object_collection {
 				public:
@@ -40,6 +47,7 @@ namespace mini {
 			using selected_object_iter_ptr = std::unique_ptr<selected_object_collection>;
 
 		public:
+			scene_controller_base ();
 			virtual ~scene_controller_base () { };
 
 			// virtual methods that a "scene" has
@@ -55,6 +63,9 @@ namespace mini {
 			virtual glm::vec2 pixels_to_screen (const glm::vec2 & pos) const = 0;
 			virtual glm::vec2 screen_to_pixels (const glm::vec2 & pos) const = 0;
 			virtual glm::vec2 world_to_screen (const glm::vec3 & world_pos) const = 0;
+
+			virtual void select_by_id (uint64_t id) = 0;
+			virtual void clear_selection () = 0;
 
 			virtual const glm::vec3 & get_cursor_pos () const = 0;
 			virtual const glm::vec3 & get_cam_target () const = 0;
@@ -97,6 +108,8 @@ namespace mini {
 			bool m_mouse_lock;
 			bool m_is_deletable;
 
+			int64_t m_id;
+
 			std::array<std::list<std::weak_ptr<scene_obj_t>>, static_cast<int> (signal_event_t::MAX)> m_listeners;
 			std::array<signal_handler_t, static_cast<int> (signal_event_t::MAX) + 1> m_handlers;
 
@@ -106,6 +119,8 @@ namespace mini {
 			void m_listen (signal_event_t sig, std::shared_ptr<scene_obj_t> listener);
 			void m_ignore (signal_event_t sig, std::shared_ptr<scene_obj_t> listener);
 
+			void m_set_id (uint64_t id);
+
 		protected:
 			void t_listen (signal_event_t sig, scene_obj_t & target);
 			void t_ignore (signal_event_t sig, scene_obj_t & target);
@@ -114,6 +129,8 @@ namespace mini {
 			void t_set_mouse_lock (bool lock);
 
 		public:
+			uint64_t get_id () const;
+
 			const std::string & get_type_name () const;
 			const std::string & get_name () const;
 
@@ -167,5 +184,7 @@ namespace mini {
 			virtual void t_on_object_created (std::shared_ptr<scene_obj_t> object) { }
 			virtual void t_on_object_selected (std::shared_ptr<scene_obj_t> object) {}
 			virtual void t_on_object_deleted (std::shared_ptr<scene_obj_t> object) { }
+
+		friend class scene_controller_base;
 	};
 }

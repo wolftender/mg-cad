@@ -398,7 +398,7 @@ namespace mini {
 
 	void bezier_patch_c0_template::m_add_to_scene () {
 		auto & scene = get_scene ();
-		scene.add_object (get_name (), std::move (m_patch));
+		scene.add_object (get_name (), m_patch);
 
 		unsigned int points_x = (m_patches_x * 3) + 1;
 		unsigned int points_y = (m_patches_y * 3) + 1;
@@ -414,6 +414,12 @@ namespace mini {
 			}
 		}
 
+		scene.clear_selection ();
+		for (const auto & point : m_points) {
+			scene.select_by_id (point->get_id ());
+		}
+
+		scene.select_by_id (m_patch->get_id ());
 		dispose ();
 	}
 

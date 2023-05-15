@@ -94,6 +94,7 @@ namespace mini {
 			std::shared_ptr<object_factory> m_factory;
 
 			std::vector<std::shared_ptr<object_wrapper_t>> m_objects;
+			std::unordered_map<uint64_t, std::weak_ptr<object_wrapper_t>> m_id_cache;
 
 			// gizmos etc
 			std::shared_ptr<billboard_object> m_cursor_object, m_origin_object;
@@ -153,6 +154,8 @@ namespace mini {
 			virtual glm::vec2 world_to_screen (const glm::vec3 & world_pos) const override;
 
 			virtual selected_object_iter_ptr get_selected_objects () override;
+			virtual void select_by_id (uint64_t id) override;
+			virtual void clear_selection () override;
 			
 			virtual void set_cursor_pos (const glm::vec3 & position) override;
 			void set_cursor_screen_pos (const glm::vec2 & screen_pos);
@@ -228,6 +231,5 @@ namespace mini {
 			void m_save_scene_as ();
 			void m_save_scene ();
 			void m_load_scene ();
-
-};
+	};
 }

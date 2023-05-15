@@ -158,6 +158,21 @@ namespace mini {
 		return m_selected_group->get_iterator ();
 	}
 
+	void application::select_by_id (uint64_t id) {
+		auto iter = m_id_cache.find (id);
+
+		if (iter != m_id_cache.end ()) {
+			auto object_ptr = iter->second.lock ();
+			if (object_ptr) {
+				m_group_select_add (object_ptr);
+			}
+		}
+	}
+
+	void application::clear_selection () {
+		m_reset_selection ();
+	}
+
 	void application::set_cursor_pos (const glm::vec3 & position) {
 		m_cursor_position = position;
 	}
@@ -529,6 +544,10 @@ namespace mini {
 				for (auto & listener : m_objects) {
 					listener->object->notify_object_deleted ((*iter)->object);
 				}
+
+				// unparent
+				auto old_id = t_unparent_object (*(*iter)->object);
+				m_id_cache.erase (old_id);
 
 				iter = m_objects.erase (iter);
 			}
@@ -1004,6 +1023,9 @@ namespace mini {
 		std::shared_ptr<object_wrapper_t> wrapper = std::shared_ptr<object_wrapper_t> (new object_wrapper_t (object, real_name));
 		m_objects.push_back (wrapper);
 
+		auto id = t_parent_object (*object);
+		m_id_cache.insert ({ id, wrapper });
+
 		if (select) {
 			m_reset_selection ();
 			m_select_object (wrapper);
@@ -1114,6 +1136,7 @@ namespace mini {
 		m_selected_tool = nullptr;
 		
 		m_objects.clear ();
+		m_id_cache.clear ();
 		m_project_path.clear ();
 
 		set_cursor_pos ({ 0.0f, 0.0f, 0.0f });

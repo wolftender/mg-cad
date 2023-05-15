@@ -2,9 +2,41 @@
 #include "object.hpp"
 
 namespace mini {
+	uint64_t scene_controller_base::t_parent_object (scene_obj_t & object) {
+		if (object.get_id () != 0UL) {
+			throw std::runtime_error ("cannot parent this object to more than one scene");
+		}
+
+		auto id = m_next_id;
+		m_next_id += 100UL;
+
+		object.m_set_id (id);
+		return id;
+	}
+
+	uint64_t scene_controller_base::t_unparent_object (scene_obj_t & object) {
+		auto id = object.get_id ();
+		if (id == 0UL) {
+			throw std::runtime_error ("this object was not parented to any scene");
+		}
+
+		object.m_set_id (0UL);
+		return id;
+	}
+
+	scene_controller_base::scene_controller_base () {
+		m_next_id = 100UL;
+	}
+
+
+	////////////////////////////////////////////
+
+
 	scene_obj_t::scene_obj_t (scene_controller_base & scene, const std::string & type_name, bool movable, bool rotatable, bool scalable) :
 		m_scene (scene) {
 		m_type_name = type_name;
+
+		m_id = 0;
 
 		m_rotation = { 1.0f, 0.0f, 0.0f, 0.0f };
 		m_translation = { 0.0f, 0.0f, 0.0f };
@@ -64,6 +96,14 @@ namespace mini {
 
 			iter++;
 		}
+	}
+
+	uint64_t scene_obj_t::get_id () const {
+		return m_id;
+	}
+
+	void scene_obj_t::m_set_id (uint64_t id) {
+		m_id = id;
 	}
 
 	void scene_obj_t::t_listen (signal_event_t sig, scene_obj_t & target) {
