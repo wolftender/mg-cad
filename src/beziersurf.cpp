@@ -155,6 +155,13 @@ namespace mini {
 				glDrawElements (GL_PATCHES, m_indices.size (), GL_UNSIGNED_INT, 0);
 			}
 
+			if (m_show_polygon) {
+				glBindVertexArray (m_grid_vao);
+				m_bind_shader (context, *m_grid_shader, world_matrix);
+
+				glDrawElements (GL_LINES, m_grid_indices.size (), GL_UNSIGNED_INT, 0);
+			}
+
 			glUseProgram (0);
 			glBindVertexArray (0);
 		}
@@ -217,6 +224,22 @@ namespace mini {
 		glBufferData (GL_ELEMENT_ARRAY_BUFFER, sizeof (GLuint) * m_indices.size (), m_indices.data (), GL_STATIC_DRAW);
 
 		glBindVertexArray (0);
+
+		glGenVertexArrays (1, &m_grid_vao);
+		glGenBuffers (1, &m_grid_index_buffer);
+
+		glBindVertexArray (m_grid_vao);
+
+		glBindBuffer (GL_ARRAY_BUFFER, m_pos_buffer);
+		glBufferData (GL_ARRAY_BUFFER, sizeof (float) * m_positions.size (), reinterpret_cast<void *> (m_positions.data ()), GL_DYNAMIC_DRAW);
+		glVertexAttribPointer (a_position, 3, GL_FLOAT, false, sizeof (float) * 3, (void *)0);
+		glEnableVertexAttribArray (a_position);
+
+		glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, m_grid_index_buffer);
+		glBufferData (GL_ELEMENT_ARRAY_BUFFER, sizeof (GLuint) * m_grid_indices.size (), m_grid_indices.data (), GL_STATIC_DRAW);
+
+		glBindVertexArray (0);
+
 		m_ready = true;
 	}
 
@@ -259,6 +282,34 @@ namespace mini {
 						m_indices[i++] = index;
 					}
 				}
+			}
+		}
+
+		// for the grid we will need a different procedure
+		m_grid_indices.resize (2 * (((width - 1) * height) + (width * (height - 1))));
+		i = 0;
+
+		for (unsigned int cy = 0; cy < height; ++cy) {
+			unsigned int i1, i2;
+
+			for (unsigned int cx = 0; cx < width - 1; ++cx) {
+				i1 = (cy * width) + cx;
+				i2 = (cy * width) + cx + 1;
+
+				m_grid_indices[i++] = i1;
+				m_grid_indices[i++] = i2;
+			}
+
+			if (cy == height - 1) {
+				break;
+			}
+
+			for (unsigned int cx = 0; cx < width; ++cx) {
+				i1 = (cy * width) + cx;
+				i2 = ((cy + 1) * width) + cx;
+
+				m_grid_indices[i++] = i1;
+				m_grid_indices[i++] = i2;
 			}
 		}
 	}

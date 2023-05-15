@@ -27,13 +27,14 @@ namespace mini {
 			bool m_ready;
 			bool m_signals_setup;
 
-			GLuint m_vao;
-			GLuint m_pos_buffer, m_index_buffer;
+			GLuint m_vao, m_grid_vao;
+			GLuint m_pos_buffer, m_index_buffer, m_grid_index_buffer;
 
 			glm::vec4 m_color;
 
 			std::vector<float> m_positions;
 			std::vector<GLuint> m_indices;
+			std::vector<GLuint> m_grid_indices;
 
 		protected:
 			const std::vector<point_ptr> & t_get_points () const;
