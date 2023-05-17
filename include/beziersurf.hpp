@@ -91,6 +91,8 @@ namespace mini {
 			int m_patches_x;
 			int m_patches_y;
 
+			float m_radius;
+
 			build_mode_t m_build_mode;
 			int m_combo_item;
 			bool m_rebuild, m_added;

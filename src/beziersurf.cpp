@@ -377,6 +377,8 @@ namespace mini {
 		m_patches_y = patches_y;
 		m_rebuild = false;
 
+		m_radius = 2.0f;
+
 		m_combo_item = 0;
 		m_rebuild_surface (build_mode_t::mode_default);
 	}
@@ -411,12 +413,20 @@ namespace mini {
 			}
 
 			if (m_build_mode == build_mode_t::mode_cylinder) {
+				gui::prefix_label ("Radius: ", 250.0f);
+				if (ImGui::InputFloat ("##surf_radius", &m_radius)) {
+					m_rebuild = true;
+				}
+			}
+
+			if (m_build_mode == build_mode_t::mode_cylinder) {
 				gui::clamp (m_patches_x, 3, 15);
 			} else {
 				gui::clamp (m_patches_x, 1, 15);
 			}
 
 			gui::clamp (m_patches_y, 1, 15);
+			gui::clamp (m_radius, 0.5f, 4.0f);
 
 			ImGui::NewLine ();
 			if (ImGui::Button ("Create Surface", ImVec2 (ImGui::GetWindowWidth (), 24.0f))) {
@@ -520,7 +530,7 @@ namespace mini {
 					case build_mode_t::mode_cylinder:
 						{
 							float t = static_cast<float> (x) / static_cast<float> (points_x - 1) * 2.0f * glm::pi<float>();
-							float r = 2.0f;
+							float r = m_radius;
 
 							int xmod = x % 3;
 							if (xmod == 0) {
