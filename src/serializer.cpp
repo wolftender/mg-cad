@@ -46,6 +46,7 @@ namespace mini {
 				json point_s;
 				
 				point_s["id"] = point.id;
+				point_s["name"] = point.object->get_name ();
 				point_s["position"] = s_serialize_data (point.object->get_translation ());
 
 				points.push_back (point_s);
@@ -265,7 +266,7 @@ namespace mini {
 			json j = json::parse (data);
 
 			for (const auto & point : j["points"]) {
-				m_deserialize_object (point);
+				m_deserialize_point (point);
 			}
 
 			for (const auto & geometry : j["geometry"]) {
@@ -302,9 +303,38 @@ namespace mini {
 		m_deserializers.insert ({ "interpolatingC2", &generic_object_deserializer<interpolating_curve>::get_instance () });
 	}
 
+	void scene_deserializer::m_deserialize_point (const json & data) {
+		int id = data["id"].get<int> ();
+
+		if (m_cache.find (id) != m_cache.end ()) {
+			throw std::runtime_error ("duplicate object id " + id);
+		}
+
+		auto point = std::make_shared<point_object> (
+			m_scene,
+			m_store->get_billboard_s_shader (),
+			m_store->get_point_texture ()
+		);
+
+		if (data.find ("name") != data.end ()) {
+			point->set_name (data["name"].get<std::string> ());
+		} else {
+			point->set_name ("point");
+		}
+		
+		point->set_translation (s_deserialize_vector (data["position"]));
+
+		m_cache.insert ({ id, point });
+		m_objects.push_back (point);
+	}
+
 	void scene_deserializer::m_deserialize_object (const json & data) {
 		std::string type = data["objectType"].get<std::string> ();
 		int id = data["id"].get<int> ();
+
+		if (m_cache.find (id) != m_cache.end ()) {
+			throw std::runtime_error ("duplicate object id " + id);
+		}
 
 		auto deserializer = m_deserializers.find (type);
 		if (deserializer != m_deserializers.end ()) {
@@ -328,6 +358,34 @@ namespace mini {
 
 		if (obj.is_rotatable ()) {
 			obj.set_euler_angles (s_deserialize_vector (data["rotation"]));
+		}
+	}
+
+	inline void s_deserialize_point_list (scene_controller_base & scene, std::shared_ptr<resource_store> store,
+		const json & data, const cache_id_object_t & cache, point_list & points) {
+		
+		if (!data.is_array ()) {
+			throw std::runtime_error ("cannot deserialize point list from non-array json data");
+		}
+
+		points.reserve (data.size ());
+
+		for (const auto & el : data) {
+			int id = el["id"].get<int> ();
+			auto it = cache.find (id);
+
+			if (it == cache.end ()) {
+				throw std::runtime_error ("failed to deserialize point " + id);
+			}
+
+			auto object_ptr = it->second;
+			auto point_ptr = std::dynamic_pointer_cast<point_object> (object_ptr);
+
+			if (!point_ptr) {
+				throw std::runtime_error ("object id " + std::to_string (id) + " does not refer to a point");
+			}
+
+			points.push_back (point_ptr);
 		}
 	}
 
@@ -385,18 +443,53 @@ namespace mini {
 	DESERIALIZER (bezier_curve_c0) (scene_controller_base & scene, std::shared_ptr<resource_store> store,
 		const json & data, const cache_id_object_t & cache) const {
 
-		return nullptr;
+		point_list control_points;
+		s_deserialize_point_list (scene, store, data["controlPoints"], cache, control_points);
+
+		auto curve = std::make_shared<bezier_curve_c0> (
+			scene,
+			store->get_bezier_shader (),
+			store->get_line_shader (),
+			control_points
+		);
+
+		curve->set_name (data["name"].get<std::string> ());
+		return curve;
 	}
 
 	DESERIALIZER (bspline_curve) (scene_controller_base & scene, std::shared_ptr<resource_store> store,
 		const json & data, const cache_id_object_t & cache) const {
 
-		return nullptr;
+		point_list control_points;
+		s_deserialize_point_list (scene, store, data["controlPoints"], cache, control_points);
+
+		auto curve = std::make_shared<bspline_curve> (
+			scene,
+			store->get_bezier_shader (),
+			store->get_line_shader (),
+			store->get_billboard_s_shader (),
+			store->get_point_texture (),
+			control_points
+		);
+
+		curve->set_name (data["name"].get<std::string> ());
+		return curve;
 	}
 
 	DESERIALIZER (interpolating_curve) (scene_controller_base & scene, std::shared_ptr<resource_store> store,
 		const json & data, const cache_id_object_t & cache) const {
 
-		return nullptr;
+		point_list control_points;
+		s_deserialize_point_list (scene, store, data["controlPoints"], cache, control_points);
+
+		auto curve = std::make_shared<interpolating_curve> (
+			scene,
+			store->get_bezier_shader (),
+			store->get_line_shader (),
+			control_points
+		);
+
+		curve->set_name (data["name"].get<std::string> ());
+		return curve;
 	}
 }

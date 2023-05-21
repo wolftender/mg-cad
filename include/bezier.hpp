@@ -7,6 +7,7 @@
 namespace mini {
 	using point_ptr = std::shared_ptr<point_object>;
 	using point_wptr = std::weak_ptr<point_object>;
+	using point_list = std::vector<point_ptr>;
 
 	class bezier_segment_base : public graphics_obj_t {
 		private:
@@ -145,6 +146,7 @@ namespace mini {
 
 			const std::vector<point_wrapper_t> & t_get_points () const;
 			std::vector<point_wrapper_t> & t_get_points ();
+			void t_set_points (const point_list & points);
 
 			virtual void configure () override;
 
@@ -163,6 +165,7 @@ namespace mini {
 			
 		public:
 			bezier_curve_c0 (scene_controller_base & scene, std::shared_ptr<shader_t> shader1, std::shared_ptr<shader_t> shader2, bool is_gpu = true);
+			bezier_curve_c0 (scene_controller_base & scene, std::shared_ptr<shader_t> shader1, std::shared_ptr<shader_t> shader2, const point_list & points);
 			~bezier_curve_c0 ();
 
 			bezier_curve_c0 (const bezier_curve_c0 &) = delete;

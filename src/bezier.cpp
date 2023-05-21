@@ -390,6 +390,15 @@ namespace mini {
 		return m_points;
 	}
 
+	void curve_base::t_set_points (const point_list & points) {
+		m_points.clear ();
+		m_points.reserve (points.size ());
+
+		for (const auto & point : points) {
+			m_points.push_back (point_wrapper_t (point));
+		}
+	}
+
 	void curve_base::configure () {
 		// todo: move this somewhere else
 		if (!m_configured) {
@@ -535,6 +544,18 @@ namespace mini {
 		m_shader1 = shader1;
 		m_shader2 = shader2;
 
+		rebuild_curve ();
+	}
+
+	bezier_curve_c0::bezier_curve_c0 (scene_controller_base & scene, std::shared_ptr<shader_t> shader1, 
+		std::shared_ptr<shader_t> shader2, const point_list & points) :
+		curve_base (scene, "gpu_bezier_c0"),
+		m_is_gpu (true) {
+
+		m_shader1 = shader1;
+		m_shader2 = shader2;
+
+		t_set_points (points);
 		rebuild_curve ();
 	}
 

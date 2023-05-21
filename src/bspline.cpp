@@ -26,6 +26,24 @@ namespace mini {
 		rebuild_curve ();
 	}
 
+	bspline_curve::bspline_curve (scene_controller_base & scene, std::shared_ptr<shader_t> shader1, std::shared_ptr<shader_t> shader2, 
+		std::shared_ptr<shader_t> point_shader, std::shared_ptr<texture_t> point_texture, const point_list & points) :
+		curve_base (scene, "bspline_c2") {
+
+		m_shader1 = shader1;
+		m_shader2 = shader2;
+		m_point_texture = point_texture;
+		m_point_shader = point_shader;
+
+		m_show_bezier = false;
+
+		m_drag = false;
+		m_drag_index = -1;
+
+		t_set_points (points);
+		rebuild_curve ();
+	}
+
 	bspline_curve::~bspline_curve () { }
 
 	void bspline_curve::configure () {

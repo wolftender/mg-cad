@@ -19,6 +19,9 @@ namespace mini {
 		public:
 			interpolating_curve (scene_controller_base & scene, std::shared_ptr<shader_t> shader1,
 				std::shared_ptr<shader_t> shader2);
+			interpolating_curve (scene_controller_base & scene, std::shared_ptr<shader_t> shader1,
+				std::shared_ptr<shader_t> shader2, const point_list & points);
+
 			~interpolating_curve ();
 
 			interpolating_curve (const interpolating_curve &) = delete;

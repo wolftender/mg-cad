@@ -40,6 +40,11 @@ namespace mini {
 		public:
 			bspline_curve (scene_controller_base & scene, std::shared_ptr<shader_t> shader1, 
 				std::shared_ptr<shader_t> shader2, std::shared_ptr<shader_t> point_shader, std::shared_ptr<texture_t> point_texture);
+
+			bspline_curve (scene_controller_base & scene, std::shared_ptr<shader_t> shader1,
+				std::shared_ptr<shader_t> shader2, std::shared_ptr<shader_t> point_shader, 
+				std::shared_ptr<texture_t> point_texture, const point_list & points);
+
 			~bspline_curve ();
 
 			bspline_curve (const bspline_curve &) = delete;

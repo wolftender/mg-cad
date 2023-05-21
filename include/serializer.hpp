@@ -77,6 +77,7 @@ namespace mini {
 
 		private:
 			void m_init_deserializers ();
+			void m_deserialize_point (const json & data);
 			void m_deserialize_object (const json & data);
 	};
 

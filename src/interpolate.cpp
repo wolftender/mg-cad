@@ -19,6 +19,23 @@ namespace mini {
 		rebuild_curve ();
 	}
 
+	interpolating_curve::interpolating_curve (scene_controller_base & scene, std::shared_ptr<shader_t> shader1, std::shared_ptr<shader_t> shader2, 
+		const point_list & points) : curve_base (scene, "interpolating c2") {
+		
+		m_shader1 = shader1;
+		m_shader2 = shader2;
+
+		m_vao_poly = 0;
+		m_vao = 0;
+		m_pos_buffer_poly = 0;
+		m_pos_buffer = 0;
+		m_ready = false;
+		m_chord_length = true;
+
+		t_set_points (points);
+		rebuild_curve ();
+	}
+
 	interpolating_curve::~interpolating_curve () { }
 
 	void interpolating_curve::configure () {
