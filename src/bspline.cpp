@@ -138,6 +138,8 @@ namespace mini {
 		} else {
 			t_set_mouse_lock (false);
 		}
+
+		curve_base::integrate (delta_time);
 	}
 
 	void bspline_curve::m_calc_deboor_points (int segment) {

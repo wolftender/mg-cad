@@ -400,18 +400,6 @@ namespace mini {
 	}
 
 	void curve_base::configure () {
-		// todo: move this somewhere else
-		if (!m_configured) {
-			for (const auto & wrapper : m_points) {
-				auto ptr = wrapper.point.lock ();
-				if (ptr) {
-					t_listen (signal_event_t::moved, *ptr);
-				}
-			}
-
-			m_configured = true;
-		}
-
 		if (ImGui::CollapsingHeader ("Curve Settings")) {
 			gui::prefix_label ("Auto Extend: ", 250.0f);
 			ImGui::Checkbox ("##auto_extend", &m_auto_extend);
@@ -493,6 +481,19 @@ namespace mini {
 		}
 	}
 
+	void curve_base::integrate (float delta_time) {
+		if (!m_configured) {
+			for (const auto & wrapper : m_points) {
+				auto ptr = wrapper.point.lock ();
+				if (ptr) {
+					t_listen (signal_event_t::moved, *ptr);
+				}
+			}
+
+			m_configured = true;
+		}
+	}
+
 	void curve_base::t_on_object_created (std::shared_ptr<scene_obj_t> object) {
 		if (!m_auto_extend) {
 			return;
@@ -571,6 +572,8 @@ namespace mini {
 				segment->integrate (delta_time);
 			}
 		}
+
+		curve_base::integrate (delta_time);
 	}
 
 	void bezier_curve_c0::render (app_context & context, const glm::mat4x4 & world_matrix) const {

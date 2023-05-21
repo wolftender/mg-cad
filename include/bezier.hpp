@@ -149,6 +149,7 @@ namespace mini {
 			void t_set_points (const point_list & points);
 
 			virtual void configure () override;
+			virtual void integrate (float delta_time) override;
 
 			virtual void t_on_object_created (std::shared_ptr<scene_obj_t> object) override;
 			virtual void t_on_object_deleted (std::shared_ptr<scene_obj_t> object) override;

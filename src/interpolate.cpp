@@ -56,6 +56,8 @@ namespace mini {
 		if (is_rebuild_queued ()) {
 			rebuild_curve ();
 		}
+
+		curve_base::integrate (delta_time);
 	}
 
 	void interpolating_curve::render (app_context & context, const glm::mat4x4 & world_matrix) const {
