@@ -1214,6 +1214,9 @@ namespace mini {
 				return;
 			}
 
+			// clear all objects
+			m_new_project ();
+
 			while (deserializer.has_next ()) {
 				auto object = deserializer.get_next ();
 				add_object (object->get_name (), object);

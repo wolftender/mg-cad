@@ -1,5 +1,6 @@
 #include "beziersurf.hpp"
 #include "gui.hpp"
+#include "serializer.hpp"
 
 namespace mini {
 	const std::vector<point_ptr> & bezier_patch_c0::t_get_points () const {
@@ -28,6 +29,22 @@ namespace mini {
 
 	unsigned int bezier_patch_c0::get_num_patches () const {
 		return m_patches_x * m_patches_y;
+	}
+
+	int bezier_patch_c0::get_res_u () const {
+		return m_res_u;
+	}
+
+	int bezier_patch_c0::get_res_v () const {
+		return m_res_v;
+	}
+
+	void bezier_patch_c0::set_res_u (int u) {
+		m_res_u = u;
+	}
+
+	void bezier_patch_c0::set_res_v (int v) {
+		m_res_v = v;
 	}
 
 	bezier_patch_c0::bezier_patch_c0 (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> solid_shader, 
@@ -65,7 +82,49 @@ namespace mini {
 			m_points.push_back (point);
 		}
 
-		m_rebuild_buffers ();
+		// create topology
+		m_rebuild_buffers (true);
+	}
+
+	bezier_patch_c0::bezier_patch_c0 (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> solid_shader, 
+		std::shared_ptr<shader_t> grid_shader, unsigned int patches_x, unsigned int patches_y, 
+		const std::vector<point_ptr> & points, const std::vector<GLuint> topology) :
+		scene_obj_t (scene, "bezier_surf_c0", false, false, false), m_patches_x (patches_x), m_patches_y (patches_y) {
+
+		// topology validity check
+		if ((patches_x * patches_y * num_control_points) != topology.size ()) {
+			throw std::runtime_error ("invalid topology data for a bezier surface patch");
+		}
+
+		m_res_u = 25;
+		m_res_v = 25;
+
+		m_ready = false;
+		m_use_solid = false;
+		m_use_wireframe = true;
+		m_queued_update = false;
+		m_signals_setup = false;
+
+		m_vao = 0;
+		m_pos_buffer = m_index_buffer = 0;
+		m_color = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+		m_shader = shader;
+		m_solid_shader = solid_shader;
+		m_grid_shader = grid_shader;
+
+		t_set_handler (signal_event_t::moved, std::bind (&bezier_patch_c0::m_moved_sighandler,
+			this, std::placeholders::_1, std::placeholders::_2));
+
+		m_points.reserve (points.size ());
+		for (const auto & point : points) {
+			point->set_deletable (false);
+			m_points.push_back (point);
+		}
+
+		// do not create topology automatically
+		m_indices = topology;
+		m_rebuild_buffers (false);
 	}
 
 	bezier_patch_c0::~bezier_patch_c0 () {
@@ -167,6 +226,39 @@ namespace mini {
 		}
 	}
 
+	const object_serializer_base & bezier_patch_c0::get_serializer () const {
+		return generic_object_serializer<bezier_patch_c0>::get_instance ();
+	}
+
+	std::vector<uint64_t> bezier_patch_c0::serialize_points () {
+		std::vector<uint64_t> serialized;
+		serialized.reserve (m_points.size ());
+
+		for (const auto & point : m_points) {
+			serialized.push_back (point->get_id ());
+		}
+
+		return serialized;
+	}
+
+	std::vector<bezier_patch_c0::serialized_patch> bezier_patch_c0::serialize_patches () {
+		std::vector<serialized_patch> patches;
+		patches.reserve (get_num_patches ());
+
+		for (unsigned int i = 0; i < m_indices.size (); ) {
+			serialized_patch patch;
+
+			for (int j = 0; j < num_control_points; ++j, ++i) {
+				auto index = m_indices[i];
+				patch[j] = m_points[index]->get_id ();
+			}
+
+			patches.push_back (patch);
+		}
+
+		return patches;
+	}
+
 	constexpr GLuint a_position = 0;
 
 	void bezier_patch_c0::m_bind_shader (app_context & context, shader_t & shader, const glm::mat4x4 & world_matrix) const {
@@ -190,23 +282,24 @@ namespace mini {
 		shader.set_uniform ("u_color", m_color);
 	}
 
-	void bezier_patch_c0::m_rebuild_buffers () {
+	void bezier_patch_c0::m_rebuild_buffers (bool recalculate_indices) {
 		m_ready = false;
 		m_destroy_buffers ();
 
 		// allocate new buffers
 		m_positions.clear ();
-		m_indices.clear ();
-
 		m_positions.resize (get_num_points () * 3);
-		m_indices.resize (get_num_patches () * num_control_points);
 
 		if (!m_calc_pos_buffer ()) {
 			m_ready = false;
 			return;
 		}
 
-		m_calc_idx_buffer ();
+		if (recalculate_indices) {
+			m_indices.clear ();
+			m_indices.resize (get_num_patches () * num_control_points);
+			m_calc_idx_buffer ();
+		}
 
 		// put data into buffers
 		glGenVertexArrays (1, &m_vao);

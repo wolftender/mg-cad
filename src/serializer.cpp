@@ -75,7 +75,7 @@ namespace mini {
 		scene_serializer_node node;
 
 		node.id = id;
-		node.object = object;
+		node.object = object; 
 
 		if (std::dynamic_pointer_cast<point_object> (object) != nullptr) {
 			m_points.push_back (node);
@@ -218,6 +218,47 @@ namespace mini {
 		return j;
 	}
 
+	SERIALIZER (bezier_patch_c0) (int id, std::shared_ptr<scene_obj_t> object, const cache_object_id_t & cache) const {
+		json j = s_serialize_base (id, object);
+
+		std::shared_ptr<bezier_patch_c0> surface = std::dynamic_pointer_cast<mini::bezier_patch_c0> (object);
+
+		if (surface) {
+			auto patches = surface->serialize_patches ();
+			json serialized_patches;
+
+			for (const auto & patch : patches) {
+				json serialized_patch, control_points;
+
+				for (uint64_t point_id : patch) {
+					json point_data;
+					auto it = cache.find (point_id);
+
+					if (it == cache.end ()) {
+						throw std::runtime_error ("failed to serialize, incorrect relationship");
+					}
+
+					point_data["id"] = it->second;
+					control_points.push_back (point_data);
+				}
+
+				serialized_patch["controlPoints"] = control_points;
+				serialized_patch["id"] = -1; // -1 == "undefined"
+				serialized_patch["objectType"] = "bezierPatchC0";
+				serialized_patch["name"] = "patch_c2";
+				serialized_patch["samples"] = { { "x", 4 }, { "y", 4 } };
+
+				serialized_patches.push_back (serialized_patch);
+			}
+
+			j["patches"] = serialized_patches;
+			j["objectType"] = "bezierSurfaceC0";
+			j["size"] = { { "x", surface->get_patches_x () }, { "y", surface->get_patches_y () }};
+		}
+
+		return j;
+	}
+
 
 	///////////////////////////////////////////
 
@@ -261,22 +302,26 @@ namespace mini {
 
 	scene_deserializer::~scene_deserializer () { }
 
-	bool scene_deserializer::load (const std::string & data) {
+	bool scene_deserializer::load_safe (const std::string & data) {
 		try {
-			json j = json::parse (data);
-
-			for (const auto & point : j["points"]) {
-				m_deserialize_point (point);
-			}
-
-			for (const auto & geometry : j["geometry"]) {
-				m_deserialize_object (geometry);
-			}
+			load (data);
 		} catch (const std::exception &) {
 			return false;
 		}
 
 		return true;
+	}
+
+	void scene_deserializer::load (const std::string & data) {
+		json j = json::parse (data);
+
+		for (const auto & point : j["points"]) {
+			m_deserialize_point (point);
+		}
+
+		for (const auto & geometry : j["geometry"]) {
+			m_deserialize_object (geometry);
+		}
 	}
 
 	void scene_deserializer::reset () {
@@ -301,6 +346,7 @@ namespace mini {
 		m_deserializers.insert ({ "bezierC0", &generic_object_deserializer<bezier_curve_c0>::get_instance () });
 		m_deserializers.insert ({ "bezierC2", &generic_object_deserializer<bspline_curve>::get_instance () });
 		m_deserializers.insert ({ "interpolatingC2", &generic_object_deserializer<interpolating_curve>::get_instance () });
+		m_deserializers.insert ({ "bezierSurfaceC0", &generic_object_deserializer<bezier_patch_c0>::get_instance () });
 	}
 
 	void scene_deserializer::m_deserialize_point (const json & data) {
@@ -324,7 +370,11 @@ namespace mini {
 		
 		point->set_translation (s_deserialize_vector (data["position"]));
 
-		m_cache.insert ({ id, point });
+		// if id < 0 then it will not be ever referenced
+		if (id >= 0) {
+			m_cache.insert ({ id, point });
+		}
+
 		m_objects.push_back (point);
 	}
 
@@ -491,5 +541,75 @@ namespace mini {
 
 		curve->set_name (data["name"].get<std::string> ());
 		return curve;
+	}
+
+	DESERIALIZER (bezier_patch_c0) (scene_controller_base & scene, std::shared_ptr<resource_store> store,
+		const json & data, const cache_id_object_t & cache) const {
+
+		// this is going to be complicated :)
+		point_list control_points;
+
+		std::map<int, GLuint> id_map;
+		std::vector<GLuint> topology;
+
+		unsigned int patches_x = data["size"]["x"];
+		unsigned int patches_y = data["size"]["y"];
+
+		control_points.reserve (patches_x * patches_y * 3 + patches_y * 3 + patches_x * 3 + 1);
+		for (const auto & patch : data["patches"]) {
+			std::array<GLuint, 16> patch_topology;
+			auto type = patch["objectType"].get<std::string> ();
+
+			if (type != "bezierPatchC0") {
+				throw std::runtime_error ("invalid patch type " + type + " for surface of type c0");
+			}
+
+			int patch_index = 0;
+			for (const auto & point_s : patch["controlPoints"]) {
+				int id = point_s["id"].get<int> ();
+
+				auto iter_id_map = id_map.find (id);
+				if (iter_id_map != id_map.end ()) {
+					patch_topology[patch_index] = iter_id_map->second;
+					patch_index++;
+					continue;
+				}
+
+				// point was not yet indexed, add it to the index
+				auto iter_cache = cache.find (id);
+				if (iter_cache == cache.end ()) {
+					throw std::runtime_error ("failed to deserialize point " + id);
+				}
+
+				auto point = std::dynamic_pointer_cast<point_object> (iter_cache->second);
+				if (!point) {
+					throw std::runtime_error ("object id " + std::to_string (id) + " does not refer to a point");
+				}
+
+				control_points.push_back (point);
+				GLuint point_index = static_cast<GLuint> (control_points.size () - 1);
+
+				patch_topology[patch_index] = point_index;
+				patch_index++;
+
+				id_map.insert ({ id, point_index });
+			}
+
+			if (patch_index != 16) {
+				throw std::runtime_error ("incorrect number of control points for c0 surface patch: " + patch_index);
+			}
+
+			topology.insert (topology.end (), patch_topology.begin (), patch_topology.end ());
+		}
+
+		auto patch = std::make_shared<bezier_patch_c0> (
+			scene, 
+			store->get_bezier_surf_shader (),
+			store->get_bezier_surf_solid_shader (),
+			store->get_line_shader (), 
+			patches_x, patches_y, control_points, topology);
+
+		patch->set_name (data["name"].get<std::string> ());
+		return patch;
 	}
 }

@@ -69,7 +69,8 @@ namespace mini {
 			scene_deserializer (scene_controller_base & scene, std::shared_ptr<resource_store> store, const std::string & data);
 			~scene_deserializer ();
 
-			bool load (const std::string & data);
+			bool load_safe (const std::string & data);
+			void load (const std::string & data);
 
 			void reset ();
 			bool has_next ();

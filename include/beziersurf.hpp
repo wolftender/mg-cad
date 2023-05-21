@@ -49,8 +49,19 @@ namespace mini {
 			unsigned int get_num_points () const;
 			unsigned int get_num_patches () const;
 
+			int get_res_u () const;
+			int get_res_v () const;
+
+			void set_res_u (int u);
+			void set_res_v (int v);
+
 			bezier_patch_c0 (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> solid_shader, 
 				std::shared_ptr<shader_t> grid_shader, unsigned int patches_x, unsigned int patches_y, const std::vector<point_ptr> & points);
+
+			bezier_patch_c0 (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> solid_shader,
+				std::shared_ptr<shader_t> grid_shader, unsigned int patches_x, unsigned int patches_y, const std::vector<point_ptr> & points,
+				const std::vector<GLuint> topology);
+
 			~bezier_patch_c0 ();
 
 			bezier_patch_c0 (const bezier_patch_c0 &) = delete;
@@ -59,10 +70,16 @@ namespace mini {
 			virtual void configure () override;
 			virtual void integrate (float delta_time) override;
 			virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override;
+			virtual const object_serializer_base & get_serializer () const;
+
+			using serialized_patch = std::array<uint64_t, 16>;
+
+			std::vector<uint64_t> serialize_points ();
+			std::vector<serialized_patch> serialize_patches ();
 
 		private:
 			void m_bind_shader (app_context & context, shader_t & shader, const glm::mat4x4 & world_matrix) const;
-			void m_rebuild_buffers ();
+			void m_rebuild_buffers (bool recalculate_indices);
 			bool m_calc_pos_buffer ();
 			void m_calc_idx_buffer ();
 			void m_update_buffers ();
