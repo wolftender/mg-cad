@@ -25,6 +25,7 @@ namespace mini {
 			virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override;
 			virtual void configure () override;
 			virtual bool hit_test (const hit_test_data_t & data, glm::vec3 & hit_pos) const override;
+			virtual bool box_test (const box_test_data_t & data) const override;
 
 		protected:
 			virtual void t_on_selection (bool selected) override;

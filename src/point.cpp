@@ -66,6 +66,30 @@ namespace mini {
 		return false;
 	}
 
+	bool point_object::box_test (const box_test_data_t & data) const {
+		// project the point onto the screen
+		glm::vec4 affine_pos = glm::vec4 (get_translation (), 1.0f);
+		glm::vec4 projected_pos = data.camera.get_projection_matrix () * data.camera.get_view_matrix () * affine_pos;
+
+		projected_pos = projected_pos / projected_pos.w;
+
+		glm::vec2 screen_pos = projected_pos;
+		glm::vec2 pixel_pos = {
+			((screen_pos.x + 1.0f) / 2.0f) * data.screen_res.x,
+			((screen_pos.y + 1.0f) / 2.0f) * data.screen_res.y
+		};
+
+		if (data.top_left_screen.x <= pixel_pos.x &&
+			pixel_pos.x <= data.bottom_right_screen.x &&
+			data.top_left_screen.y <= pixel_pos.y &&
+			pixel_pos.y <= data.bottom_right_screen.y) {
+
+			return true;
+		}
+		
+		return false;
+	}
+
 	void point_object::t_on_selection (bool selected) {
 		if (selected) {
 			m_billboard.set_color_tint (m_selected_color);

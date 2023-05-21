@@ -141,6 +141,10 @@ namespace mini {
 		return m_bezier_surf_solid_shader;
 	}
 
+	std::shared_ptr<shader_t> resource_store::get_box_select_shader () const {
+		return m_box_select_shader;
+	}
+
 	std::shared_ptr<texture_t> resource_store::get_cursor_texture () const {
 		return m_cursor_texture;
 	}
@@ -177,6 +181,9 @@ namespace mini {
 
 		m_bezier_surf_solid_shader = m_load_shader ("shaders/vs_pass.glsl", "shaders/fs_solidcolor.glsl",
 			"shaders/tcs_bezier_quads.glsl", "shaders/tes_bezier_quads.glsl");
+
+		// box select
+		m_box_select_shader = m_load_shader ("shaders/vs_sprite.glsl", "shaders/fs_boxselect.glsl");
 
 		// textures
 		m_cursor_texture = texture_t::load_from_file ("assets/cursor.png");

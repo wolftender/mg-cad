@@ -299,6 +299,14 @@ namespace mini {
 		}
 	}
 
+	void shader_t::set_uniform (const std::string & name, const glm::mat3x3 & matrix) {
+		const int location = get_uniform_location (name);
+
+		if (location >= 0) {
+			glUniformMatrix3fv (location, 1, GL_FALSE, glm::value_ptr (matrix));
+		}
+	}
+
 	void shader_t::set_uniform (const std::string & name, const glm::mat4x4 & matrix) {
 		const int location = get_uniform_location (name);
 

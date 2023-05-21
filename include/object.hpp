@@ -23,6 +23,17 @@ namespace mini {
 			const glm::vec2 & screen_res, const glm::vec3 & mouse_ray);
 	};
 
+	struct box_test_data_t {
+		const mini::camera & camera;
+		glm::vec2 top_left_screen;
+		glm::vec2 bottom_right_screen;
+		glm::vec2 screen_res;
+		bool valid;
+
+		box_test_data_t (const mini::camera & cam, const glm::vec2 & top_left_screen,
+			const glm::vec2 & bottom_right_screen, const glm::vec2 & screen_res);
+	};
+
 	class scene_obj_t;
 
 	class scene_controller_base {
@@ -175,6 +186,7 @@ namespace mini {
 			virtual void integrate (float delta_time);
 			virtual void configure ();
 			virtual bool hit_test (const hit_test_data_t & data, glm::vec3 & hit_pos) const;
+			virtual bool box_test (const box_test_data_t & data) const;
 			
 			// object serialization
 			virtual const object_serializer_base & get_serializer () const;

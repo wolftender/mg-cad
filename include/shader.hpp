@@ -63,6 +63,7 @@ namespace mini {
 			void set_uniform (const std::string & name, const glm::vec2 & vector);
 			void set_uniform (const std::string & name, const glm::vec3 & vector);
 			void set_uniform (const std::string & name, const glm::vec4 & vector);
+			void set_uniform (const std::string & name, const glm::mat3x3 & matrix);
 			void set_uniform (const std::string & name, const glm::mat4x4 & matrix);
 
 		private:

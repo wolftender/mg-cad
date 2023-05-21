@@ -154,6 +154,7 @@
     <ClInclude Include="include\scamera.hpp" />
     <ClInclude Include="include\serializer.hpp" />
     <ClInclude Include="include\shader.hpp" />
+    <ClInclude Include="include\sprite.hpp" />
     <ClInclude Include="include\store.hpp" />
     <ClInclude Include="include\texture.hpp" />
     <ClInclude Include="include\tool.hpp" />
@@ -183,6 +184,7 @@
     <ClCompile Include="src\scamera.cpp" />
     <ClCompile Include="src\serializer.cpp" />
     <ClCompile Include="src\shader.cpp" />
+    <ClCompile Include="src\sprite.cpp" />
     <ClCompile Include="src\store.cpp" />
     <ClCompile Include="src\texture.cpp" />
     <ClCompile Include="src\tool.cpp" />
@@ -194,6 +196,7 @@
     <None Include="Makefile" />
     <None Include="README.md" />
     <None Include="shaders\fs_basic.glsl" />
+    <None Include="shaders\fs_boxselect.glsl" />
     <None Include="shaders\fs_solidcolor.glsl" />
     <None Include="shaders\fs_white.glsl" />
     <None Include="shaders\fs_billboard.glsl" />
@@ -217,6 +220,7 @@
     <None Include="shaders\vs_meshgrid.glsl" />
     <None Include="shaders\vs_pass.glsl" />
     <None Include="shaders\vs_position.glsl" />
+    <None Include="shaders\vs_sprite.glsl" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="assets\cursor.png" />

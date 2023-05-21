@@ -12,6 +12,7 @@
 #include "factory.hpp"
 #include "store.hpp"
 #include "anaglyph.hpp"
+#include "sprite.hpp"
 
 namespace mini {
 	class application : public app_window, public scene_controller_base {
@@ -130,6 +131,13 @@ namespace mini {
 			std::string m_project_path;
 			bool m_is_saved;
 
+			// box select
+			bool m_box_select;
+			glm::vec2 m_bs_top_left, m_bs_bottom_right;
+			glm::vec2 m_bs_start;
+
+			std::shared_ptr<sprite> m_bs_sprite;
+
 		public:
 			// api for tools
 			float get_cam_yaw () const;
@@ -217,6 +225,8 @@ namespace mini {
 			void m_add_object (const std::string & name, std::shared_ptr<scene_obj_t> object, bool select);
 
 			// selection methods
+			void m_begin_box_select ();
+			void m_end_box_select ();
 			void m_mark_object (std::shared_ptr<object_wrapper_t> object_wrapper);
 			void m_select_object (std::shared_ptr<object_wrapper_t> object_wrapper);
 			void m_group_select_add (std::shared_ptr<object_wrapper_t> object_wrapper);

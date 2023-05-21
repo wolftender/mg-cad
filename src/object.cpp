@@ -309,6 +309,10 @@ namespace mini {
 		return false;
 	}
 
+	bool scene_obj_t::box_test (const box_test_data_t & data) const {
+		return false;
+	}
+
 	const glm::quat & scene_obj_t::get_rotation () const {
 		return m_rotation;
 	}
@@ -338,6 +342,16 @@ namespace mini {
 		mouse_screen (mouse_screen),
 		screen_res (screen_res),
 		mouse_ray (mouse_ray) {
+
+		valid = true;
+	}
+
+	box_test_data_t::box_test_data_t (const mini::camera & cam, const glm::vec2 & top_left_screen, 
+		const glm::vec2 & bottom_right_screen, const glm::vec2 & screen_res) :
+		camera (cam),
+		top_left_screen (top_left_screen),
+		bottom_right_screen (bottom_right_screen),
+		screen_res (screen_res) {
 
 		valid = true;
 	}

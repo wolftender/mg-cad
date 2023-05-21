@@ -375,8 +375,13 @@ namespace mini {
 			} else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
 				m_snap_cursor_to_mouse ();
 			} else if (button == GLFW_MOUSE_BUTTON_LEFT) {
-				// selection code
-				m_handle_mouse_select ();
+				bool is_alt_down = is_key_down (GLFW_KEY_LEFT_ALT) || is_key_down (GLFW_KEY_RIGHT_ALT);
+
+				if (!is_alt_down) {
+					m_handle_mouse_select ();
+				} else {
+					m_begin_box_select ();
+				}
 			}
 		}
 
@@ -430,6 +435,38 @@ namespace mini {
 
 	void application::m_handle_mouse () {
 		// mouse input etc
+		if (m_box_select) {
+			bool is_alt_down = is_key_down (GLFW_KEY_LEFT_ALT) || is_key_down (GLFW_KEY_RIGHT_ALT);
+
+			if (is_left_click () && m_viewport_focus && is_alt_down) {
+				const offset_t & curr_pos = get_viewport_mouse_offset ();
+
+				float xs = m_bs_start.x;
+				float xc = curr_pos.x;
+
+				float ys = m_bs_start.y;
+				float yc = curr_pos.y;
+
+				float x1 = glm::min (xs, xc);
+				float x2 = glm::max (xs, xc);
+
+				float y1 = glm::min (ys, yc);
+				float y2 = glm::max (ys, yc);
+
+				m_bs_top_left = { x1, y1 };
+				m_bs_bottom_right = { x2, y2 };
+
+				float sx = x2 - x1;
+				float sy = y2 - y1;
+
+				m_bs_sprite->set_size ({sx, sy});
+			} else {
+				m_end_box_select ();
+			}
+
+			return;
+		}
+
 		if (is_left_click () && m_viewport_focus) {
 			const offset_t & last_pos = get_last_mouse_offset ();
 			const offset_t & curr_pos = get_mouse_offset ();
@@ -513,6 +550,14 @@ namespace mini {
 
 		// default is not saved
 		m_is_saved = false;
+
+		// box select data
+		m_box_select = false;
+		m_bs_bottom_right = { 0.0f, 0.0f };
+		m_bs_top_left = { 0.0f, 0.0f };
+		m_bs_start = { 0.0f, 0.0f };
+
+		m_bs_sprite = std::make_shared<sprite> (m_store->get_box_select_shader (), nullptr);
 	}
 
 	void application::t_integrate (float delta_time) {
@@ -627,6 +672,16 @@ namespace mini {
 		
 		if (m_selected_group && m_selected_group->group_size () >= 1) {
 			m_context.draw (m_origin_object, make_translation (m_selected_group->get_origin ()));
+		}
+
+		if (m_box_select) {
+			float bs_width = m_bs_sprite->get_size ().x;
+			float bs_height = m_bs_sprite->get_size ().y;
+
+			glm::mat4x4 bs_world (1.0f);
+			bs_world = glm::translate (bs_world, { 0.5f * bs_width + m_bs_top_left.x, 0.5f * bs_height + m_bs_top_left.y, 0 });
+
+			m_context.draw (m_bs_sprite, bs_world);
 		}
 
 		if (m_anaglyph.is_enabled ()) {
@@ -1031,6 +1086,31 @@ namespace mini {
 
 		for (auto & o : m_objects) {
 			o->object->notify_object_created (object);
+		}
+	}
+
+	void application::m_begin_box_select () {
+		m_box_select = true;
+		m_bs_start = {
+			static_cast<float> (m_vp_mouse_offset.x),
+			static_cast<float> (m_vp_mouse_offset.y)
+		};
+	}
+
+	void application::m_end_box_select () {
+		m_box_select = false;
+
+		glm::vec2 screen_res = glm::vec2 (
+			static_cast<float> (m_last_vp_width),
+			static_cast<float> (m_last_vp_height)
+		);
+
+		box_test_data_t box_test (get_camera (), m_bs_top_left, m_bs_bottom_right, screen_res);
+
+		for (auto & object : m_objects) {
+			if (object->object->box_test (box_test)) {
+				m_group_select_add (object);
+			}
 		}
 	}
 
