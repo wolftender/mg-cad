@@ -1,6 +1,7 @@
 #pragma once
 #include <glad/glad.h>
 #include <memory>
+#include <functional>
 
 #include "algebra.hpp"
 #include "shader.hpp"
@@ -47,6 +48,9 @@ namespace mini {
 	/// object oriented and opengl is procedural, we want an object oriented wrapper.
 	/// </summary>
 	class app_context final {
+		public:
+			using render_hook_t = std::function<void (app_context &)>;
+
 		private:
 			struct enqueued_renderable_t {
 				std::weak_ptr<graphics_obj_t> object;
@@ -69,6 +73,9 @@ namespace mini {
 
 			std::unique_ptr<camera> m_camera;
 
+			render_hook_t m_pre_render;
+			render_hook_t m_post_render;
+
 		public:
 			app_context (const video_mode_t & video_mode);
 			~app_context ();
@@ -78,6 +85,11 @@ namespace mini {
 
 			void set_camera_pos (const glm::vec3 & position);
 			void set_camera_target (const glm::vec3 & target);
+
+			void set_pre_render (render_hook_t hook);
+			void set_post_render (render_hook_t hook);
+			void clear_pre_render ();
+			void clear_post_render ();
 
 			void set_video_mode (const video_mode_t & video_mode);
 

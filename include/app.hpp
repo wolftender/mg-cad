@@ -13,6 +13,7 @@
 #include "store.hpp"
 #include "anaglyph.hpp"
 #include "sprite.hpp"
+#include "gizmo.hpp"
 
 namespace mini {
 	class application : public app_window, public scene_controller_base {
@@ -138,6 +139,9 @@ namespace mini {
 
 			std::shared_ptr<sprite> m_bs_sprite;
 
+			// gizmos
+			std::shared_ptr<gizmo> m_gizmo;
+
 		public:
 			// api for tools
 			float get_cam_yaw () const;
@@ -194,6 +198,7 @@ namespace mini {
 		protected:
 			virtual void t_integrate (float delta_time) override;
 			virtual void t_render () override;
+			void m_post_render (app_context & context);
 
 			virtual void t_on_character (unsigned int code) override;
 			virtual void t_on_cursor_pos (double posx, double posy) override;

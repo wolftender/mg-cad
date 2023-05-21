@@ -65,6 +65,22 @@ namespace mini {
 		m_camera->set_target (target);
 	}
 
+	void app_context::set_pre_render (render_hook_t hook) {
+		m_pre_render = hook;
+	}
+
+	void app_context::set_post_render (render_hook_t hook) {
+		m_post_render = hook;
+	}
+
+	void app_context::clear_pre_render () {
+		m_pre_render = nullptr;
+	}
+
+	void app_context::clear_post_render () {
+		m_post_render = nullptr;
+	}
+
 	void app_context::set_video_mode (const video_mode_t & video_mode) {
 		m_new_mode = video_mode;
 		m_switch_mode = true;
@@ -179,11 +195,19 @@ namespace mini {
 		glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// render the scene
+		if (m_pre_render) {
+			m_pre_render (*this);
+		}
+
 		for (uint32_t index = 0; index < m_last_queue_index; ++index) {
 			auto object_ptr = m_queue[index].object.lock ();
 			if (object_ptr) {
 				object_ptr->render (*this, m_queue[index].world_matrix);
 			}
+		}
+
+		if (m_post_render) {
+			m_post_render (*this);
 		}
 
 		// clear the rendering queue

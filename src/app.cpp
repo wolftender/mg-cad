@@ -520,6 +520,9 @@ namespace mini {
 		m_context (video_mode_t (1200, 800)),
 		m_anaglyph (m_context.get_video_mode ()) {
 
+		// render hooks
+		m_context.set_post_render (std::bind (&application::m_post_render, this, std::placeholders::_1));
+
 		m_cam_pitch = 0.0f;
 		m_cam_yaw = 0.0f;
 		m_distance = 10.0f;
@@ -558,6 +561,9 @@ namespace mini {
 		m_bs_start = { 0.0f, 0.0f };
 
 		m_bs_sprite = std::make_shared<sprite> (m_store->get_box_select_shader (), nullptr);
+
+		// gizmo
+		m_gizmo = std::make_shared<gizmo> (m_store->get_gizmo_shader (), m_store->get_line_shader ());
 	}
 
 	void application::t_integrate (float delta_time) {
@@ -669,10 +675,6 @@ namespace mini {
 
 		
 		m_context.draw (m_cursor_object, make_translation (m_cursor_position));
-		
-		if (m_selected_group && m_selected_group->group_size () >= 1) {
-			m_context.draw (m_origin_object, make_translation (m_selected_group->get_origin ()));
-		}
 
 		if (m_box_select) {
 			float bs_width = m_bs_sprite->get_size ().x;
@@ -708,6 +710,19 @@ namespace mini {
 
 		if (m_show_creator) {
 			m_draw_object_creator ();
+		}
+	}
+
+	void application::m_post_render (app_context & context) {
+		glClear (GL_DEPTH_BUFFER_BIT);
+		glEnable (GL_DEPTH_TEST);
+
+		if (m_selected_group && m_selected_group->group_size () >= 1) {
+			if (m_selected_group->group_size () == 1) {
+				m_gizmo->render (context, make_translation (m_selected_object->object->get_translation ()));
+			} else {
+				m_gizmo->render (context, make_translation (m_selected_group->get_origin ()));
+			}
 		}
 	}
 

@@ -15,6 +15,7 @@ namespace mini {
 			std::shared_ptr<shader_t> m_line_shader;
 			std::shared_ptr<shader_t> m_bezier_surf_shader, m_bezier_surf_solid_shader;
 			std::shared_ptr<shader_t> m_box_select_shader;
+			std::shared_ptr<shader_t> m_gizmo_shader;
 
 			std::shared_ptr<texture_t> m_cursor_texture, m_point_texture;
 
@@ -32,6 +33,7 @@ namespace mini {
 			std::shared_ptr<shader_t> get_bezier_surf_shader () const;
 			std::shared_ptr<shader_t> get_bezier_surf_solid_shader () const;
 			std::shared_ptr<shader_t> get_box_select_shader () const;
+			std::shared_ptr<shader_t> get_gizmo_shader () const;
 
 			std::shared_ptr<texture_t> get_cursor_texture () const;
 			std::shared_ptr<texture_t> get_point_texture () const;

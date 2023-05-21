@@ -145,6 +145,10 @@ namespace mini {
 		return m_box_select_shader;
 	}
 
+	std::shared_ptr<shader_t> resource_store::get_gizmo_shader () const {
+		return m_gizmo_shader;
+	}
+
 	std::shared_ptr<texture_t> resource_store::get_cursor_texture () const {
 		return m_cursor_texture;
 	}
@@ -184,6 +188,9 @@ namespace mini {
 
 		// box select
 		m_box_select_shader = m_load_shader ("shaders/vs_sprite.glsl", "shaders/fs_boxselect.glsl");
+
+		// gizmos
+		m_gizmo_shader = m_load_shader ("shaders/vs_position.glsl", "shaders/fs_solidcolor.glsl");
 
 		// textures
 		m_cursor_texture = texture_t::load_from_file ("assets/cursor.png");
