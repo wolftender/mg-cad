@@ -912,7 +912,6 @@ namespace mini {
 		if (ImGui::CollapsingHeader ("Display", ImGuiTreeNodeFlags_DefaultOpen)) {
 			gui::prefix_label ("Grid Enabled: ", 250.0f);
 			ImGui::Checkbox ("##grid_enable", &m_grid_enabled);
-			ImGui::NewLine ();
 
 			gui::prefix_label ("Points Enabled: ", 250.0f);
 			ImGui::Checkbox ("##points_enable", &m_points_enabled);
