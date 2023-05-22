@@ -458,7 +458,7 @@ namespace mini {
 	bezier_patch_c0_template::bezier_patch_c0_template (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> solid_shader, 
 		std::shared_ptr<shader_t> grid_shader, std::shared_ptr<shader_t> point_shader, std::shared_ptr<texture_t> point_texture, 
 		unsigned int patches_x, unsigned int patches_y) : 
-		scene_obj_t (scene, "bezier_surf_c0", true, true, true) {
+		scene_obj_t (scene, "bezier_surf_c0", false, false, false) {
 
 		m_shader = shader;
 		m_solid_shader = solid_shader;
