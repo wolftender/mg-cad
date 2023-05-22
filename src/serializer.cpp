@@ -322,6 +322,10 @@ namespace mini {
 		for (const auto & geometry : j["geometry"]) {
 			m_deserialize_object (geometry);
 		}
+
+		std::sort (m_objects.begin (), m_objects.end (), [](const object_deque_item & a, const object_deque_item & b) {
+			return a.id < b.id;
+		});
 	}
 
 	void scene_deserializer::reset () {
@@ -337,7 +341,7 @@ namespace mini {
 		auto next = m_objects.front ();
 		m_objects.pop_front ();
 
-		return next;
+		return next.object;
 	}
 
 	void scene_deserializer::m_init_deserializers () {
@@ -375,7 +379,7 @@ namespace mini {
 			m_cache.insert ({ id, point });
 		}
 
-		m_objects.push_back (point);
+		m_objects.push_back ({ id, point });
 	}
 
 	void scene_deserializer::m_deserialize_object (const json & data) {
@@ -391,8 +395,8 @@ namespace mini {
 			auto object = deserializer->second->deserialize (m_scene, m_store, data, m_cache);
 
 			if (object) {
-				m_cache.insert ({id, object});
-				m_objects.push_back (object);
+				m_cache.insert ({ id, object });
+				m_objects.push_back ({ id, object });
 			}
 		}
 	}

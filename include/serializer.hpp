@@ -55,10 +55,15 @@ namespace mini {
 
 	class scene_deserializer {
 		private:
+			struct object_deque_item {
+				int id;
+				std::shared_ptr<scene_obj_t> object;
+			};
+
 			cache_id_object_t m_cache;
 			bool m_ready;
 
-			std::deque<std::shared_ptr<scene_obj_t>> m_objects;
+			std::deque<object_deque_item> m_objects;
 			std::unordered_map<std::string, const object_deserializer_base *> m_deserializers;
 
 			scene_controller_base & m_scene;

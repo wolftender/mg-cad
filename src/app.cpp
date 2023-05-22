@@ -319,7 +319,7 @@ namespace mini {
 			}
 		}
 
-		if (m_viewport_focus) {
+		if (m_viewport_focus && m_mouse_in_viewport) {
 			m_distance = m_distance - (static_cast<float> (offset_y) / 2.0f);
 		}
 	}
