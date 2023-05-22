@@ -227,6 +227,10 @@ namespace mini {
 		return m_context.get_video_mode ();
 	}
 
+	bool application::get_show_points () const {
+		return m_points_enabled;
+	}
+
 	app_context & application::get_context () {
 		return m_context;
 	}
@@ -572,6 +576,7 @@ namespace mini {
 		m_grid_enabled = true;
 		m_viewport_focus = false;
 		m_mouse_in_viewport = false;
+		m_points_enabled = true;
 
 		m_last_vp_height = m_last_vp_width = 0;
 		m_test_texture = texture_t::load_from_file ("assets/test.png");
@@ -904,9 +909,13 @@ namespace mini {
 			ImGui::NewLine ();
 		}
 
-		if (ImGui::CollapsingHeader ("Grid", ImGuiTreeNodeFlags_DefaultOpen)) {
+		if (ImGui::CollapsingHeader ("Display", ImGuiTreeNodeFlags_DefaultOpen)) {
 			gui::prefix_label ("Grid Enabled: ", 250.0f);
 			ImGui::Checkbox ("##grid_enable", &m_grid_enabled);
+			ImGui::NewLine ();
+
+			gui::prefix_label ("Points Enabled: ", 250.0f);
+			ImGui::Checkbox ("##points_enable", &m_points_enabled);
 			ImGui::NewLine ();
 		}
 
@@ -1345,7 +1354,7 @@ namespace mini {
 
 			try {
 				deserializer.load (ss.str ());
-			} catch (const std::runtime_error & error) {
+			} catch (const std::exception & error) {
 				std::cerr << error.what () << std::endl;
 				return;
 			}

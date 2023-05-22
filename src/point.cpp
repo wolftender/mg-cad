@@ -36,9 +36,11 @@ namespace mini {
 	}
 
 	void point_object::render (app_context & context, const glm::mat4x4 & world_matrix) const {
-		glDisable (GL_DEPTH_TEST);
-		m_billboard.render (context, world_matrix);
-		glEnable (GL_DEPTH_TEST);
+		if (get_scene ().get_show_points ()) {
+			glDisable (GL_DEPTH_TEST);
+			m_billboard.render (context, world_matrix);
+			glEnable (GL_DEPTH_TEST);
+		}
 	}
 
 	void point_object::configure () {

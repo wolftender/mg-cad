@@ -118,6 +118,7 @@ namespace mini {
 			float m_time;
 			float m_grid_spacing;
 			bool m_grid_enabled;
+			bool m_points_enabled;
 
 			// object creation tool
 			bool m_show_creator;
@@ -181,6 +182,8 @@ namespace mini {
 
 			virtual const camera & get_camera () const override;
 			virtual const video_mode_t & get_video_mode () const override;
+
+			virtual bool get_show_points () const override;
 
 			app_context & get_context ();
 			std::shared_ptr<scene_obj_t> get_selection ();

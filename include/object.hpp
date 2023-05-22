@@ -75,6 +75,8 @@ namespace mini {
 			virtual glm::vec2 screen_to_pixels (const glm::vec2 & pos) const = 0;
 			virtual glm::vec2 world_to_screen (const glm::vec3 & world_pos) const = 0;
 
+			virtual bool get_show_points () const = 0;
+
 			virtual void select_by_id (uint64_t id) = 0;
 			virtual void clear_selection () = 0;
 
