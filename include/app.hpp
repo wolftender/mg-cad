@@ -208,6 +208,7 @@ namespace mini {
 			virtual void t_on_resize (int width, int height) override;
 
 		private:
+			bool m_handle_gizmo_action ();
 			void m_handle_mouse_select ();
 			void m_handle_mouse ();
 			void m_snap_cursor_to_mouse ();

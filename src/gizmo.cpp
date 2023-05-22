@@ -28,6 +28,54 @@ namespace mini {
 		}
 	}
 
+	inline float line_distance (const glm::vec3 & a1, const glm::vec3 & b1, const glm::vec3 & a2, const glm::vec3 & b2) {
+		glm::vec3 c = glm::cross (b1, b2);
+		float num = glm::dot (c, a2 - a1);
+		float den = glm::length (c);
+
+		return glm::abs (num / den);
+	}
+
+	inline float line_distance (const glm::vec3 & a, const glm::vec3 & n, const glm::vec3 & p) {
+		return glm::length (glm::cross (p - a, n)) / glm::length (n);
+	}
+
+	gizmo::gizmo_action_t gizmo::get_action (hit_test_data_t & hit_data, const glm::vec3 & center) const {
+		constexpr glm::vec3 axis_x = { 1.0f, 0.0f, 0.0f };
+		constexpr glm::vec3 axis_y = { 0.0f, 1.0f, 0.0f };
+		constexpr glm::vec3 axis_z = { 0.0f, 0.0f, 1.0f };
+
+		if (m_mode == gizmo_mode_t::translation) {
+			// check collision with arrows, if collides then return correct translate
+			bool collides_x = false, collides_y = false, collides_z = false;
+
+			const auto & cam_pos = hit_data.camera.get_position ();
+
+			float cam_dist = glm::distance (cam_pos, center);
+			float world_size = glm::tan (glm::pi<float> () / 3.0f) * cam_dist * 0.018f;
+
+			constexpr float off = 1.9f;
+
+			float center_x_dist = line_distance (cam_pos, hit_data.mouse_ray, center + world_size * axis_x * off);
+			float center_y_dist = line_distance (cam_pos, hit_data.mouse_ray, center - world_size * axis_y * off);
+			float center_z_dist = line_distance (cam_pos, hit_data.mouse_ray, center - world_size * axis_z * off);
+
+			collides_x = (line_distance (center, { 1.0f, 0.0f, 0.0f }, cam_pos, hit_data.mouse_ray) < 0.3f * world_size) && (center_x_dist < world_size * off);
+			collides_y = (line_distance (center, { 0.0f, 1.0f, 0.0f }, cam_pos, hit_data.mouse_ray) < 0.3f * world_size) && (center_y_dist < world_size * off);
+			collides_z = (line_distance (center, { 0.0f, 0.0f, 1.0f }, cam_pos, hit_data.mouse_ray) < 0.3f * world_size) && (center_z_dist < world_size * off);
+
+			if (collides_x) {
+				return gizmo_action_t::translate_x;
+			} else if (collides_y) {
+				return gizmo_action_t::translate_y;
+			} else if (collides_z) {
+				return gizmo_action_t::translate_z;
+			}
+		}
+
+		return gizmo_action_t::none;
+	}
+
 	void gizmo::m_render_translation (app_context & context, const glm::mat4x4 & world_matrix) const {
 		glBindVertexArray (m_mesh_arrow.vao);
 		m_shader_mesh->bind ();

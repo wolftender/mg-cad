@@ -275,15 +275,15 @@ namespace mini {
 		if (action == GLFW_RELEASE && !ImGui::GetIO ().WantCaptureKeyboard) {
 			switch (key) {
 				case KEY_TRANSLATE:
-					m_selected_tool = std::make_shared<translation_tool> (*this);
+					m_selected_tool = std::make_shared<translation_tool> (*this, axis_t::none, false);
 					break;
 
 				case KEY_ROTATE:
-					m_selected_tool = std::make_shared<rotation_tool> (*this);
+					m_selected_tool = std::make_shared<rotation_tool> (*this, axis_t::none);
 					break;
 
 				case KEY_SCALE:
-					m_selected_tool = std::make_shared<scale_tool> (*this);
+					m_selected_tool = std::make_shared<scale_tool> (*this, axis_t::none);
 					break;
 					
 				case GLFW_KEY_ESCAPE:
@@ -378,7 +378,9 @@ namespace mini {
 				bool is_alt_down = is_key_down (GLFW_KEY_LEFT_ALT) || is_key_down (GLFW_KEY_RIGHT_ALT);
 
 				if (!is_alt_down) {
-					m_handle_mouse_select ();
+					if (!m_handle_gizmo_action ()) {
+						m_handle_mouse_select ();
+					}
 				} else {
 					m_begin_box_select ();
 				}
@@ -400,6 +402,45 @@ namespace mini {
 		}
 
 		app_window::t_on_resize (width, height);
+	}
+
+	bool application::m_handle_gizmo_action () {
+		auto group_size = m_selected_group->group_size ();
+		if (group_size == 0) {
+			return false;
+		}
+
+		hit_test_data_t data = get_hit_test_data ();
+		
+		if (!data.valid) {
+			return false;
+		}
+
+		gizmo::gizmo_action_t action = gizmo::gizmo_action_t::none;
+
+		if (group_size == 1) {
+			action = m_gizmo->get_action (data, m_selected_object->object->get_translation ());
+		} else {
+			action = m_gizmo->get_action (data, m_selected_group->get_origin ());
+		}
+
+		switch (action) {
+			case gizmo::gizmo_action_t::translate_x:
+				m_selected_tool = std::make_shared<translation_tool> (*this, axis_t::x, true);
+				return true;
+
+			case gizmo::gizmo_action_t::translate_y:
+				m_selected_tool = std::make_shared<translation_tool> (*this, axis_t::y, true);
+				return true;
+			
+			case gizmo::gizmo_action_t::translate_z:
+				m_selected_tool = std::make_shared<translation_tool> (*this, axis_t::z, true);
+				return true;
+
+			default: break;
+		} 
+
+		return false;
 	}
 
 	void application::m_handle_mouse_select () {
@@ -768,15 +809,15 @@ namespace mini {
 				ImGui::Separator ();
 
 				if (ImGui::MenuItem ("Translate", "T", nullptr, selected_objects)) {
-					m_selected_tool = std::make_shared<translation_tool> (*this);
+					m_selected_tool = std::make_shared<translation_tool> (*this, axis_t::none, false);
 				}
 
 				if (ImGui::MenuItem ("Rotate", "R", nullptr, selected_objects)) {
-					m_selected_tool = std::make_shared<rotation_tool> (*this);
+					m_selected_tool = std::make_shared<rotation_tool> (*this, axis_t::none);
 				}
 
 				if (ImGui::MenuItem ("Scale", "S", nullptr, selected_objects)) {
-					m_selected_tool = std::make_shared<scale_tool> (*this);
+					m_selected_tool = std::make_shared<scale_tool> (*this, axis_t::none);
 				}
 
 				ImGui::EndMenu ();

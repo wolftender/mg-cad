@@ -45,7 +45,7 @@ namespace mini {
 	/**********************
 	 *  TRANSLATION TOOL  *
 	 **********************/
-	translation_tool::translation_tool (application & app) : tool_base (app, "translate") {
+	translation_tool::translation_tool (application & app, axis_t axis, bool drag) : tool_base (app, "translate") {
 		auto selection = get_app ().get_group_selection ();
 
 		if (selection) {
@@ -66,8 +66,9 @@ namespace mini {
 			m_offset_x = m_offset_y = 0;
 		}
 
-		m_axis_lock = axis_t::none;
+		m_axis_lock = axis;
 		m_apply = false;
+		m_is_drag = drag;
 	}
 		
 	translation_tool::~translation_tool () { 
@@ -107,6 +108,15 @@ namespace mini {
 	}
 
 	bool translation_tool::on_mouse_button (int button, int action, int mods) {
+		if (m_is_drag) {
+			if (action == GLFW_RELEASE && button == GLFW_MOUSE_BUTTON_LEFT) {
+				if (m_selection) {
+					m_apply = true;
+					t_dispose ();
+				}
+			}
+		}
+
 		if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT) {
 			if (m_selection) {
 				m_apply = true;
@@ -151,18 +161,40 @@ namespace mini {
 	/**********************
 	 *   ROTATION TOOL    *
 	 **********************/
-	rotation_tool::rotation_tool (application & app) : tool_base (app, "rotate") {
+	rotation_tool::rotation_tool (application & app, axis_t axis) : tool_base (app, "rotate") {
 		auto selection = get_app ().get_group_selection ();
 
 		if (selection) {
 			m_original_rotation = selection->get_rotation ();
 			m_selection = selection;
+
+			offset_t mouse_offset = get_app ().get_viewport_mouse_offset ();
+
+			m_offset_x = mouse_offset.x;
+			m_offset_y = mouse_offset.y;
+
+			glm::vec2 screen_pos = get_app ().world_to_screen (m_selection->get_translation ());
+			screen_pos = glm::clamp (screen_pos, { -1.0f, -1.0f }, { 1.0f, 1.0f });
+
+			glm::vec2 pixel_pos = get_app ().screen_to_pixels (screen_pos);
+
+			m_object_x = pixel_pos.x;
+			m_object_y = pixel_pos.y;
+
+			float dx = static_cast<float>(m_offset_x) - static_cast<float>(m_object_x);
+			float dy = static_cast<float>(m_offset_y) - static_cast<float>(m_object_y);
+
+			m_start_angle = -atan2f (dy, dx);
 		} else {
 			m_original_rotation = { 1.0f, 0.0f, 0.0f, 0.0f };
 			t_dispose ();
+
+			m_offset_x = m_offset_y = 0;
+			m_object_x = m_object_y = 0.0f;
+			m_start_angle = 0.0f;
 		}
 
-		m_axis_lock = axis_t::none;
+		m_axis_lock = axis;
 		m_apply = false;
 	}
 
@@ -229,37 +261,38 @@ namespace mini {
 			return false;
 		}
 
-		const offset_t & last_pos = get_app ().get_last_mouse_offset ();
-		const offset_t & curr_pos = get_app ().get_mouse_offset ();
+		const offset_t & curr_pos = get_app ().get_viewport_mouse_offset ();
 
-		float dx = static_cast<float>(curr_pos.x) - static_cast<float>(last_pos.x);
-		float dy = static_cast<float>(curr_pos.y) - static_cast<float>(last_pos.y);
+		float dx = static_cast<float>(curr_pos.x) - static_cast<float>(m_object_x);
+		float dy = static_cast<float>(curr_pos.y) - static_cast<float>(m_object_y);
 
 		glm::quat delta_rotation = { 1.0f, 0.0f, 0.0f, 0.0f };
 		constexpr float ang_speed = (1.0f / 360.0f) * glm::pi<float> ();
 
+		float delta_angle = -m_start_angle - atan2f (dy, dx);
+
 		switch (m_axis_lock) {
 			case axis_t::x: 
-				delta_rotation = delta_rotation * glm::angleAxis (ang_speed * dx, glm::vec3 { 1.0f, 0.0f, 0.0f }); 
+				delta_rotation = delta_rotation * glm::angleAxis (delta_angle, glm::vec3 { 1.0f, 0.0f, 0.0f }); 
 				break;
 
 			case axis_t::y:
-				delta_rotation = delta_rotation * glm::angleAxis (ang_speed * dx, glm::vec3{ 0.0f, 1.0f, 0.0f });
+				delta_rotation = delta_rotation * glm::angleAxis (delta_angle, glm::vec3{ 0.0f, 1.0f, 0.0f });
 				break;
 
 			case axis_t::z: 
-				delta_rotation = delta_rotation * glm::angleAxis (ang_speed * dx, glm::vec3{ 0.0f, 0.0f, 1.0f });
+				delta_rotation = delta_rotation * glm::angleAxis (delta_angle, glm::vec3{ 0.0f, 0.0f, 1.0f });
 				break;
 
 			default:
 				const auto & camera = get_app ().get_camera ();
 				glm::vec3 axis = glm::normalize (camera.get_target () - camera.get_position ());
 
-				delta_rotation = delta_rotation * glm::angleAxis (ang_speed * dx, axis);
+				delta_rotation = delta_rotation * glm::angleAxis (delta_angle, axis);
 				break;
 		}
 
-		m_selection->set_rotation (glm::normalize (delta_rotation) * m_selection->get_rotation ());
+		m_selection->set_rotation (glm::normalize (delta_rotation) * m_original_rotation);
 		return true;
 	}
 
@@ -318,7 +351,7 @@ namespace mini {
 	/**********************
 	 *     SCALE TOOL     *
 	 **********************/
-	scale_tool::scale_tool (application & app) : tool_base (app, "scale tool") {
+	scale_tool::scale_tool (application & app, axis_t axis) : tool_base (app, "scale tool") {
 		auto selection = get_app ().get_group_selection ();
 
 		if (selection) {
@@ -343,7 +376,7 @@ namespace mini {
 			t_dispose ();
 		}
 
-		m_axis_lock = axis_t::none;
+		m_axis_lock = axis;
 		m_apply = false;
 	}
 

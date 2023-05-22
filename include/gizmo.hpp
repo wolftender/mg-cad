@@ -13,6 +13,13 @@ namespace mini {
 				scale
 			};
 
+			enum class gizmo_action_t {
+				none,
+				translate_x,
+				translate_y,
+				translate_z
+			};
+
 		private:
 			struct gizmo_mesh_t {
 				GLuint pos_buffer, index_buffer, vao;
@@ -44,6 +51,7 @@ namespace mini {
 			gizmo & operator= (const gizmo &) = delete;
 
 			virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override;
+			gizmo_action_t get_action (hit_test_data_t & hit_data, const glm::vec3 & center) const;
 
 		private:
 			void m_render_translation (app_context & context, const glm::mat4x4 & world_matrix) const;

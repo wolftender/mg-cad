@@ -72,10 +72,10 @@ namespace mini {
 			std::shared_ptr<scene_obj_t> m_selection;
 
 			axis_t m_axis_lock;
-			bool m_apply;
+			bool m_apply, m_is_drag;
 
 		public:
-			translation_tool (application & app);
+			translation_tool (application & app, axis_t axis, bool drag);
 			~translation_tool ();
 
 			translation_tool (const translation_tool &) = delete;
@@ -91,11 +91,15 @@ namespace mini {
 			glm::quat m_original_rotation;
 			std::shared_ptr<scene_obj_t> m_selection;
 
+			int m_offset_x, m_offset_y;
+			float m_object_x, m_object_y;
+			float m_start_angle;
+
 			axis_t m_axis_lock;
 			bool m_apply;
 
 		public:
-			rotation_tool (application & app);
+			rotation_tool (application & app, axis_t axis);
 			~rotation_tool ();
 
 			rotation_tool (const rotation_tool &) = delete;
@@ -117,7 +121,7 @@ namespace mini {
 			bool m_apply;
 
 		public:
-			scale_tool (application & app);
+			scale_tool (application & app, axis_t axis);
 			~scale_tool ();
 
 			scale_tool (const scale_tool &) = delete;
