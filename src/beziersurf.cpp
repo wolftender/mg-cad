@@ -60,7 +60,7 @@ namespace mini {
 		m_res_v = 25;
 
 		m_ready = false;
-		m_use_solid = false;
+		m_use_solid = true;
 		m_use_wireframe = true;
 		m_queued_update = false;
 		m_signals_setup = false;
@@ -100,7 +100,7 @@ namespace mini {
 		m_res_v = 25;
 
 		m_ready = false;
-		m_use_solid = false;
+		m_use_solid = true;
 		m_use_wireframe = true;
 		m_queued_update = false;
 		m_signals_setup = false;

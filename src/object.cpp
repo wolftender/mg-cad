@@ -205,6 +205,10 @@ namespace mini {
 	}
 
 	void scene_obj_t::set_translation (const glm::vec3 & translation) {
+		if (!m_movable) {
+			return;
+		}
+
 		auto old_translation = m_translation;
 		m_translation = translation;
 		
@@ -214,6 +218,10 @@ namespace mini {
 	}
 
 	void scene_obj_t::set_euler_angles (const glm::vec3 & euler_angles) {
+		if (!m_rotatable) {
+			return;
+		}
+
 		glm::quat rotation = { 1.0f, 0.0f, 0.0f, 0.0f };
 
 		rotation = rotation * glm::angleAxis (euler_angles[2], glm::vec3 { 0.0f, 0.0f, 1.0f });
@@ -231,6 +239,10 @@ namespace mini {
 	}
 
 	void scene_obj_t::set_scale (const glm::vec3 & scale) {
+		if (!m_scalable) {
+			return;
+		}
+
 		auto old_scale = m_scale;
 		m_scale = scale;
 		
@@ -322,6 +334,10 @@ namespace mini {
 	}
 
 	void scene_obj_t::set_rotation (const glm::quat & rotation) {
+		if (!m_rotatable) {
+			return;
+		}
+
 		auto old_rotation = m_rotation;
 
 		m_rotation = rotation;
