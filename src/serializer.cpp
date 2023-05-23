@@ -218,10 +218,10 @@ namespace mini {
 		return j;
 	}
 
-	SERIALIZER (bezier_patch_c0) (int id, std::shared_ptr<scene_obj_t> object, const cache_object_id_t & cache) const {
+	SERIALIZER (bezier_surface_c0) (int id, std::shared_ptr<scene_obj_t> object, const cache_object_id_t & cache) const {
 		json j = s_serialize_base (id, object);
 
-		std::shared_ptr<bezier_patch_c0> surface = std::dynamic_pointer_cast<mini::bezier_patch_c0> (object);
+		std::shared_ptr<bezier_surface_c0> surface = std::dynamic_pointer_cast<mini::bezier_surface_c0> (object);
 
 		if (surface) {
 			auto patches = surface->serialize_patches ();
@@ -350,7 +350,7 @@ namespace mini {
 		m_deserializers.insert ({ "bezierC0", &generic_object_deserializer<bezier_curve_c0>::get_instance () });
 		m_deserializers.insert ({ "bezierC2", &generic_object_deserializer<bspline_curve>::get_instance () });
 		m_deserializers.insert ({ "interpolatingC2", &generic_object_deserializer<interpolating_curve>::get_instance () });
-		m_deserializers.insert ({ "bezierSurfaceC0", &generic_object_deserializer<bezier_patch_c0>::get_instance () });
+		m_deserializers.insert ({ "bezierSurfaceC0", &generic_object_deserializer<bezier_surface_c0>::get_instance () });
 	}
 
 	void scene_deserializer::m_deserialize_point (const json & data) {
@@ -547,7 +547,7 @@ namespace mini {
 		return curve;
 	}
 
-	DESERIALIZER (bezier_patch_c0) (scene_controller_base & scene, std::shared_ptr<resource_store> store,
+	DESERIALIZER (bezier_surface_c0) (scene_controller_base & scene, std::shared_ptr<resource_store> store,
 		const json & data, const cache_id_object_t & cache) const {
 
 		// this is going to be complicated :)
@@ -606,7 +606,7 @@ namespace mini {
 			topology.insert (topology.end (), patch_topology.begin (), patch_topology.end ());
 		}
 
-		auto patch = std::make_shared<bezier_patch_c0> (
+		auto patch = std::make_shared<bezier_surface_c0> (
 			scene, 
 			store->get_bezier_surf_shader (),
 			store->get_bezier_surf_solid_shader (),

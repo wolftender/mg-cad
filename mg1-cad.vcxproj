@@ -140,6 +140,7 @@
     <ClInclude Include="include\app.hpp" />
     <ClInclude Include="include\bezier.hpp" />
     <ClInclude Include="include\bspline.hpp" />
+    <ClInclude Include="include\bsplinesurf.hpp" />
     <ClInclude Include="include\camera.hpp" />
     <ClInclude Include="include\context.hpp" />
     <ClInclude Include="include\cube.hpp" />
@@ -157,6 +158,7 @@
     <ClInclude Include="include\shader.hpp" />
     <ClInclude Include="include\sprite.hpp" />
     <ClInclude Include="include\store.hpp" />
+    <ClInclude Include="include\surface.hpp" />
     <ClInclude Include="include\texture.hpp" />
     <ClInclude Include="include\tool.hpp" />
     <ClInclude Include="include\torus.hpp" />
@@ -169,6 +171,7 @@
     <ClCompile Include="src\beziersurf.cpp" />
     <ClCompile Include="src\billboard.cpp" />
     <ClCompile Include="src\bspline.cpp" />
+    <ClCompile Include="src\bsplinesurf.cpp" />
     <ClCompile Include="src\factory.cpp" />
     <ClCompile Include="src\gizmo.cpp" />
     <ClCompile Include="src\group.cpp" />
@@ -188,6 +191,7 @@
     <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\sprite.cpp" />
     <ClCompile Include="src\store.cpp" />
+    <ClCompile Include="src\surface.cpp" />
     <ClCompile Include="src\texture.cpp" />
     <ClCompile Include="src\tool.cpp" />
     <ClCompile Include="src\torus.cpp" />
