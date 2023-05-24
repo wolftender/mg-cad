@@ -9,6 +9,7 @@
 #include "bspline.hpp"
 #include "interpolate.hpp"
 #include "beziersurf.hpp"
+#include "surfacetpl.hpp"
 
 namespace mini {
 	object_factory::object_factory_impl_t::object_factory_impl_t (object_ctor_t c, const std::string & n, const std::string & d) :
@@ -136,7 +137,7 @@ namespace mini {
 	}
 
 	std::shared_ptr<scene_obj_t> object_factory::make_bezier_surf_c0 (scene_controller_base & scene, std::shared_ptr<const resource_store> store) {
-		return std::make_shared<bezier_patch_c0_template> (
+		return std::make_shared<surface_template<bezier_surface_c0>> (
 			scene, 
 			store->get_bezier_surf_shader (),
 			store->get_bezier_surf_solid_shader (),

@@ -106,6 +106,8 @@ namespace mini {
 			using signal_handler_t = std::function<void(signal_event_t, scene_obj_t &)>;
 
 		private:
+			static uint64_t s_allocated_count;
+
 			scene_controller_base & m_scene;
 			std::string m_type_name;
 			std::string m_name;

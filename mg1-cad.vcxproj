@@ -159,6 +159,7 @@
     <ClInclude Include="include\sprite.hpp" />
     <ClInclude Include="include\store.hpp" />
     <ClInclude Include="include\surface.hpp" />
+    <ClInclude Include="include\surfacetpl.hpp" />
     <ClInclude Include="include\texture.hpp" />
     <ClInclude Include="include\tool.hpp" />
     <ClInclude Include="include\torus.hpp" />
@@ -192,6 +193,7 @@
     <ClCompile Include="src\sprite.cpp" />
     <ClCompile Include="src\store.cpp" />
     <ClCompile Include="src\surface.cpp" />
+    <ClCompile Include="src\surfacetpl.cpp" />
     <ClCompile Include="src\texture.cpp" />
     <ClCompile Include="src\tool.cpp" />
     <ClCompile Include="src\torus.cpp" />

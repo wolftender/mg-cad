@@ -31,6 +31,7 @@ namespace mini {
 
 	////////////////////////////////////////////
 
+	uint64_t scene_obj_t::s_allocated_count = 0;
 
 	scene_obj_t::scene_obj_t (scene_controller_base & scene, const std::string & type_name, bool movable, bool rotatable, bool scalable) :
 		m_scene (scene) {
@@ -51,9 +52,13 @@ namespace mini {
 		m_disposed = false;
 		m_mouse_lock = false;
 		m_is_deletable = true;
+
+		s_allocated_count++;
 	}
 
-	scene_obj_t::~scene_obj_t () { }
+	scene_obj_t::~scene_obj_t () { 
+		s_allocated_count--;
+	}
 
 	void scene_obj_t::t_set_mouse_lock (bool lock) {
 		m_mouse_lock = lock;

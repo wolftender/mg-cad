@@ -55,12 +55,28 @@ namespace mini {
 			void set_res_u (int u);
 			void set_res_v (int v);
 
-			bicubic_surface (const std::string & type_name, scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> solid_shader,
-				std::shared_ptr<shader_t> grid_shader, unsigned int patches_x, unsigned int patches_y, const std::vector<point_ptr> & points);
+			bicubic_surface (
+				const std::string & type_name, 
+				scene_controller_base & scene, 
+				std::shared_ptr<shader_t> shader, 
+				std::shared_ptr<shader_t> solid_shader,
+				std::shared_ptr<shader_t> grid_shader, 
+				unsigned int patches_x, 
+				unsigned int patches_y, 
+				const std::vector<point_ptr> & points
+			);
 
-			bicubic_surface (const std::string & type_name, scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> solid_shader,
-				std::shared_ptr<shader_t> grid_shader, unsigned int patches_x, unsigned int patches_y, const std::vector<point_ptr> & points,
-				const std::vector<GLuint> topology);
+			bicubic_surface (
+				const std::string & type_name, 
+				scene_controller_base & scene, 
+				std::shared_ptr<shader_t> shader, 
+				std::shared_ptr<shader_t> solid_shader,
+				std::shared_ptr<shader_t> grid_shader, 
+				unsigned int patches_x, 
+				unsigned int patches_y, 
+				const std::vector<point_ptr> & points,
+				const std::vector<GLuint> topology
+			);
 
 			virtual ~bicubic_surface ();
 
