@@ -4,6 +4,13 @@
 
 namespace mini {
 	class bspline_surface : public bicubic_surface {
+		private:
+			static std::vector<GLuint> s_gen_grid_topology (
+				unsigned int patches_x,
+				unsigned int patches_y,
+				const std::vector<GLuint> & topology
+			);
+
 		public:
 			bspline_surface (
 				scene_controller_base & scene,
@@ -23,7 +30,7 @@ namespace mini {
 				unsigned int patches_x,
 				unsigned int patches_y,
 				const std::vector<point_ptr> & points,
-				const std::vector<GLuint> topology
+				const std::vector<GLuint> & topology
 			);
 
 			virtual const object_serializer_base & get_serializer () const;

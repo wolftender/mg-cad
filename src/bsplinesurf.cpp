@@ -3,6 +3,51 @@
 #include "serializer.hpp"
 
 namespace mini {
+	// this is extremally sub-optimal for b-spline surfaces because
+	// it generates many suplicate edges!
+	// todo: fix this in the future
+
+	std::vector<GLuint> bspline_surface::s_gen_grid_topology (
+		unsigned int patches_x,
+		unsigned int patches_y,
+		const std::vector<GLuint> & topology) {
+
+		std::vector<GLuint> grid_indices;
+		unsigned int num_patches = patches_x * patches_y;
+
+		grid_indices.resize (num_patches * 80);
+		int i = 0;
+
+		for (unsigned int p = 0; p < num_patches; ++p) {
+			constexpr unsigned int patch_size = 4;
+			unsigned int i1, i2;
+
+			for (unsigned int y = 0; y < patch_size; ++y) {
+				for (unsigned int x = 0; x < patch_size - 1; ++x) {
+					i1 = topology[(16 * p) + (y * patch_size) + x];
+					i2 = topology[(16 * p) + (y * patch_size) + x + 1];
+
+					grid_indices[i++] = i1;
+					grid_indices[i++] = i2;
+				}
+
+				if (y == patch_size - 1) {
+					break;
+				}
+
+				for (unsigned int x = 0; x < patch_size; ++x) {
+					i1 = topology[(16 * p) + (y * patch_size) + x];
+					i2 = topology[(16 * p) + ((y + 1) * patch_size) + x];
+
+					grid_indices[i++] = i1;
+					grid_indices[i++] = i2;
+				}
+			}
+		}
+
+		return grid_indices;
+	}
+
 	bspline_surface::bspline_surface (
 		scene_controller_base & scene,
 		std::shared_ptr<shader_t> shader,
@@ -36,7 +81,7 @@ namespace mini {
 		unsigned int patches_x,
 		unsigned int patches_y,
 		const std::vector<point_ptr> & points,
-		const std::vector<GLuint> topology)
+		const std::vector<GLuint> & topology)
 		: bicubic_surface (
 			"bezier_surf_c2",
 			scene,
@@ -46,7 +91,8 @@ namespace mini {
 			patches_x,
 			patches_y,
 			points,
-			topology
+			topology,
+			s_gen_grid_topology (patches_x, patches_y, topology)
 		) { 
 		
 		// topology validity check

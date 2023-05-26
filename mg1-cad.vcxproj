@@ -221,6 +221,8 @@
     <None Include="shaders\tcs_bezier_quads.glsl" />
     <None Include="shaders\tes_bezier_isolines.glsl" />
     <None Include="shaders\tes_bezier_quads.glsl" />
+    <None Include="shaders\tes_bspline_isolines.glsl" />
+    <None Include="shaders\tes_bspline_quads.glsl" />
     <None Include="shaders\vs_basic.glsl" />
     <None Include="shaders\vs_billboard.glsl" />
     <None Include="shaders\vs_billboard_s.glsl" />

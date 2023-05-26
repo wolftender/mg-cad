@@ -95,7 +95,8 @@ namespace mini {
 		unsigned int patches_x, 
 		unsigned int patches_y,
 		const std::vector<point_ptr> & points, 
-		const std::vector<GLuint> topology) :
+		const std::vector<GLuint> & topology,
+		const std::vector<GLuint> & grid_topology) :
 		scene_obj_t (scene, type_name, false, false, false), 
 		m_patches_x (patches_x), 
 		m_patches_y (patches_y) {
@@ -128,6 +129,7 @@ namespace mini {
 
 		// do not create topology automatically
 		m_indices = topology;
+		m_grid_indices = grid_topology;
 	}
 
 	bicubic_surface::~bicubic_surface () {

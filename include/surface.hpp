@@ -75,7 +75,8 @@ namespace mini {
 				unsigned int patches_x, 
 				unsigned int patches_y, 
 				const std::vector<point_ptr> & points,
-				const std::vector<GLuint> topology
+				const std::vector<GLuint> & topology,
+				const std::vector<GLuint> & grid_topology
 			);
 
 			virtual ~bicubic_surface ();
