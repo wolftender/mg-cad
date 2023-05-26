@@ -96,10 +96,12 @@ namespace mini {
 			void m_bind_shader (app_context & context, shader_t & shader, const glm::mat4x4 & world_matrix) const;
 			void m_rebuild_buffers (bool recalculate_indices);
 			bool m_calc_pos_buffer ();
-			void m_calc_idx_buffer ();
 			void m_update_buffers ();
 			void m_destroy_buffers ();
 			void m_moved_sighandler (signal_event_t sig, scene_obj_t & sender);
 			void m_setup_signals ();
+
+		protected:
+			virtual void t_calc_idx_buffer (std::vector<GLuint> & indices, std::vector<GLuint> & grid_indices) = 0;
 	};
 }

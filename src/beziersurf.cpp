@@ -21,7 +21,13 @@ namespace mini {
 			patches_x,
 			patches_y,
 			points
-		) { }
+		) { 
+		
+		// validity check
+		if ((patches_y * patches_x * 9 + patches_x * 3 + patches_y * 3 + 1) != points.size ()) {
+			throw std::runtime_error ("invalid input data for a bicubic surface patch");
+		}
+	}
 
 	bezier_surface_c0::bezier_surface_c0 (
 		scene_controller_base & scene, 
@@ -42,10 +48,69 @@ namespace mini {
 			patches_y,
 			points,
 			topology
-		) { }
+		) { 
+		
+		// topology validity check
+		if ((patches_x * patches_y * 16) != topology.size ()) {
+			throw std::runtime_error ("invalid topology data for a bezier surface patch");
+		}
+	}
 
 	const object_serializer_base & bezier_surface_c0::get_serializer () const {
 		return generic_object_serializer<bezier_surface_c0>::get_instance ();
+	}
+
+	void bezier_surface_c0::t_calc_idx_buffer (std::vector<GLuint> & indices, std::vector<GLuint> & grid_indices) {
+		// create indices for patches
+		unsigned int i = 0;
+		unsigned int width = get_patches_x () * 3 + 1;
+		unsigned int height = get_patches_y () * 3 + 1;
+
+		for (unsigned int py = 0; py < get_patches_y (); ++py) {
+			for (unsigned int px = 0; px < get_patches_x (); ++px) {
+				// add all control points to the patch
+				unsigned int bx = px * 3;
+				unsigned int by = py * 3;
+
+				for (unsigned int y = 0; y < 4; ++y) {
+					for (unsigned int x = 0; x < 4; ++x) {
+						unsigned int cx = bx + x;
+						unsigned int cy = by + y;
+
+						unsigned int index = (cy * width) + cx;
+						indices[i++] = index;
+					}
+				}
+			}
+		}
+
+		// for the grid we will need a different procedure
+		grid_indices.resize (2 * (((width - 1) * height) + (width * (height - 1))));
+		i = 0;
+
+		for (unsigned int cy = 0; cy < height; ++cy) {
+			unsigned int i1, i2;
+
+			for (unsigned int cx = 0; cx < width - 1; ++cx) {
+				i1 = (cy * width) + cx;
+				i2 = (cy * width) + cx + 1;
+
+				grid_indices[i++] = i1;
+				grid_indices[i++] = i2;
+			}
+
+			if (cy == height - 1) {
+				break;
+			}
+
+			for (unsigned int cx = 0; cx < width; ++cx) {
+				i1 = (cy * width) + cx;
+				i2 = ((cy + 1) * width) + cx;
+
+				grid_indices[i++] = i1;
+				grid_indices[i++] = i2;
+			}
+		}
 	}
 
 

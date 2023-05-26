@@ -89,6 +89,14 @@ namespace mini {
 				m_point_texture = point_texture;
 			}
 
+			virtual void integrate (float delta_time) override {
+				surface_template_base::integrate (delta_time);
+
+				if (m_patch) {
+					m_patch->integrate (delta_time);
+				}
+			}
+
 			virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override {
 				if (m_patch) {
 					m_patch->render (context, world_matrix);

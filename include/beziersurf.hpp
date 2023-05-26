@@ -28,5 +28,8 @@ namespace mini {
 			);
 
 			virtual const object_serializer_base & get_serializer () const;
+			
+		protected:
+			virtual void t_calc_idx_buffer (std::vector<GLuint> & indices, std::vector<GLuint> & grid_indices) override;
 	};
 }

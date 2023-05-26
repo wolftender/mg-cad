@@ -59,18 +59,13 @@ namespace mini {
 		m_patches_x (patches_x), 
 		m_patches_y (patches_y) {
 
-		// validity check
-		if ((patches_y * patches_x * 9 + patches_x * 3 + patches_y * 3 + 1) != points.size ()) {
-			throw std::runtime_error ("invalid input data for a bezier surface patch");
-		}
-
 		m_res_u = 25;
 		m_res_v = 25;
 
 		m_ready = false;
 		m_use_solid = true;
 		m_use_wireframe = true;
-		m_queued_update = false;
+		m_queued_update = true;
 		m_signals_setup = false;
 
 		m_vao = 0;
@@ -89,9 +84,6 @@ namespace mini {
 			point->set_deletable (false);
 			m_points.push_back (point);
 		}
-
-		// create topology
-		m_rebuild_buffers (true);
 	}
 
 	bicubic_surface::bicubic_surface (
@@ -108,18 +100,13 @@ namespace mini {
 		m_patches_x (patches_x), 
 		m_patches_y (patches_y) {
 
-		// topology validity check
-		if ((patches_x * patches_y * num_control_points) != topology.size ()) {
-			throw std::runtime_error ("invalid topology data for a bezier surface patch");
-		}
-
 		m_res_u = 25;
 		m_res_v = 25;
 
 		m_ready = false;
 		m_use_solid = true;
 		m_use_wireframe = true;
-		m_queued_update = false;
+		m_queued_update = true;
 		m_signals_setup = false;
 
 		m_vao = 0;
@@ -141,7 +128,6 @@ namespace mini {
 
 		// do not create topology automatically
 		m_indices = topology;
-		m_rebuild_buffers (false);
 	}
 
 	bicubic_surface::~bicubic_surface () {
@@ -311,7 +297,7 @@ namespace mini {
 		if (recalculate_indices) {
 			m_indices.clear ();
 			m_indices.resize (get_num_patches () * num_control_points);
-			m_calc_idx_buffer ();
+			t_calc_idx_buffer (m_indices, m_grid_indices);
 		}
 
 		// put data into buffers
@@ -367,60 +353,11 @@ namespace mini {
 		return true;
 	}
 
-	void bicubic_surface::m_calc_idx_buffer () {
-		// create indices for patches
-		unsigned int i = 0;
-		unsigned int width = m_patches_x * 3 + 1;
-		unsigned int height = m_patches_y * 3 + 1;
-
-		for (unsigned int py = 0; py < m_patches_y; ++py) {
-			for (unsigned int px = 0; px < m_patches_x; ++px) {
-				// add all control points to the patch
-				unsigned int bx = px * 3;
-				unsigned int by = py * 3;
-
-				for (unsigned int y = 0; y < 4; ++y) {
-					for (unsigned int x = 0; x < 4; ++x) {
-						unsigned int cx = bx + x;
-						unsigned int cy = by + y;
-
-						unsigned int index = (cy * width) + cx;
-						m_indices[i++] = index;
-					}
-				}
-			}
-		}
-
-		// for the grid we will need a different procedure
-		m_grid_indices.resize (2 * (((width - 1) * height) + (width * (height - 1))));
-		i = 0;
-
-		for (unsigned int cy = 0; cy < height; ++cy) {
-			unsigned int i1, i2;
-
-			for (unsigned int cx = 0; cx < width - 1; ++cx) {
-				i1 = (cy * width) + cx;
-				i2 = (cy * width) + cx + 1;
-
-				m_grid_indices[i++] = i1;
-				m_grid_indices[i++] = i2;
-			}
-
-			if (cy == height - 1) {
-				break;
-			}
-
-			for (unsigned int cx = 0; cx < width; ++cx) {
-				i1 = (cy * width) + cx;
-				i2 = ((cy + 1) * width) + cx;
-
-				m_grid_indices[i++] = i1;
-				m_grid_indices[i++] = i2;
-			}
-		}
-	}
-
 	void bicubic_surface::m_update_buffers () {
+		if (!m_vao) {
+			return m_rebuild_buffers (m_indices.size () == 0);
+		}
+
 		if (!m_calc_pos_buffer ()) {
 			m_ready = false;
 			return;
