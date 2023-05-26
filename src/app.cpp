@@ -1262,7 +1262,7 @@ namespace mini {
 		scene_serializer serializer;
 
 		for (int i = 0; i < m_objects.size (); ++i) {
-			serializer.add_object (i, m_objects[i]->object);
+			serializer.add_object (m_objects[i]->object);
 		}
 
 		serialized = serializer.get_data ();

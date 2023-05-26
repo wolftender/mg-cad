@@ -1,5 +1,6 @@
 #include "bsplinesurf.hpp"
 #include "surfacetpl.hpp"
+#include "serializer.hpp"
 
 namespace mini {
 	bspline_surface::bspline_surface (
@@ -11,7 +12,7 @@ namespace mini {
 		unsigned int patches_y,
 		const std::vector<point_ptr> & points)
 		: bicubic_surface (
-			"bezier_surf_c0",
+			"bezier_surf_c2",
 			scene,
 			shader,
 			solid_shader,
@@ -19,7 +20,13 @@ namespace mini {
 			patches_x,
 			patches_y,
 			points
-		) { }
+		) { 
+		
+		// validity check
+		if ((3 + patches_x) * (3 + patches_y) != points.size ()) {
+			throw std::runtime_error ("invalid input data for a bicubic surface patch");
+		}
+	}
 
 	bspline_surface::bspline_surface (
 		scene_controller_base & scene,
@@ -31,7 +38,7 @@ namespace mini {
 		const std::vector<point_ptr> & points,
 		const std::vector<GLuint> topology)
 		: bicubic_surface (
-			"bezier_surf_c0",
+			"bezier_surf_c2",
 			scene,
 			shader,
 			solid_shader,
@@ -40,7 +47,17 @@ namespace mini {
 			patches_y,
 			points,
 			topology
-		) { }
+		) { 
+		
+		// topology validity check
+		if ((patches_x * patches_y * 16) != topology.size ()) {
+			throw std::runtime_error ("invalid topology data for a bspline surface patch");
+		}
+	}
+
+	const object_serializer_base & bspline_surface::get_serializer () const {
+		return generic_object_serializer<bspline_surface>::get_instance ();
+	}
 
 	void bspline_surface::t_calc_idx_buffer (std::vector<GLuint> & indices, std::vector<GLuint> & grid_indices) {
 		// create indices for patches
@@ -146,6 +163,7 @@ namespace mini {
 					case build_mode_t::mode_cylinder:
 					{
 						float t = static_cast<float> (x) / static_cast<float> (points_x - 3) * 2.0f * glm::pi<float> ();
+						//float r = get_radius () * (3.0f - glm::cos (2.0f * glm::pi<float> () / static_cast<float> (points_x - 3))) / 2.0f;
 						float r = get_radius ();
 
 						// just using this actually looks pretty nice for bspline surfaces

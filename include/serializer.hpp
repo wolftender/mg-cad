@@ -15,20 +15,39 @@ namespace mini {
 	class scene_obj_t;
 	class scene_controller_base;
 
-	using cache_object_id_t = std::unordered_map<uint64_t, int>;
+	//using cache_object_id_t = std::unordered_map<uint64_t, int>;
 	using cache_id_object_t = std::unordered_map<int, std::shared_ptr<scene_obj_t>>;
+
+	class cache_object_id_t final {
+		private:
+			std::unordered_map<uint64_t, int> m_cache;
+			int m_last_object_id;
+
+		public:
+			cache_object_id_t ();
+			~cache_object_id_t ();
+
+			cache_object_id_t (const cache_object_id_t &) = delete;
+			cache_object_id_t & operator= (const cache_object_id_t &) = delete;
+
+			int add (uint64_t object);
+			void clear ();
+			bool has (uint64_t object) const;
+			int get (uint64_t object) const;
+			int reserve_id ();
+	};
 
 	class object_serializer_base {
 		public:
 			virtual ~object_serializer_base () = default;
-			virtual json serialize (int id, std::shared_ptr<scene_obj_t> object, const cache_object_id_t & cache) const = 0;
+			virtual json serialize (int id, std::shared_ptr<scene_obj_t> object, cache_object_id_t & cache) const = 0;
 	};
 
 	class object_deserializer_base {
 		public:
 			virtual ~object_deserializer_base () = default;
 			virtual std::shared_ptr<scene_obj_t> deserialize (scene_controller_base & scene, std::shared_ptr<resource_store> store, 
-				const json & data, const cache_id_object_t & cache) const = 0;
+				const json & data, cache_id_object_t & cache) const = 0;
 	};
 	
 	class scene_serializer {
@@ -48,7 +67,7 @@ namespace mini {
 			~scene_serializer ();
 
 			std::string get_data ();
-			bool add_object (int id, std::shared_ptr<scene_obj_t> object);
+			bool add_object (std::shared_ptr<scene_obj_t> object);
 
 			void reset ();
 	};
@@ -94,7 +113,7 @@ namespace mini {
 				return serializer;
 			}
 
-			virtual json serialize (int id, std::shared_ptr<scene_obj_t> object, const cache_object_id_t & cache) const override;
+			virtual json serialize (int id, std::shared_ptr<scene_obj_t> object, cache_object_id_t & cache) const override;
 	};
 
 	template<typename T> class generic_object_serializer : public object_serializer_base {
@@ -107,7 +126,7 @@ namespace mini {
 				return serializer;
 			}
 
-			virtual json serialize (int id, std::shared_ptr<scene_obj_t> object, const cache_object_id_t & cache) const override;
+			virtual json serialize (int id, std::shared_ptr<scene_obj_t> object, cache_object_id_t & cache) const override;
 	};
 
 	template<typename T> class generic_object_deserializer : public object_deserializer_base {
@@ -121,6 +140,6 @@ namespace mini {
 			}
 
 			virtual std::shared_ptr<scene_obj_t> deserialize (scene_controller_base & scene, std::shared_ptr<resource_store> store, 
-				const json & data, const cache_id_object_t & cache) const override;
+				const json & data, cache_id_object_t & cache) const override;
 	};
 }
