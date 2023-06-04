@@ -63,6 +63,7 @@ namespace mini {
 
 			// virtual methods that a "scene" has
 			virtual void add_object (const std::string & name, std::shared_ptr<scene_obj_t> object) = 0;
+			virtual std::shared_ptr<scene_obj_t> get_object (uint64_t id) = 0;
 			virtual void set_cursor_pos (const glm::vec3 & position) = 0;
 
 			virtual bool is_viewport_focused () const = 0;
@@ -89,6 +90,16 @@ namespace mini {
 			virtual const video_mode_t & get_video_mode () const = 0;
 
 			virtual selected_object_iter_ptr get_selected_objects () = 0;
+			
+			template<typename T> std::shared_ptr<T> get_object (uint64_t id) {
+				auto object = get_object (id);
+				if (!object) {
+					return nullptr;
+				}
+
+				auto object_cast = std::dynamic_pointer_cast<T> (object);
+				return object_cast;
+			}
 	};
 
 	class scene_obj_t : 

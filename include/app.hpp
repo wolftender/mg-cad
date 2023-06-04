@@ -153,6 +153,7 @@ namespace mini {
 			virtual bool is_mouse_in_viewport () const override;
 
 			virtual void add_object (const std::string & name, std::shared_ptr<scene_obj_t> object) override;
+			virtual std::shared_ptr<scene_obj_t> get_object (uint64_t id) override;
 
 			virtual const glm::vec3 & get_cursor_pos () const override;
 			glm::vec2 get_cursor_screen_pos () const;
@@ -232,6 +233,9 @@ namespace mini {
 			// object management
 			std::string m_get_free_name (const std::string & name, const std::string & self = std::string ()) const;
 			void m_add_object (const std::string & name, std::shared_ptr<scene_obj_t> object, bool select);
+
+			// point merging
+			void m_merge_selection ();
 
 			// selection methods
 			void m_begin_box_select ();

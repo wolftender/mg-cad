@@ -1,12 +1,53 @@
 #include "point.hpp"
 
 namespace mini {
+	bool point_family_base::get_destroy_allowed () const {
+		return m_destroy_allowed;
+	}
+
+	bool point_family_base::get_merge_allowed () const {
+		return m_merge_allowed;
+	}
+
+	point_family_base::point_family_base (
+		scene_controller_base & scene, 
+		const std::string & type_name,
+		bool destroy_allowed, 
+		bool merge_allowed) :
+		scene_obj_t (scene, type_name, false, false, false) {
+
+		m_merge_allowed = merge_allowed;
+		m_destroy_allowed = destroy_allowed;
+	}
+
+	void point_family_base::t_set_destroy_allowed (bool value) {
+		m_destroy_allowed = value;
+	}
+
+	void point_family_base::t_set_merge_allowed (bool value) {
+		m_merge_allowed = value;
+	}
+
+	void point_family_base::m_point_destroy (const point_ptr point) {
+		t_on_point_destroy (point);
+	}
+
+	void point_family_base::m_point_merge (const point_ptr point, const point_ptr merge) {
+		t_on_point_merge (point, merge);
+	}
+
+	/////////////////////////////////////////////////////////
+
 	const glm::vec4 & point_object::get_color () const {
 		return m_color;
 	}
 
 	const glm::vec4 & point_object::get_select_color () const {
 		return m_selected_color;
+	}
+
+	bool point_object::is_mergeable () const {
+		return m_mergeable;
 	}
 
 	void point_object::set_color (const glm::vec4 & color) {
@@ -32,6 +73,7 @@ namespace mini {
 		m_color = s_color_default;
 		m_selected_color = s_select_default;
 
+		m_mergeable = true;
 		m_billboard.set_size ({ 16.0f, 16.0f });
 	}
 
@@ -92,11 +134,69 @@ namespace mini {
 		return false;
 	}
 
+	void point_object::add_parent (std::shared_ptr<point_family_base> family) {
+		if (!family->get_destroy_allowed ()) {
+			set_deletable (false);
+		}
+
+		if (!family->get_merge_allowed ()) {
+			m_mergeable = false;
+		}
+
+		m_parents.push_back (family);
+	}
+
+	void point_object::clear_parent (const point_family_base & family) {
+		for (auto iter = m_parents.begin (); iter != m_parents.end (); ) {
+			auto parent = iter->lock ();
+			if (!parent || parent->get_id () == family.get_id ()) {
+				iter = m_parents.erase (iter);
+				continue;
+			}
+
+			++iter;
+		}
+
+		m_check_deletable ();
+	}
+
+	void point_object::merge (point_ptr point) {
+		auto self = std::dynamic_pointer_cast<point_object>(shared_from_this ());
+
+		for (auto iter = m_parents.begin (); iter != m_parents.end (); ) {
+			auto parent = iter->lock ();
+			if (parent) {
+				parent->m_point_merge (self, point);
+			}
+
+			iter = m_parents.erase (iter);
+		}
+
+		// no more parents, no need to keep it non-deletable
+		set_deletable (true);
+		m_mergeable = true;
+	}
+
 	void point_object::t_on_selection (bool selected) {
 		if (selected) {
 			m_billboard.set_color_tint (m_selected_color);
 		} else {
 			m_billboard.set_color_tint (m_color);
 		}
+	}
+
+	void point_object::m_check_deletable () {
+		bool deletable = true, mergeable = true;
+
+		for (auto & parent_wptr : m_parents) {
+			auto parent = parent_wptr.lock ();
+			if (parent) {
+				deletable = deletable || parent->get_destroy_allowed ();
+				mergeable = mergeable || parent->get_merge_allowed ();
+			}
+		}
+
+		set_deletable (deletable);
+		m_mergeable = mergeable;
 	}
 }

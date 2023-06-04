@@ -3,7 +3,7 @@
 #include "bezier.hpp"
 
 namespace mini {
-	class bicubic_surface : public scene_obj_t {
+	class bicubic_surface : public point_family_base {
 		private:
 			static constexpr unsigned int num_control_points = 16;
 
@@ -55,9 +55,9 @@ namespace mini {
 			void set_res_u (int u);
 			void set_res_v (int v);
 
-			bicubic_surface (
-				const std::string & type_name, 
+			bicubic_surface ( 
 				scene_controller_base & scene, 
+				const std::string & type_name,
 				std::shared_ptr<shader_t> shader, 
 				std::shared_ptr<shader_t> solid_shader,
 				std::shared_ptr<shader_t> grid_shader, 
@@ -67,8 +67,8 @@ namespace mini {
 			);
 
 			bicubic_surface (
-				const std::string & type_name, 
 				scene_controller_base & scene, 
+				const std::string & type_name,
 				std::shared_ptr<shader_t> shader, 
 				std::shared_ptr<shader_t> solid_shader,
 				std::shared_ptr<shader_t> grid_shader, 
@@ -104,5 +104,8 @@ namespace mini {
 
 		protected:
 			virtual void t_calc_idx_buffer (std::vector<GLuint> & indices, std::vector<GLuint> & grid_indices) = 0;
+
+			virtual void t_on_point_destroy (const point_ptr point) override;
+			virtual void t_on_point_merge (const point_ptr point, const point_ptr merge) override;
 	};
 }

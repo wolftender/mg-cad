@@ -47,15 +47,15 @@ namespace mini {
 	}
 
 	bicubic_surface::bicubic_surface (
-		const std::string & type_name, 
-		scene_controller_base & scene, 
+		scene_controller_base & scene,
+		const std::string & type_name,
 		std::shared_ptr<shader_t> shader, 
 		std::shared_ptr<shader_t> solid_shader,
 		std::shared_ptr<shader_t> grid_shader, 
 		unsigned int patches_x, 
 		unsigned int patches_y, 
 		const std::vector<point_ptr> & points) :
-		scene_obj_t (scene, type_name, false, false, false), 
+		point_family_base (scene, type_name, false, true),
 		m_patches_x (patches_x), 
 		m_patches_y (patches_y) {
 
@@ -87,8 +87,8 @@ namespace mini {
 	}
 
 	bicubic_surface::bicubic_surface (
-		const std::string & type_name, 
-		scene_controller_base & scene, 
+		scene_controller_base & scene,
+		const std::string & type_name,
 		std::shared_ptr<shader_t> shader, 
 		std::shared_ptr<shader_t> solid_shader,
 		std::shared_ptr<shader_t> grid_shader, 
@@ -97,7 +97,7 @@ namespace mini {
 		const std::vector<point_ptr> & points, 
 		const std::vector<GLuint> & topology,
 		const std::vector<GLuint> & grid_topology) :
-		scene_obj_t (scene, type_name, false, false, false), 
+		point_family_base (scene, type_name, false, true),
 		m_patches_x (patches_x), 
 		m_patches_y (patches_y) {
 
@@ -134,7 +134,7 @@ namespace mini {
 
 	bicubic_surface::~bicubic_surface () {
 		for (const auto & point : m_points) {
-			point->set_deletable (true);
+			point->clear_parent (*this);
 		}
 
 		m_destroy_buffers ();
@@ -397,9 +397,29 @@ namespace mini {
 
 	void bicubic_surface::m_setup_signals () {
 		for (auto & point : m_points) {
+			point->add_parent (std::dynamic_pointer_cast<point_family_base> (shared_from_this ()));
 			t_listen (signal_event_t::moved, *point);
 		}
 
 		m_signals_setup = true;
+	}
+
+	void bicubic_surface::t_on_point_destroy (const point_ptr point) {
+		throw std::runtime_error ("cannot destroy point that belongs to a surface");
+	}
+
+	void bicubic_surface::t_on_point_merge (const point_ptr point, const point_ptr merge) {
+		for (int i = 0; i < m_points.size (); ++i) {
+			if (m_points[i]->get_id () == point->get_id ()) {
+				m_points[i] = merge;
+			}
+		}
+
+		m_queued_update = true;
+
+		t_ignore (signal_event_t::moved, *point);
+		t_listen (signal_event_t::moved, *merge);
+
+		merge->add_parent (std::dynamic_pointer_cast<point_family_base> (shared_from_this ()));
 	}
 }

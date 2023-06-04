@@ -6,6 +6,7 @@
 
 #include "gui.hpp"
 #include "app.hpp"
+#include "point.hpp"
 #include "serializer.hpp"
 
 namespace mini {
@@ -288,6 +289,10 @@ namespace mini {
 
 				case KEY_SCALE:
 					m_selected_tool = std::make_shared<scale_tool> (*this, axis_t::none);
+					break;
+
+				case KEY_MERGE:
+					m_merge_selection ();
 					break;
 					
 				case GLFW_KEY_ESCAPE:
@@ -811,6 +816,10 @@ namespace mini {
 					m_destroy_object ();
 				}
 
+				if (ImGui::MenuItem ("Merge Points", "M", nullptr, selected_objects)) {
+					m_merge_selection ();
+				}
+
 				ImGui::Separator ();
 
 				if (ImGui::MenuItem ("Translate", "T", nullptr, selected_objects)) {
@@ -1153,6 +1162,38 @@ namespace mini {
 		}
 	}
 
+	void application::m_merge_selection () {
+		std::list<point_ptr> points;
+		glm::vec3 sum = { 0.0f, 0.0f, 0.0f };
+
+		for (auto iter = m_selected_group->get_iterator (); iter->has (); iter->next ()) {
+			auto object = std::dynamic_pointer_cast<point_object> (iter->get_object ());
+
+			if (object && object->is_mergeable ()) {
+				points.push_back (object);
+				sum += object->get_translation ();
+			}
+		}
+
+		if (points.size () < 2) {
+			return;
+		}
+
+		sum = sum / static_cast<float> (points.size ());
+		auto center = std::make_shared<point_object> (
+			*this,
+			m_store->get_billboard_s_shader (),
+			m_store->get_point_texture ()
+		);
+
+		center->set_translation (sum);
+		m_add_object ("point", center, true);
+
+		for (const auto & point : points) {
+			point->merge (center);
+		}
+	}
+
 	void application::m_begin_box_select () {
 		m_box_select = true;
 		m_bs_start = {
@@ -1374,5 +1415,18 @@ namespace mini {
 
 	void application::add_object (const std::string & name, std::shared_ptr<scene_obj_t> object) {
 		m_add_object (name, object, true);
+	}
+
+	std::shared_ptr<scene_obj_t> application::get_object (uint64_t id) {
+		auto iter = m_id_cache.find (id);
+
+		if (iter != m_id_cache.end ()) {
+			auto object = iter->second.lock ();
+			if (object) {
+				return object->object;
+			}
+		}
+
+		return nullptr;
 	}
 }
