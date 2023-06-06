@@ -125,7 +125,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,6 +147,7 @@
     <ClInclude Include="include\billboard.hpp" />
     <ClInclude Include="include\event.hpp" />
     <ClInclude Include="include\factory.hpp" />
+    <ClInclude Include="include\gapfilling.hpp" />
     <ClInclude Include="include\gizmo.hpp" />
     <ClInclude Include="include\grid.hpp" />
     <ClInclude Include="include\gui.hpp" />
@@ -174,6 +175,7 @@
     <ClCompile Include="src\bspline.cpp" />
     <ClCompile Include="src\bsplinesurf.cpp" />
     <ClCompile Include="src\factory.cpp" />
+    <ClCompile Include="src\gapfilling.cpp" />
     <ClCompile Include="src\gizmo.cpp" />
     <ClCompile Include="src\group.cpp" />
     <ClCompile Include="src\gui.cpp" />

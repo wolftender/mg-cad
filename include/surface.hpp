@@ -4,6 +4,12 @@
 
 namespace mini {
 	class bicubic_surface : public point_family_base {
+		public:
+			struct surface_patch {
+				std::array<std::array<point_ptr, 4>, 4> points;
+				std::shared_ptr<bicubic_surface> surface;
+			};
+
 		private:
 			static constexpr unsigned int num_control_points = 16;
 
@@ -92,6 +98,8 @@ namespace mini {
 
 			std::vector<uint64_t> serialize_points ();
 			std::vector<serialized_patch> serialize_patches ();
+
+			surface_patch get_patch (unsigned int x, unsigned int y);
 
 		private:
 			void m_bind_shader (app_context & context, shader_t & shader, const glm::mat4x4 & world_matrix) const;

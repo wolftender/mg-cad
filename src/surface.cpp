@@ -260,6 +260,23 @@ namespace mini {
 		return patches;
 	}
 
+	bicubic_surface::surface_patch bicubic_surface::get_patch (unsigned int x, unsigned int y) {
+		surface_patch patch;
+		unsigned int patch_idx = y * m_patches_x + x;
+		unsigned int base_idx = patch_idx * num_control_points;
+
+		patch.surface = std::dynamic_pointer_cast<bicubic_surface> (shared_from_this ());
+
+		for (int i = 0; i < num_control_points; ++i) {
+			int px = i % 4;
+			int py = i / 4;
+
+			patch.points[px][py] = m_points[m_indices[base_idx + i]];
+		}
+
+		return patch;
+	}
+
 	constexpr GLuint a_position = 0;
 
 	void bicubic_surface::m_bind_shader (app_context & context, shader_t & shader, const glm::mat4x4 & world_matrix) const {

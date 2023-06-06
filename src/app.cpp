@@ -8,6 +8,7 @@
 #include "app.hpp"
 #include "point.hpp"
 #include "serializer.hpp"
+#include "gapfilling.hpp"
 
 namespace mini {
 	constexpr const std::string_view app_title = "modelowanie geometryczne 1";
@@ -293,6 +294,10 @@ namespace mini {
 
 				case KEY_MERGE:
 					m_merge_selection ();
+					break;
+
+				case KEY_FILLIN:
+					m_fillin_selection ();
 					break;
 					
 				case GLFW_KEY_ESCAPE:
@@ -820,6 +825,10 @@ namespace mini {
 					m_merge_selection ();
 				}
 
+				if (ImGui::MenuItem ("Fill-in Surface", "G", nullptr, selected_objects)) {
+					m_fillin_selection ();
+				}
+
 				ImGui::Separator ();
 
 				if (ImGui::MenuItem ("Translate", "T", nullptr, selected_objects)) {
@@ -1192,6 +1201,10 @@ namespace mini {
 		for (const auto & point : points) {
 			point->merge (center);
 		}
+	}
+
+	void application::m_fillin_selection () {
+		gap_filling_controller algorithm (*this);
 	}
 
 	void application::m_begin_box_select () {
