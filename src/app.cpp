@@ -1204,7 +1204,8 @@ namespace mini {
 	}
 
 	void application::m_fillin_selection () {
-		gap_filling_controller algorithm (*this);
+		gap_filling_controller algorithm (*this, m_store);
+		algorithm.create_surfaces ();
 	}
 
 	void application::m_begin_box_select () {
