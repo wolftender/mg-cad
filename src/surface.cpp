@@ -67,6 +67,7 @@ namespace mini {
 		m_use_wireframe = true;
 		m_queued_update = true;
 		m_signals_setup = false;
+		m_show_polygon = false;
 
 		m_vao = 0;
 		m_pos_buffer = m_index_buffer = 0;
@@ -109,6 +110,7 @@ namespace mini {
 		m_use_wireframe = true;
 		m_queued_update = true;
 		m_signals_setup = false;
+		m_show_polygon = true;
 
 		m_vao = 0;
 		m_pos_buffer = m_index_buffer = 0;
