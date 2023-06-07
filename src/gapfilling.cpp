@@ -160,7 +160,9 @@ namespace mini {
 		point_list control_points;
 		for (int x = start.x, y = start.y, i = 0; i < 4; x += (end.x - start.x) / 3, y += (end.y - start.y) / 3, i++) {
 			control_points.push_back (patch.points[x][y]);
+			std::cout << patch.points[x][y]->get_name () << ", ";
 		}
+		std::cout << std::endl;
 
 		auto curve = std::make_shared<bezier_curve_c0> (
 			m_scene,
@@ -188,9 +190,24 @@ namespace mini {
 			m_get_offsets (m_patches[gap.patch2], gap.point2, gap.point3, patch2_start, patch2_end);
 			m_get_offsets (m_patches[gap.patch3], gap.point3, gap.point1, patch3_start, patch3_end);
 
-			m_spawn_debug_curve (m_patches[gap.patch1], patch1_start, patch1_end);
-			m_spawn_debug_curve (m_patches[gap.patch2], patch2_start, patch2_end);
-			m_spawn_debug_curve (m_patches[gap.patch3], patch3_start, patch3_end);
+			// m_spawn_debug_curve (m_patches[gap.patch1], patch1_start, patch1_end);
+			// m_spawn_debug_curve (m_patches[gap.patch2], patch2_start, patch2_end);
+			// m_spawn_debug_curve (m_patches[gap.patch3], patch3_start, patch3_end);
+
+			auto gregory_surf = std::make_shared<gregory_surface> (
+				m_scene,
+				m_store->get_bezier_surf_shader (),
+				m_store->get_line_shader (),
+				m_store->get_bezier_shader (),
+				m_patches[gap.patch1],
+				m_patches[gap.patch2],
+				m_patches[gap.patch3],
+				patch_indexing_t { patch1_start, patch1_end },
+				patch_indexing_t { patch2_start, patch2_end },
+				patch_indexing_t { patch3_start, patch3_end }
+			);
+
+			m_scene.add_object ("gregory_surface", gregory_surf);
 		}
 	}
 }

@@ -11,7 +11,7 @@ namespace mini {
 	}
 
 	void bicubic_surface::set_showing_polygon (bool show) {
-		m_show_polygon = true;
+		m_show_polygon = show;
 	}
 
 	unsigned int bicubic_surface::get_patches_x () const {
@@ -44,6 +44,22 @@ namespace mini {
 
 	void bicubic_surface::set_res_v (int v) {
 		m_res_v = v;
+	}
+
+	bool bicubic_surface::is_solid () const {
+		return m_use_solid;
+	}
+
+	void bicubic_surface::set_solid (bool solid) {
+		m_use_solid = solid;
+	}
+
+	bool bicubic_surface::is_wireframe () const {
+		return m_use_wireframe;
+	}
+
+	void bicubic_surface::set_wireframe (bool wireframe) {
+		m_use_wireframe = wireframe;
 	}
 
 	bicubic_surface::bicubic_surface (
@@ -267,7 +283,9 @@ namespace mini {
 		unsigned int patch_idx = y * m_patches_x + x;
 		unsigned int base_idx = patch_idx * num_control_points;
 
-		patch.surface = std::dynamic_pointer_cast<bicubic_surface> (shared_from_this ());
+		patch.surface = std::static_pointer_cast<bicubic_surface> (shared_from_this ());
+		patch.patch_x = x;
+		patch.patch_y = y;
 
 		for (int i = 0; i < num_control_points; ++i) {
 			int px = i % 4;
@@ -416,7 +434,7 @@ namespace mini {
 
 	void bicubic_surface::m_setup_signals () {
 		for (auto & point : m_points) {
-			point->add_parent (std::dynamic_pointer_cast<point_family_base> (shared_from_this ()));
+			point->add_parent (std::static_pointer_cast<point_family_base> (shared_from_this ()));
 			t_listen (signal_event_t::moved, *point);
 		}
 
@@ -439,6 +457,6 @@ namespace mini {
 		t_ignore (signal_event_t::moved, *point);
 		t_listen (signal_event_t::moved, *merge);
 
-		merge->add_parent (std::dynamic_pointer_cast<point_family_base> (shared_from_this ()));
+		merge->add_parent (std::static_pointer_cast<point_family_base> (shared_from_this ()));
 	}
 }

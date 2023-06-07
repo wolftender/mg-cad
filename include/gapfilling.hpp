@@ -2,6 +2,7 @@
 #include "object.hpp"
 #include "bezier.hpp"
 #include "beziersurf.hpp"
+#include "gregory.hpp"
 
 namespace mini {
 	class gap_filling_controller final {
@@ -14,10 +15,6 @@ namespace mini {
 
 				surface_gap_t (int patch1, int patch2, int patch3, uint64_t point1, uint64_t point2, uint64_t point3) :
 					patch1 (patch1), patch2 (patch2), patch3 (patch3), point1 (point1), point2 (point2), point3 (point3) { }
-			};
-
-			struct patch_offset_t {
-				int x, y;
 			};
 
 			std::vector<bicubic_surface::surface_patch> m_patches;

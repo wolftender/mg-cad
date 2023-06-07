@@ -161,7 +161,7 @@ namespace mini {
 	}
 
 	void point_object::merge (point_ptr point) {
-		auto self = std::dynamic_pointer_cast<point_object>(shared_from_this ());
+		auto self = std::static_pointer_cast<point_object>(shared_from_this ());
 
 		for (auto iter = m_parents.begin (); iter != m_parents.end (); ) {
 			auto parent = iter->lock ();

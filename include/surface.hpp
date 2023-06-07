@@ -7,7 +7,9 @@ namespace mini {
 		public:
 			struct surface_patch {
 				std::array<std::array<point_ptr, 4>, 4> points;
-				std::shared_ptr<bicubic_surface> surface;
+				std::weak_ptr<bicubic_surface> surface;
+
+				unsigned int patch_x, patch_y;
 			};
 
 		private:
@@ -60,6 +62,12 @@ namespace mini {
 
 			void set_res_u (int u);
 			void set_res_v (int v);
+
+			bool is_solid () const;
+			void set_solid (bool solid);
+
+			bool is_wireframe () const;
+			void set_wireframe (bool wireframe);
 
 			bicubic_surface ( 
 				scene_controller_base & scene, 
