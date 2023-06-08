@@ -1,4 +1,5 @@
 #include "gregory.hpp"
+#include "gui.hpp"
 
 namespace mini {
 	patch_offset_t operator+(const patch_offset_t & a, const patch_offset_t & b) {
@@ -30,6 +31,19 @@ namespace mini {
 		const patch_indexing_t & index3) :
 		scene_obj_t (scene, "gregory_patch", false, false, false) {
 
+		auto surf1 = patch1.surface.lock ();
+		auto surf2 = patch2.surface.lock ();
+		auto surf3 = patch3.surface.lock ();
+
+		if (!surf1 || !surf2 || !surf3) {
+			m_id_surf1 = m_id_surf2 = m_id_surf3 = 0;
+			dispose ();
+		} else {
+			m_id_surf1 = surf1->get_id ();
+			m_id_surf2 = surf2->get_id ();
+			m_id_surf3 = surf3->get_id ();
+		}
+
 		m_solid_shader = shader;
 		m_line_shader = line_shader;
 		m_patch1 = patch1;
@@ -45,9 +59,20 @@ namespace mini {
 		// reset opengl buffers to null
 		m_line_vao = m_line_buffer = 0;
 		m_ready = false;
+		m_signals_setup = false;
+		m_rebuild_queued = false;
+		m_use_wireframe = true;
+		m_show_grid = true;
+		m_use_solid = true;
+
+		m_color = { 0.0f, 0.79f, 0.6f, 1.0f };
+		m_grid_color = { 0.8f, 0.0f, 1.0f, 1.0f };
 
 		m_calculate_points ();
 		m_initialize_buffers ();
+
+		t_set_handler (signal_event_t::changed, std::bind (&gregory_surface::m_changed_sighandler, 
+			this, std::placeholders::_1, std::placeholders::_2));
 	}
 
 	constexpr int at (int x, int y) {
@@ -59,25 +84,63 @@ namespace mini {
 	}
 
 	void gregory_surface::configure () {
+		if (ImGui::CollapsingHeader ("Gregory Settings")) {
+			gui::prefix_label ("Show Grid: ", 250.0f);
+			ImGui::Checkbox ("##greg_show_polygon", &m_show_grid);
+
+			gui::prefix_label ("Show Solid: ", 250.0f);
+			ImGui::Checkbox ("##greg_show_solid", &m_use_solid);
+
+			gui::prefix_label ("Show Wireframe: ", 250.0f);
+			ImGui::Checkbox ("##greg_show_frame", &m_use_wireframe);
+
+			gui::prefix_label ("Draw Res. U: ", 250.0f);
+			ImGui::InputInt ("##greg_res_u", &m_res_u);
+
+			gui::prefix_label ("Draw Res. V: ", 250.0f);
+			ImGui::InputInt ("##greg_res_v", &m_res_v);
+
+			gui::prefix_label ("Color: ", 250.0f);
+			gui::color_editor ("##greg_Color", m_color);
+
+			gui::prefix_label ("Grid Color: ", 250.0f);
+			gui::color_editor ("##greg_grid_Color", m_grid_color);
+
+			ImGui::NewLine ();
+		}
+
+		gui::clamp (m_res_u, 4, 64);
+		gui::clamp (m_res_v, 4, 64);
 	}
 
 	void gregory_surface::integrate (float delta_time) {
-		
+		if (!m_signals_setup) {
+			m_setup_signals ();
+		}
+
+		if (m_rebuild_queued) {
+			m_destroy_buffers ();
+			m_calculate_points ();
+			m_initialize_buffers ();
+
+			m_rebuild_queued = false;
+		}
 	}
 
 	void gregory_surface::render (app_context & context, const glm::mat4x4 & world_matrix) const {
 		if (m_ready) {
 			glBindVertexArray (m_vao);
 
-			//if (m_use_wireframe) {
+			if (m_use_wireframe) {
 				glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
-			//}
+			}
 
 			m_bind_shader (context, *m_solid_shader.get (), world_matrix);
 
 			// first render pass - u,v
 			m_solid_shader->set_uniform_uint ("u_resolution_v", static_cast<GLuint> (m_res_v));
 			m_solid_shader->set_uniform_uint ("u_resolution_u", static_cast<GLuint> (m_res_u));
+			m_line_shader->set_uniform ("u_color", m_color);
 
 			glPatchParameteri (GL_PATCH_VERTICES, 20);
 			glDrawArrays (GL_PATCHES, 0, m_positions.size ());
@@ -85,15 +148,45 @@ namespace mini {
 			glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 
 			// draw control points
-			glBindVertexArray (m_line_vao);
-			m_bind_shader (context, *m_line_shader, world_matrix);
-			m_line_shader->set_uniform ("u_color", glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
-			glDrawArrays (GL_LINES, 0, m_line_positions.size ());
+			if (m_show_grid) {
+				glBindVertexArray (m_line_vao);
+
+				m_bind_shader (context, *m_line_shader, world_matrix);
+				m_line_shader->set_uniform ("u_color", m_grid_color);
+
+				glDrawArrays (GL_LINES, 0, m_line_positions.size ());
+			}
+
 			glBindVertexArray (0);
 		}
 	}
 
+	void gregory_surface::t_on_object_deleted (std::shared_ptr<scene_obj_t> object) {
+		auto id = object->get_id ();
+		if (id == m_id_surf1 || id == m_id_surf2 || id == m_id_surf3) {
+			dispose ();
+		}
+	}
+
 	constexpr GLuint a_position = 0;
+
+	void gregory_surface::m_setup_signals () {
+		auto surf1 = m_patch1.surface.lock ();
+		auto surf2 = m_patch2.surface.lock ();
+		auto surf3 = m_patch3.surface.lock ();
+
+		if (!surf1 || !surf2 || !surf3) {
+			dispose ();
+		} else {
+			t_listen (signal_event_t::changed, *surf1);
+			t_listen (signal_event_t::changed, *surf2);
+			t_listen (signal_event_t::changed, *surf3);
+		}
+	}
+
+	void gregory_surface::m_changed_sighandler (signal_event_t sig, scene_obj_t & sender) {
+		m_rebuild_queued = true;
+	}
 
 	void gregory_surface::m_initialize_buffers () {
 		glCreateVertexArrays (1, &m_vao);
@@ -162,7 +255,6 @@ namespace mini {
 		shader.set_uniform ("u_projection", proj_matrix);
 		shader.set_uniform ("u_resolution", resolution);
 		shader.set_uniform ("u_line_width", 2.0f);
-		shader.set_uniform ("u_color", glm::vec4 {1.0f, 0.0f, 0.0f, 1.0f});
 	}
 
 	void gregory_surface::m_calculate_points () {
@@ -299,21 +391,21 @@ namespace mini {
 		patch_offset_t u_offset = idx.start, v_offset;
 		quarter_surface surface;
 
-		std::cout << std::endl;
+		//std::cout << std::endl;
 		for (int u = 0; u < 4; ++u) {
 			v_offset = u_offset;
 
 			for (int v = 0; v < 4; ++v) {
 				surface[at (u,v)] = patch.points[v_offset.x][v_offset.y]->get_translation ();
-				std::cout << patch.points[v_offset.x][v_offset.y]->get_name () << " ";
+				//std::cout << patch.points[v_offset.x][v_offset.y]->get_name () << " ";
 
 				v_offset = v_offset + v_dir;
 			}
 
 			u_offset = u_offset + u_dir;
-			std::cout << std::endl;
+			//std::cout << std::endl;
 		}
-		std::cout << std::endl;
+		//std::cout << std::endl;
 
 		// now the easy part, just divide the surface in two using decasteljeu algorithm
 		for (int v = 0; v < 4; ++v) {

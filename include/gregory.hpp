@@ -25,13 +25,11 @@ namespace mini {
 			using quarter_surface = std::array<glm::vec3, 20>;
 			using gregory_patch = std::array<glm::vec3, 16>;
 
+			uint64_t m_id_surf1, m_id_surf2, m_id_surf3;
+
 			bicubic_surface::surface_patch m_patch1;
 			bicubic_surface::surface_patch m_patch2;
 			bicubic_surface::surface_patch m_patch3;
-
-			std::weak_ptr<bezier_surface_c0> m_surface1;
-			std::weak_ptr<bezier_surface_c0> m_surface2;
-			std::weak_ptr<bezier_surface_c0> m_surface3;
 
 			// used for reindexing
 			patch_indexing_t m_index1;
@@ -49,8 +47,10 @@ namespace mini {
 			GLuint m_line_vao, m_vao;
 			GLuint m_line_buffer, m_pos_buffer;
 
-			bool m_ready;
+			bool m_ready, m_signals_setup, m_rebuild_queued, m_use_wireframe, m_show_grid, m_use_solid;
 			int m_res_u, m_res_v;
+
+			glm::vec4 m_color, m_grid_color;
 
 		public:
 			gregory_surface (
@@ -75,7 +75,13 @@ namespace mini {
 			virtual void integrate (float delta_time) override;
 			virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override;
 
+		protected:
+			virtual void t_on_object_deleted (std::shared_ptr<scene_obj_t> object) override;
+
 		private:
+			void m_setup_signals ();
+			void m_changed_sighandler (signal_event_t sig, scene_obj_t & sender);
+
 			void m_initialize_buffers ();
 			void m_destroy_buffers ();
 			void m_bind_shader (app_context & context, shader_t & shader, const glm::mat4x4 & world_matrix) const;

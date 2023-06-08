@@ -69,10 +69,11 @@ vec3 bernstein_grid (float u, float v) {
     vec3 f30 = gl_in[18].gl_Position.xyz;
     vec3 f31 = gl_in[19].gl_Position.xyz;
 
-    vec3 F0 = (u*f01 + v*f00)/(u+v);
-    vec3 F1 = ((1.0-u)*f10 + v*f11)/(1.0-u+v);
-    vec3 F2 = ((1.0-u)*f21 + (1.0-v)*f20)/(2.0-u-v);
-    vec3 F3 = (u*f30 + (1.0-v)*f31)/(1.0+u-v);
+    const float eps = 0.00001f;
+    vec3 F0 = (u*f01 + v*f00)/(u+v+eps);
+    vec3 F1 = ((1.0-u)*f10 + v*f11)/(1.0-u+v+eps);
+    vec3 F2 = ((1.0-u)*f21 + (1.0-v)*f20)/(2.0-u-v+eps);
+    vec3 F3 = (u*f30 + (1.0-v)*f31)/(1.0+u-v+eps);
 
     p00 = p0;
     p01 = e00;

@@ -111,6 +111,7 @@ namespace mini {
 				scaled		= 2,
 				selected	= 3,
 				renamed		= 4,
+				changed		= 5,
 				MAX
 			};
 
@@ -148,6 +149,7 @@ namespace mini {
 			void m_set_id (uint64_t id);
 
 		protected:
+			void t_notify (signal_event_t sig);
 			void t_listen (signal_event_t sig, scene_obj_t & target);
 			void t_ignore (signal_event_t sig, scene_obj_t & target);
 			void t_set_handler (signal_event_t sig, signal_handler_t handler);

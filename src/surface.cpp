@@ -192,6 +192,8 @@ namespace mini {
 		if (m_queued_update) {
 			m_update_buffers ();
 			m_queued_update = false;
+
+			t_notify (signal_event_t::changed);
 		}
 	}
 

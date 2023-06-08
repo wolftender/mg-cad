@@ -111,6 +111,10 @@ namespace mini {
 		m_id = id;
 	}
 
+	void scene_obj_t::t_notify (signal_event_t sig) {
+		m_notify (sig);
+	}
+
 	void scene_obj_t::t_listen (signal_event_t sig, scene_obj_t & target) {
 		target.m_listen (sig, shared_from_this ());
 	}
