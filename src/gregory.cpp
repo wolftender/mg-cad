@@ -140,7 +140,12 @@ namespace mini {
 			// first render pass - u,v
 			m_solid_shader->set_uniform_uint ("u_resolution_v", static_cast<GLuint> (m_res_v));
 			m_solid_shader->set_uniform_uint ("u_resolution_u", static_cast<GLuint> (m_res_u));
-			m_line_shader->set_uniform ("u_color", m_color);
+			
+			if (!is_selected ()) {
+				m_solid_shader->set_uniform ("u_color", m_color);
+			} else {
+				m_solid_shader->set_uniform ("u_color", m_color * point_object::s_select_default);
+			}
 
 			glPatchParameteri (GL_PATCH_VERTICES, 20);
 			glDrawArrays (GL_PATCHES, 0, m_positions.size ());

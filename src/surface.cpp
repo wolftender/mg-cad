@@ -319,7 +319,12 @@ namespace mini {
 		shader.set_uniform ("u_projection", proj_matrix);
 		shader.set_uniform ("u_resolution", resolution);
 		shader.set_uniform ("u_line_width", 2.0f);
-		shader.set_uniform ("u_color", m_color);
+		
+		if (!is_selected ()) {
+			shader.set_uniform ("u_color", m_color);
+		} else {
+			shader.set_uniform ("u_color", m_color * point_object::s_select_default);
+		}
 	}
 
 	void bicubic_surface::m_rebuild_buffers (bool recalculate_indices) {
