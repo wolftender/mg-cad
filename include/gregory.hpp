@@ -38,22 +38,19 @@ namespace mini {
 			patch_indexing_t m_index2;
 			patch_indexing_t m_index3;
 
-			std::shared_ptr<shader_t> m_shader;
+			std::shared_ptr<shader_t> m_solid_shader;
 			std::shared_ptr<shader_t> m_line_shader;
 			std::shared_ptr<shader_t> m_bezier_shader;
 
-			// there are 20 gregory control points
-			gregory_patch m_gregory_points1;
-			gregory_patch m_gregory_points2;
-			gregory_patch m_gregory_points3;
-
+			std::vector<float> m_positions;
 			std::vector<float> m_line_positions;
 
 			// opengl buffers
-			GLuint m_line_vao;
-			GLuint m_line_buffer;
+			GLuint m_line_vao, m_vao;
+			GLuint m_line_buffer, m_pos_buffer;
 
 			bool m_ready;
+			int m_res_u, m_res_v;
 
 		public:
 			gregory_surface (

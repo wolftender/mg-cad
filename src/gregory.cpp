@@ -30,7 +30,7 @@ namespace mini {
 		const patch_indexing_t & index3) :
 		scene_obj_t (scene, "gregory_patch", false, false, false) {
 
-		m_shader = shader;
+		m_solid_shader = shader;
 		m_line_shader = line_shader;
 		m_patch1 = patch1;
 		m_patch2 = patch2;
@@ -39,6 +39,8 @@ namespace mini {
 		m_index1 = index1;
 		m_index2 = index2;
 		m_index3 = index3;
+
+		m_res_u = m_res_v = 16;
 
 		// reset opengl buffers to null
 		m_line_vao = m_line_buffer = 0;
@@ -64,15 +66,47 @@ namespace mini {
 	}
 
 	void gregory_surface::render (app_context & context, const glm::mat4x4 & world_matrix) const {
-		glBindVertexArray (m_line_vao);
-		m_bind_shader (context, *m_line_shader, world_matrix);
-		glDrawArrays (GL_LINES, 0, m_line_positions.size ());
-		glBindVertexArray (0);
+		if (m_ready) {
+			glBindVertexArray (m_vao);
+
+			//if (m_use_wireframe) {
+				glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
+			//}
+
+			m_bind_shader (context, *m_solid_shader.get (), world_matrix);
+
+			// first render pass - u,v
+			m_solid_shader->set_uniform_uint ("u_resolution_v", static_cast<GLuint> (m_res_v));
+			m_solid_shader->set_uniform_uint ("u_resolution_u", static_cast<GLuint> (m_res_u));
+
+			glPatchParameteri (GL_PATCH_VERTICES, 20);
+			glDrawArrays (GL_PATCHES, 0, m_positions.size ());
+
+			glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
+
+			// draw control points
+			glBindVertexArray (m_line_vao);
+			m_bind_shader (context, *m_line_shader, world_matrix);
+			m_line_shader->set_uniform ("u_color", glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
+			glDrawArrays (GL_LINES, 0, m_line_positions.size ());
+			glBindVertexArray (0);
+		}
 	}
 
 	constexpr GLuint a_position = 0;
 
 	void gregory_surface::m_initialize_buffers () {
+		glCreateVertexArrays (1, &m_vao);
+		glCreateBuffers (1, &m_pos_buffer);
+
+		glBindVertexArray (m_vao);
+		glBindBuffer (GL_ARRAY_BUFFER, m_pos_buffer);
+		glBufferData (GL_ARRAY_BUFFER, sizeof (float) * m_positions.size (), reinterpret_cast<void *> (m_positions.data ()), GL_STATIC_DRAW);
+		glVertexAttribPointer (a_position, 3, GL_FLOAT, false, sizeof (float) * 3, (void *)0);
+		glEnableVertexAttribArray (a_position);
+
+		// control lines
+
 		glCreateVertexArrays (1, &m_line_vao);
 		glCreateBuffers (1, &m_line_buffer);
 
@@ -84,9 +118,21 @@ namespace mini {
 
 		glBindBuffer (GL_ARRAY_BUFFER, 0);
 		glBindVertexArray (0);
+
+		m_ready = true;
 	}
 
 	void gregory_surface::m_destroy_buffers () {
+		m_ready = false;
+
+		if (m_pos_buffer) {
+			glDeleteBuffers (1, &m_pos_buffer);
+		}
+
+		if (m_vao) {
+			glDeleteVertexArrays (1, &m_vao);
+		}
+
 		if (m_line_buffer) {
 			glDeleteBuffers (1, &m_line_buffer);
 		}
@@ -115,7 +161,7 @@ namespace mini {
 		shader.set_uniform ("u_view", view_matrix);
 		shader.set_uniform ("u_projection", proj_matrix);
 		shader.set_uniform ("u_resolution", resolution);
-		shader.set_uniform ("u_line_width", 4.0f);
+		shader.set_uniform ("u_line_width", 2.0f);
 		shader.set_uniform ("u_color", glm::vec4 {1.0f, 0.0f, 0.0f, 1.0f});
 	}
 
@@ -147,7 +193,9 @@ namespace mini {
 		}
 
 		m_line_positions.clear ();
+		m_positions.clear ();
 
+		// macros
 		auto add_line = [this](const std::initializer_list<glm::vec3> & p) constexpr -> void {
 			auto first = p.begin(), second = p.begin() + 1;
 
@@ -161,6 +209,12 @@ namespace mini {
 				m_line_positions.push_back (b[0]);
 				m_line_positions.push_back (b[1]);
 				m_line_positions.push_back (b[2]);
+			}
+		};
+
+		auto add_positions = [this](const std::initializer_list<glm::vec3> & p) constexpr -> void {
+			for (auto iter = p.begin (); iter != p.end (); ++iter) {
+				m_positions.insert (m_positions.end (), { iter->x, iter->y, iter->z });
 			}
 		};
 
@@ -202,6 +256,8 @@ namespace mini {
 			add_line ({ e21, f21 });
 			add_line ({ e30, f30 });
 			add_line ({ e31, f31 });
+
+			add_positions ({ p0, p1, p2, p3, e00, e01, e10, e11, e20, e21, e30, e31, f00, f01, f10, f11, f20, f21, f30, f31 });
 		}
 	}
 
