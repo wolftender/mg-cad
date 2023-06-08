@@ -22,7 +22,7 @@ namespace mini {
 	class gregory_surface : public scene_obj_t {
 		private:
 			// a quarter of bezier surface
-			using quarter_surface = std::array<glm::vec3, 16>;
+			using quarter_surface = std::array<glm::vec3, 20>;
 			using gregory_patch = std::array<glm::vec3, 16>;
 
 			bicubic_surface::surface_patch m_patch1;
@@ -42,12 +42,18 @@ namespace mini {
 			std::shared_ptr<shader_t> m_line_shader;
 			std::shared_ptr<shader_t> m_bezier_shader;
 
-			// there are 20 gregory control points,
-			// but the four in the middle are actually doubled
-			// so we can store just a 16 point net
+			// there are 20 gregory control points
 			gregory_patch m_gregory_points1;
 			gregory_patch m_gregory_points2;
 			gregory_patch m_gregory_points3;
+
+			std::vector<float> m_line_positions;
+
+			// opengl buffers
+			GLuint m_line_vao;
+			GLuint m_line_buffer;
+
+			bool m_ready;
 
 		public:
 			gregory_surface (
@@ -73,6 +79,10 @@ namespace mini {
 			virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override;
 
 		private:
+			void m_initialize_buffers ();
+			void m_destroy_buffers ();
+			void m_bind_shader (app_context & context, shader_t & shader, const glm::mat4x4 & world_matrix) const;
+
 			void m_calculate_points ();
 
 			void m_calculate_adjacent_surf (
@@ -81,7 +91,5 @@ namespace mini {
 				const bicubic_surface::surface_patch & patch, 
 				const patch_indexing_t idx
 			);
-
-			void m_calculate_patch (gregory_patch & patch, const quarter_surface & s1, const quarter_surface & s2);
 	};
 }
