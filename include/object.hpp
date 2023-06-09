@@ -112,6 +112,7 @@ namespace mini {
 				selected	= 3,
 				renamed		= 4,
 				changed		= 5,
+				topology	= 6,
 				MAX
 			};
 

@@ -83,6 +83,7 @@ namespace mini {
 		private:
 			void m_setup_signals ();
 			void m_changed_sighandler (signal_event_t sig, scene_obj_t & sender);
+			void m_topology_sighandler (signal_event_t sig, scene_obj_t & sender);
 
 			void m_initialize_buffers ();
 			void m_destroy_buffers ();

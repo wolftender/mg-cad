@@ -75,6 +75,9 @@ namespace mini {
 
 		t_set_handler (signal_event_t::changed, std::bind (&gregory_surface::m_changed_sighandler, 
 			this, std::placeholders::_1, std::placeholders::_2));
+
+		t_set_handler (signal_event_t::topology, std::bind (&gregory_surface::m_topology_sighandler,
+			this, std::placeholders::_1, std::placeholders::_2));
 	}
 
 	constexpr int at (int x, int y) {
@@ -213,11 +216,19 @@ namespace mini {
 			t_listen (signal_event_t::changed, *surf1);
 			t_listen (signal_event_t::changed, *surf2);
 			t_listen (signal_event_t::changed, *surf3);
+
+			t_listen (signal_event_t::topology, *surf1);
+			t_listen (signal_event_t::topology, *surf2);
+			t_listen (signal_event_t::topology, *surf3);
 		}
 	}
 
 	void gregory_surface::m_changed_sighandler (signal_event_t sig, scene_obj_t & sender) {
 		m_rebuild_queued = true;
+	}
+
+	void gregory_surface::m_topology_sighandler (signal_event_t sig, scene_obj_t & sender) {
+		dispose ();
 	}
 
 	void gregory_surface::m_initialize_buffers () {

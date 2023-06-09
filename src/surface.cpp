@@ -465,6 +465,7 @@ namespace mini {
 		t_listen (signal_event_t::moved, *merge);
 
 		merge->add_parent (std::static_pointer_cast<point_family_base> (shared_from_this ()));
+		t_notify (signal_event_t::topology);
 	}
 
 	void bicubic_surface::t_on_alt_select () {
