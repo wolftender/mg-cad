@@ -365,6 +365,10 @@ namespace mini {
 		return generic_object_serializer<scene_obj_t>::get_instance ();
 	}
 
+	glm::vec3 scene_obj_t::get_transform_origin () const {
+		return m_translation;
+	}
+
 	hit_test_data_t::hit_test_data_t (const mini::camera & cam, const glm::vec2 & mouse_screen, 
 		const glm::vec2 & screen_res, const glm::vec3 & mouse_ray) :
 		camera (cam), 

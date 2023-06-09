@@ -207,6 +207,7 @@ namespace mini {
 			virtual void configure ();
 			virtual bool hit_test (const hit_test_data_t & data, glm::vec3 & hit_pos) const;
 			virtual bool box_test (const box_test_data_t & data) const;
+			virtual glm::vec3 get_transform_origin () const;
 			
 			// object serialization
 			virtual const object_serializer_base & get_serializer () const;

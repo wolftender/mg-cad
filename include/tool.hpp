@@ -69,6 +69,7 @@ namespace mini {
 	class translation_tool : public tool_base {
 		private:
 			glm::vec3 m_original_transform;
+			glm::vec3 m_original_origin;
 			int m_offset_x, m_offset_y;
 
 			std::shared_ptr<scene_obj_t> m_selection;

@@ -50,9 +50,11 @@ namespace mini {
 
 		if (selection) {
 			m_original_transform = selection->get_translation ();
+			m_original_origin = selection->get_transform_origin ();
+
 			m_selection = selection;
 
-			glm::vec2 screen_pos = get_app ().world_to_screen (m_original_transform);
+			glm::vec2 screen_pos = get_app ().world_to_screen (m_original_origin);
 			screen_pos = glm::clamp (screen_pos, { -1.0f, -1.0f }, { 1.0f, 1.0f });
 
 			glm::vec2 pixel_pos = get_app ().screen_to_pixels (screen_pos);
@@ -138,11 +140,11 @@ namespace mini {
 		glm::vec3 plane_normal = normalize (camera.get_position () - camera.get_target ());
 		glm::vec3 direction = calculate_mouse_dir (m_offset_x, m_offset_y);
 
-		float nt = glm::dot ((m_original_transform - camera.get_position ()), plane_normal);
+		float nt = glm::dot ((m_original_origin - camera.get_position ()), plane_normal);
 		float dt = glm::dot (direction, plane_normal);
 
 		auto new_pos = (nt / dt) * direction + camera.get_position ();
-		auto t = m_selection->get_translation ();
+		auto t = m_selection->get_transform_origin ();
 
 		switch (m_axis_lock) {
 			case axis_t::x: t.x = new_pos.x; break;
@@ -152,8 +154,7 @@ namespace mini {
 			default: break;
 		}
 
-		m_selection->set_translation (t);
-
+		m_selection->set_translation (t - m_original_origin + m_original_transform);
 		return true;
 	}
 
@@ -173,7 +174,7 @@ namespace mini {
 			m_offset_x = mouse_offset.x;
 			m_offset_y = mouse_offset.y;
 
-			glm::vec2 screen_pos = get_app ().world_to_screen (m_selection->get_translation ());
+			glm::vec2 screen_pos = get_app ().world_to_screen (m_selection->get_transform_origin ());
 			screen_pos = glm::clamp (screen_pos, { -1.0f, -1.0f }, { 1.0f, 1.0f });
 
 			glm::vec2 pixel_pos = get_app ().screen_to_pixels (screen_pos);
@@ -358,7 +359,7 @@ namespace mini {
 			m_original_transform = selection->get_scale ();
 			m_selection = selection;
 
-			glm::vec2 screen_pos = get_app ().world_to_screen (m_selection->get_translation ());
+			glm::vec2 screen_pos = get_app ().world_to_screen (m_selection->get_transform_origin ());
 			screen_pos = glm::clamp (screen_pos, { -1.0f, -1.0f }, { 1.0f, 1.0f });
 
 			glm::vec2 pixel_pos = get_app ().screen_to_pixels (screen_pos);
