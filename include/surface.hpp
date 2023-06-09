@@ -123,5 +123,7 @@ namespace mini {
 
 			virtual void t_on_point_destroy (const point_ptr point) override;
 			virtual void t_on_point_merge (const point_ptr point, const point_ptr merge) override;
+
+			virtual void t_on_alt_select () override;
 	};
 }

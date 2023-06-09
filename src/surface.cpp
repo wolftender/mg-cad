@@ -466,4 +466,12 @@ namespace mini {
 
 		merge->add_parent (std::static_pointer_cast<point_family_base> (shared_from_this ()));
 	}
+
+	void bicubic_surface::t_on_alt_select () {
+		for (const auto & point : m_points) {
+			if (!point->is_selected ()) {
+				get_scene ().select_by_id (point->get_id ());
+			}
+		}
+	}
 }

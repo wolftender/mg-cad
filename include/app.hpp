@@ -246,6 +246,7 @@ namespace mini {
 			void m_group_select_add (std::shared_ptr<object_wrapper_t> object_wrapper);
 			void m_select_all ();
 			void m_reset_selection ();
+			void m_alt_select (std::shared_ptr<object_wrapper_t> object_wrapper);
 
 			// serialize/deserialize
 			bool m_serialize_scene (std::string & serialized) const;

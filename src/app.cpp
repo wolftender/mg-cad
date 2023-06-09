@@ -1239,11 +1239,16 @@ namespace mini {
 	// then use this method
 	void application::m_mark_object (std::shared_ptr<object_wrapper_t> object_wrapper) {
 		bool is_control_down = is_key_down (GLFW_KEY_RIGHT_CONTROL) || is_key_down (GLFW_KEY_LEFT_CONTROL);
+		bool is_shift_down = is_key_down (GLFW_KEY_LEFT_SHIFT);
 
 		if (is_control_down) {
 			m_group_select_add (object_wrapper);
 		} else {
-			m_select_object (object_wrapper);
+			if (is_shift_down) {
+				m_alt_select (object_wrapper);
+			} else {
+				m_select_object (object_wrapper);
+			}
 		}
 	}
 
@@ -1310,6 +1315,16 @@ namespace mini {
 
 		for (auto & object : m_objects) {
 			object->selected = false;
+		}
+	}
+
+	void application::m_alt_select (std::shared_ptr<object_wrapper_t> object_wrapper) {
+		// alt select is a special kind of select that selects the object and allows it to execute
+		// some additional code, this can be used e.g. to select a surface and a group of points
+
+		object_wrapper->object->alt_select ();
+		if (!object_wrapper->selected) {
+			m_group_select_add (object_wrapper);
 		}
 	}
 

@@ -70,6 +70,7 @@ namespace mini {
 
 		protected:
 			virtual void t_on_selection (bool selected) override;
+			virtual void t_on_alt_select () override;
 
 		private:
 			void m_check_deletable ();

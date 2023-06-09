@@ -185,6 +185,24 @@ namespace mini {
 		}
 	}
 
+	void point_object::t_on_alt_select () {
+		for (auto iter = m_parents.begin (); iter != m_parents.end (); ++iter) {
+			auto parent = iter->lock ();
+
+			if (!parent) {
+				iter = m_parents.erase (iter);
+				if (iter == m_parents.end ()) {
+					break;
+				} else {
+					continue;
+				}
+			}
+
+			parent->alt_select ();
+			get_scene ().select_by_id (parent->get_id ());
+		}
+	}
+
 	void point_object::m_check_deletable () {
 		bool deletable = true, mergeable = true;
 

@@ -326,6 +326,10 @@ namespace mini {
 		}
 	}
 
+	void scene_obj_t::alt_select () {
+		t_on_alt_select ();
+	}
+
 	bool scene_obj_t::hit_test (const hit_test_data_t & data, glm::vec3 & hit_pos) const {
 		return false;
 	}

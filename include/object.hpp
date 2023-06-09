@@ -188,6 +188,8 @@ namespace mini {
 			void set_name (const std::string & name);
 			void set_deletable (bool deletable);
 
+			void alt_select ();
+
 			glm::mat4x4 compose_matrix (const glm::vec3 & translation, const glm::quat & quaternion, const glm::vec3 & scale) const;
 			glm::mat4x4 get_matrix () const;
 
@@ -210,6 +212,7 @@ namespace mini {
 
 		protected:
 			virtual void t_on_selection (bool select) { }
+			virtual void t_on_alt_select () { }
 			virtual void t_on_object_created (std::shared_ptr<scene_obj_t> object) { }
 			virtual void t_on_object_selected (std::shared_ptr<scene_obj_t> object) {}
 			virtual void t_on_object_deleted (std::shared_ptr<scene_obj_t> object) { }
