@@ -196,6 +196,7 @@ namespace mini {
 
 			auto gregory_surf = std::make_shared<gregory_surface> (
 				m_scene,
+				m_store->get_gregory_surf_shader (),
 				m_store->get_gregory_surf_solid_shader (),
 				m_store->get_line_shader (),
 				m_store->get_bezier_shader (),

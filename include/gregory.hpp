@@ -36,6 +36,7 @@ namespace mini {
 			patch_indexing_t m_index2;
 			patch_indexing_t m_index3;
 
+			std::shared_ptr<shader_t> m_isoline_shader;
 			std::shared_ptr<shader_t> m_solid_shader;
 			std::shared_ptr<shader_t> m_line_shader;
 			std::shared_ptr<shader_t> m_bezier_shader;
@@ -56,6 +57,7 @@ namespace mini {
 			gregory_surface (
 				scene_controller_base & scene,
 				std::shared_ptr<shader_t> shader,
+				std::shared_ptr<shader_t> shader_solid,
 				std::shared_ptr<shader_t> line_shader,
 				std::shared_ptr<shader_t> bezier_shader,
 				const bicubic_surface::surface_patch & patch1,

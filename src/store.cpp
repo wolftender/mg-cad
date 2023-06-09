@@ -208,6 +208,9 @@ namespace mini {
 		m_bspline_surf_solid_shader = m_load_shader ("shaders/vs_pass.glsl", "shaders/fs_solidcolor.glsl",
 			"shaders/tcs_bezier_quads.glsl", "shaders/tes_bspline_quads.glsl");
 
+		m_gregory_surf_shader = m_load_shader ("shaders/vs_pass.glsl", "shaders/fs_solidcolor.glsl",
+			"shaders/tcs_gregory_isolines.glsl", "shaders/tes_gregory_isolines.glsl", "shaders/gs_lines.glsl");
+
 		m_gregory_surf_solid_shader = m_load_shader ("shaders/vs_pass.glsl", "shaders/fs_solidcolor.glsl",
 			"shaders/tcs_gregory_quads.glsl", "shaders/tes_gregory_quads.glsl");
 

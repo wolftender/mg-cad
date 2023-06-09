@@ -20,7 +20,8 @@ namespace mini {
 
 	gregory_surface::gregory_surface (
 		scene_controller_base & scene, 
-		std::shared_ptr<shader_t> shader, 
+		std::shared_ptr<shader_t> shader,
+		std::shared_ptr<shader_t> shader_solid, 
 		std::shared_ptr<shader_t> line_shader,
 		std::shared_ptr<shader_t> bezier_shader,
 		const bicubic_surface::surface_patch & patch1, 
@@ -44,7 +45,8 @@ namespace mini {
 			m_id_surf3 = surf3->get_id ();
 		}
 
-		m_solid_shader = shader;
+		m_isoline_shader = shader;
+		m_solid_shader = shader_solid;
 		m_line_shader = line_shader;
 		m_patch1 = patch1;
 		m_patch2 = patch2;
@@ -131,26 +133,51 @@ namespace mini {
 		if (m_ready) {
 			glBindVertexArray (m_vao);
 
-			if (m_use_wireframe) {
-				glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
-			}
+			if (m_use_solid) {
+				if (m_use_wireframe) {
+					glPolygonMode (GL_FRONT_AND_BACK, GL_LINE);
+				}
 
-			m_bind_shader (context, *m_solid_shader.get (), world_matrix);
+				m_bind_shader (context, *m_solid_shader.get (), world_matrix);
 
-			// first render pass - u,v
-			m_solid_shader->set_uniform_uint ("u_resolution_v", static_cast<GLuint> (m_res_v));
-			m_solid_shader->set_uniform_uint ("u_resolution_u", static_cast<GLuint> (m_res_u));
-			
-			if (!is_selected ()) {
-				m_solid_shader->set_uniform ("u_color", m_color);
+				m_solid_shader->set_uniform_uint ("u_resolution_v", static_cast<GLuint> (m_res_v));
+				m_solid_shader->set_uniform_uint ("u_resolution_u", static_cast<GLuint> (m_res_u));
+
+				if (!is_selected ()) {
+					m_solid_shader->set_uniform ("u_color", m_color);
+				} else {
+					m_solid_shader->set_uniform ("u_color", m_color * point_object::s_select_default);
+				}
+
+				glPatchParameteri (GL_PATCH_VERTICES, 20);
+				glDrawArrays (GL_PATCHES, 0, m_positions.size ());
+
+				glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 			} else {
-				m_solid_shader->set_uniform ("u_color", m_color * point_object::s_select_default);
+				m_bind_shader (context, *m_isoline_shader.get (), world_matrix);
+
+				if (!is_selected ()) {
+					m_solid_shader->set_uniform ("u_color", m_color);
+				} else {
+					m_solid_shader->set_uniform ("u_color", m_color * point_object::s_select_default);
+				}
+
+				// first render pass - u,v
+				m_isoline_shader->set_uniform_int ("u_vertical", true);
+				m_isoline_shader->set_uniform_uint ("u_resolution_v", static_cast<GLuint> (m_res_v));
+				m_isoline_shader->set_uniform_uint ("u_resolution_u", static_cast<GLuint> (m_res_u));
+
+				glPatchParameteri (GL_PATCH_VERTICES, 20);
+				glDrawArrays (GL_PATCHES, 0, m_positions.size ());
+
+				// second render pass = v,u
+				m_isoline_shader->set_uniform_int ("u_vertical", false);
+				m_isoline_shader->set_uniform_uint ("u_resolution_v", static_cast<GLuint> (m_res_u));
+				m_isoline_shader->set_uniform_uint ("u_resolution_u", static_cast<GLuint> (m_res_v));
+
+				glPatchParameteri (GL_PATCH_VERTICES, 20);
+				glDrawArrays (GL_PATCHES, 0, m_positions.size ());
 			}
-
-			glPatchParameteri (GL_PATCH_VERTICES, 20);
-			glDrawArrays (GL_PATCHES, 0, m_positions.size ());
-
-			glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 
 			// draw control points
 			if (m_show_grid) {
