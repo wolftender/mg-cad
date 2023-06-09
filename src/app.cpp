@@ -821,9 +821,13 @@ namespace mini {
 					m_destroy_object ();
 				}
 
+				ImGui::Separator ();
+
 				if (ImGui::MenuItem ("Merge Points", "M", nullptr, selected_objects)) {
 					m_merge_selection ();
 				}
+
+				ImGui::Separator ();
 
 				if (ImGui::MenuItem ("Fill-in Surface", "G", nullptr, selected_objects)) {
 					m_fillin_selection ();
@@ -979,21 +983,28 @@ namespace mini {
 
 		// render controls
 		if (ImGui::BeginListBox ("##objectlist", ImVec2 (-1.0f, ImGui::GetWindowHeight () - 110.0f))) {
-			for (auto & object : m_objects) {
-				std::string full_name;
-				bool selected = object->selected;
+			ImGuiListClipper clipper (m_objects.size ());
 
-				if (selected) {
-					full_name = "*" + object->name + " : (" + object->object->get_type_name () + ")";
-				} else {
-					full_name = object->name + " : (" + object->object->get_type_name () + ")";
-				}
+			while (clipper.Step ()) {
+				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd && i < m_objects.size (); ++i) {
+					auto & object = m_objects[i];
 
-				if (ImGui::Selectable (full_name.c_str (), &selected)) {
-					m_mark_object (object);
+					std::string full_name;
+					bool selected = object->selected;
+
+					if (selected) {
+						full_name = "*" + object->name + " : (" + object->object->get_type_name () + ")";
+					} else {
+						full_name = object->name + " : (" + object->object->get_type_name () + ")";
+					}
+
+					if (ImGui::Selectable (full_name.c_str (), &selected)) {
+						m_mark_object (object);
+					}
 				}
 			}
 
+			clipper.End ();
 			ImGui::EndListBox ();
 		}
 
