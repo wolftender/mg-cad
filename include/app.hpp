@@ -81,6 +81,7 @@ namespace mini {
 
 					virtual void render (app_context & context, const glm::mat4x4 & world_matrix) const override;
 					virtual void configure () override;
+					virtual glm::vec3 get_transform_origin () const override;
 
 				private:
 					void m_reset_group_transforms ();
@@ -153,6 +154,7 @@ namespace mini {
 			virtual bool is_mouse_in_viewport () const override;
 
 			virtual void add_object (const std::string & name, std::shared_ptr<scene_obj_t> object) override;
+			virtual std::shared_ptr<scene_obj_t> get_object (uint64_t id) override;
 
 			virtual const glm::vec3 & get_cursor_pos () const override;
 			glm::vec2 get_cursor_screen_pos () const;
@@ -233,6 +235,10 @@ namespace mini {
 			std::string m_get_free_name (const std::string & name, const std::string & self = std::string ()) const;
 			void m_add_object (const std::string & name, std::shared_ptr<scene_obj_t> object, bool select);
 
+			// point merging
+			void m_merge_selection ();
+			void m_fillin_selection ();
+
 			// selection methods
 			void m_begin_box_select ();
 			void m_end_box_select ();
@@ -241,6 +247,7 @@ namespace mini {
 			void m_group_select_add (std::shared_ptr<object_wrapper_t> object_wrapper);
 			void m_select_all ();
 			void m_reset_selection ();
+			void m_alt_select (std::shared_ptr<object_wrapper_t> object_wrapper);
 
 			// serialize/deserialize
 			bool m_serialize_scene (std::string & serialized) const;

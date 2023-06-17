@@ -108,6 +108,10 @@ namespace mini {
 		return scene_obj_t::configure ();
 	}
 
+	glm::vec3 application::group_logic_object::get_transform_origin () const {
+		return m_origin + get_translation ();
+	}
+
 	void application::group_logic_object::m_reset_group_transforms () {
 		set_translation (glm::vec3 (0.0f));
 		set_rotation (glm::quat {1.0f, 0.0f, 0.0f, 0.0f});

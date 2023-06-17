@@ -63,6 +63,7 @@ namespace mini {
 
 			// virtual methods that a "scene" has
 			virtual void add_object (const std::string & name, std::shared_ptr<scene_obj_t> object) = 0;
+			virtual std::shared_ptr<scene_obj_t> get_object (uint64_t id) = 0;
 			virtual void set_cursor_pos (const glm::vec3 & position) = 0;
 
 			virtual bool is_viewport_focused () const = 0;
@@ -89,6 +90,16 @@ namespace mini {
 			virtual const video_mode_t & get_video_mode () const = 0;
 
 			virtual selected_object_iter_ptr get_selected_objects () = 0;
+			
+			template<typename T> std::shared_ptr<T> get_object (uint64_t id) {
+				auto object = get_object (id);
+				if (!object) {
+					return nullptr;
+				}
+
+				auto object_cast = std::dynamic_pointer_cast<T> (object);
+				return object_cast;
+			}
 	};
 
 	class scene_obj_t : 
@@ -100,6 +111,8 @@ namespace mini {
 				scaled		= 2,
 				selected	= 3,
 				renamed		= 4,
+				changed		= 5,
+				topology	= 6,
 				MAX
 			};
 
@@ -137,6 +150,7 @@ namespace mini {
 			void m_set_id (uint64_t id);
 
 		protected:
+			void t_notify (signal_event_t sig);
 			void t_listen (signal_event_t sig, scene_obj_t & target);
 			void t_ignore (signal_event_t sig, scene_obj_t & target);
 			void t_set_handler (signal_event_t sig, signal_handler_t handler);
@@ -175,6 +189,8 @@ namespace mini {
 			void set_name (const std::string & name);
 			void set_deletable (bool deletable);
 
+			void alt_select ();
+
 			glm::mat4x4 compose_matrix (const glm::vec3 & translation, const glm::quat & quaternion, const glm::vec3 & scale) const;
 			glm::mat4x4 get_matrix () const;
 
@@ -191,12 +207,14 @@ namespace mini {
 			virtual void configure ();
 			virtual bool hit_test (const hit_test_data_t & data, glm::vec3 & hit_pos) const;
 			virtual bool box_test (const box_test_data_t & data) const;
+			virtual glm::vec3 get_transform_origin () const;
 			
 			// object serialization
 			virtual const object_serializer_base & get_serializer () const;
 
 		protected:
 			virtual void t_on_selection (bool select) { }
+			virtual void t_on_alt_select () { }
 			virtual void t_on_object_created (std::shared_ptr<scene_obj_t> object) { }
 			virtual void t_on_object_selected (std::shared_ptr<scene_obj_t> object) {}
 			virtual void t_on_object_deleted (std::shared_ptr<scene_obj_t> object) { }

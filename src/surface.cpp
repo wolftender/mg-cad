@@ -11,7 +11,7 @@ namespace mini {
 	}
 
 	void bicubic_surface::set_showing_polygon (bool show) {
-		m_show_polygon = true;
+		m_show_polygon = show;
 	}
 
 	unsigned int bicubic_surface::get_patches_x () const {
@@ -46,16 +46,32 @@ namespace mini {
 		m_res_v = v;
 	}
 
+	bool bicubic_surface::is_solid () const {
+		return m_use_solid;
+	}
+
+	void bicubic_surface::set_solid (bool solid) {
+		m_use_solid = solid;
+	}
+
+	bool bicubic_surface::is_wireframe () const {
+		return m_use_wireframe;
+	}
+
+	void bicubic_surface::set_wireframe (bool wireframe) {
+		m_use_wireframe = wireframe;
+	}
+
 	bicubic_surface::bicubic_surface (
-		const std::string & type_name, 
-		scene_controller_base & scene, 
+		scene_controller_base & scene,
+		const std::string & type_name,
 		std::shared_ptr<shader_t> shader, 
 		std::shared_ptr<shader_t> solid_shader,
 		std::shared_ptr<shader_t> grid_shader, 
 		unsigned int patches_x, 
 		unsigned int patches_y, 
 		const std::vector<point_ptr> & points) :
-		scene_obj_t (scene, type_name, false, false, false), 
+		point_family_base (scene, type_name, false, true),
 		m_patches_x (patches_x), 
 		m_patches_y (patches_y) {
 
@@ -67,6 +83,7 @@ namespace mini {
 		m_use_wireframe = true;
 		m_queued_update = true;
 		m_signals_setup = false;
+		m_show_polygon = false;
 
 		m_vao = 0;
 		m_pos_buffer = m_index_buffer = 0;
@@ -87,8 +104,8 @@ namespace mini {
 	}
 
 	bicubic_surface::bicubic_surface (
-		const std::string & type_name, 
-		scene_controller_base & scene, 
+		scene_controller_base & scene,
+		const std::string & type_name,
 		std::shared_ptr<shader_t> shader, 
 		std::shared_ptr<shader_t> solid_shader,
 		std::shared_ptr<shader_t> grid_shader, 
@@ -97,7 +114,7 @@ namespace mini {
 		const std::vector<point_ptr> & points, 
 		const std::vector<GLuint> & topology,
 		const std::vector<GLuint> & grid_topology) :
-		scene_obj_t (scene, type_name, false, false, false), 
+		point_family_base (scene, type_name, false, true),
 		m_patches_x (patches_x), 
 		m_patches_y (patches_y) {
 
@@ -109,6 +126,7 @@ namespace mini {
 		m_use_wireframe = true;
 		m_queued_update = true;
 		m_signals_setup = false;
+		m_show_polygon = true;
 
 		m_vao = 0;
 		m_pos_buffer = m_index_buffer = 0;
@@ -134,7 +152,7 @@ namespace mini {
 
 	bicubic_surface::~bicubic_surface () {
 		for (const auto & point : m_points) {
-			point->set_deletable (true);
+			point->clear_parent (*this);
 		}
 
 		m_destroy_buffers ();
@@ -174,6 +192,8 @@ namespace mini {
 		if (m_queued_update) {
 			m_update_buffers ();
 			m_queued_update = false;
+
+			t_notify (signal_event_t::changed);
 		}
 	}
 
@@ -260,6 +280,25 @@ namespace mini {
 		return patches;
 	}
 
+	bicubic_surface::surface_patch bicubic_surface::get_patch (unsigned int x, unsigned int y) {
+		surface_patch patch;
+		unsigned int patch_idx = y * m_patches_x + x;
+		unsigned int base_idx = patch_idx * num_control_points;
+
+		patch.surface = std::static_pointer_cast<bicubic_surface> (shared_from_this ());
+		patch.patch_x = x;
+		patch.patch_y = y;
+
+		for (int i = 0; i < num_control_points; ++i) {
+			int px = i % 4;
+			int py = i / 4;
+
+			patch.points[px][py] = m_points[m_indices[base_idx + i]];
+		}
+
+		return patch;
+	}
+
 	constexpr GLuint a_position = 0;
 
 	void bicubic_surface::m_bind_shader (app_context & context, shader_t & shader, const glm::mat4x4 & world_matrix) const {
@@ -280,7 +319,12 @@ namespace mini {
 		shader.set_uniform ("u_projection", proj_matrix);
 		shader.set_uniform ("u_resolution", resolution);
 		shader.set_uniform ("u_line_width", 2.0f);
-		shader.set_uniform ("u_color", m_color);
+		
+		if (!is_selected ()) {
+			shader.set_uniform ("u_color", m_color);
+		} else {
+			shader.set_uniform ("u_color", m_color * point_object::s_select_default);
+		}
 	}
 
 	void bicubic_surface::m_rebuild_buffers (bool recalculate_indices) {
@@ -397,9 +441,38 @@ namespace mini {
 
 	void bicubic_surface::m_setup_signals () {
 		for (auto & point : m_points) {
+			point->add_parent (std::static_pointer_cast<point_family_base> (shared_from_this ()));
 			t_listen (signal_event_t::moved, *point);
 		}
 
 		m_signals_setup = true;
+	}
+
+	void bicubic_surface::t_on_point_destroy (const point_ptr point) {
+		throw std::runtime_error ("cannot destroy point that belongs to a surface");
+	}
+
+	void bicubic_surface::t_on_point_merge (const point_ptr point, const point_ptr merge) {
+		for (int i = 0; i < m_points.size (); ++i) {
+			if (m_points[i]->get_id () == point->get_id ()) {
+				m_points[i] = merge;
+			}
+		}
+
+		m_queued_update = true;
+
+		t_ignore (signal_event_t::moved, *point);
+		t_listen (signal_event_t::moved, *merge);
+
+		merge->add_parent (std::static_pointer_cast<point_family_base> (shared_from_this ()));
+		t_notify (signal_event_t::topology);
+	}
+
+	void bicubic_surface::t_on_alt_select () {
+		for (const auto & point : m_points) {
+			if (!point->is_selected ()) {
+				get_scene ().select_by_id (point->get_id ());
+			}
+		}
 	}
 }

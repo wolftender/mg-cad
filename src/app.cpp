@@ -6,7 +6,9 @@
 
 #include "gui.hpp"
 #include "app.hpp"
+#include "point.hpp"
 #include "serializer.hpp"
+#include "gapfilling.hpp"
 
 namespace mini {
 	constexpr const std::string_view app_title = "modelowanie geometryczne 1";
@@ -288,6 +290,14 @@ namespace mini {
 
 				case KEY_SCALE:
 					m_selected_tool = std::make_shared<scale_tool> (*this, axis_t::none);
+					break;
+
+				case KEY_MERGE:
+					m_merge_selection ();
+					break;
+
+				case KEY_FILLIN:
+					m_fillin_selection ();
 					break;
 					
 				case GLFW_KEY_ESCAPE:
@@ -813,6 +823,18 @@ namespace mini {
 
 				ImGui::Separator ();
 
+				if (ImGui::MenuItem ("Merge Points", "M", nullptr, selected_objects)) {
+					m_merge_selection ();
+				}
+
+				ImGui::Separator ();
+
+				if (ImGui::MenuItem ("Fill-in Surface", "G", nullptr, selected_objects)) {
+					m_fillin_selection ();
+				}
+
+				ImGui::Separator ();
+
 				if (ImGui::MenuItem ("Translate", "T", nullptr, selected_objects)) {
 					m_selected_tool = std::make_shared<translation_tool> (*this, axis_t::none, false);
 				}
@@ -961,21 +983,28 @@ namespace mini {
 
 		// render controls
 		if (ImGui::BeginListBox ("##objectlist", ImVec2 (-1.0f, ImGui::GetWindowHeight () - 110.0f))) {
-			for (auto & object : m_objects) {
-				std::string full_name;
-				bool selected = object->selected;
+			ImGuiListClipper clipper (m_objects.size ());
 
-				if (selected) {
-					full_name = "*" + object->name + " : (" + object->object->get_type_name () + ")";
-				} else {
-					full_name = object->name + " : (" + object->object->get_type_name () + ")";
-				}
+			while (clipper.Step ()) {
+				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd && i < m_objects.size (); ++i) {
+					auto & object = m_objects[i];
 
-				if (ImGui::Selectable (full_name.c_str (), &selected)) {
-					m_mark_object (object);
+					std::string full_name;
+					bool selected = object->selected;
+
+					if (selected) {
+						full_name = "*" + object->name + " : (" + object->object->get_type_name () + ")";
+					} else {
+						full_name = object->name + " : (" + object->object->get_type_name () + ")";
+					}
+
+					if (ImGui::Selectable (full_name.c_str (), &selected)) {
+						m_mark_object (object);
+					}
 				}
 			}
 
+			clipper.End ();
 			ImGui::EndListBox ();
 		}
 
@@ -1153,6 +1182,43 @@ namespace mini {
 		}
 	}
 
+	void application::m_merge_selection () {
+		std::list<point_ptr> points;
+		glm::vec3 sum = { 0.0f, 0.0f, 0.0f };
+
+		for (auto iter = m_selected_group->get_iterator (); iter->has (); iter->next ()) {
+			auto object = std::dynamic_pointer_cast<point_object> (iter->get_object ());
+
+			if (object && object->is_mergeable ()) {
+				points.push_back (object);
+				sum += object->get_translation ();
+			}
+		}
+
+		if (points.size () < 2) {
+			return;
+		}
+
+		sum = sum / static_cast<float> (points.size ());
+		auto center = std::make_shared<point_object> (
+			*this,
+			m_store->get_billboard_s_shader (),
+			m_store->get_point_texture ()
+		);
+
+		center->set_translation (sum);
+		m_add_object ("point", center, true);
+
+		for (const auto & point : points) {
+			point->merge (center);
+		}
+	}
+
+	void application::m_fillin_selection () {
+		gap_filling_controller algorithm (*this, m_store);
+		algorithm.create_surfaces ();
+	}
+
 	void application::m_begin_box_select () {
 		m_box_select = true;
 		m_bs_start = {
@@ -1184,11 +1250,16 @@ namespace mini {
 	// then use this method
 	void application::m_mark_object (std::shared_ptr<object_wrapper_t> object_wrapper) {
 		bool is_control_down = is_key_down (GLFW_KEY_RIGHT_CONTROL) || is_key_down (GLFW_KEY_LEFT_CONTROL);
+		bool is_shift_down = is_key_down (GLFW_KEY_LEFT_SHIFT);
 
 		if (is_control_down) {
 			m_group_select_add (object_wrapper);
 		} else {
-			m_select_object (object_wrapper);
+			if (is_shift_down) {
+				m_alt_select (object_wrapper);
+			} else {
+				m_select_object (object_wrapper);
+			}
 		}
 	}
 
@@ -1255,6 +1326,16 @@ namespace mini {
 
 		for (auto & object : m_objects) {
 			object->selected = false;
+		}
+	}
+
+	void application::m_alt_select (std::shared_ptr<object_wrapper_t> object_wrapper) {
+		// alt select is a special kind of select that selects the object and allows it to execute
+		// some additional code, this can be used e.g. to select a surface and a group of points
+
+		object_wrapper->object->alt_select ();
+		if (!object_wrapper->selected) {
+			m_group_select_add (object_wrapper);
 		}
 	}
 
@@ -1374,5 +1455,18 @@ namespace mini {
 
 	void application::add_object (const std::string & name, std::shared_ptr<scene_obj_t> object) {
 		m_add_object (name, object, true);
+	}
+
+	std::shared_ptr<scene_obj_t> application::get_object (uint64_t id) {
+		auto iter = m_id_cache.find (id);
+
+		if (iter != m_id_cache.end ()) {
+			auto object = iter->second.lock ();
+			if (object) {
+				return object->object;
+			}
+		}
+
+		return nullptr;
 	}
 }

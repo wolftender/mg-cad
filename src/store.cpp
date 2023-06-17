@@ -149,6 +149,14 @@ namespace mini {
 		return m_bspline_surf_solid_shader;
 	}
 
+	std::shared_ptr<shader_t> resource_store::get_gregory_surf_shader () const {
+		return m_gregory_surf_shader;
+	}
+
+	std::shared_ptr<shader_t> resource_store::get_gregory_surf_solid_shader () const {
+		return m_gregory_surf_solid_shader;
+	}
+
 	std::shared_ptr<shader_t> resource_store::get_box_select_shader () const {
 		return m_box_select_shader;
 	}
@@ -199,6 +207,12 @@ namespace mini {
 
 		m_bspline_surf_solid_shader = m_load_shader ("shaders/vs_pass.glsl", "shaders/fs_solidcolor.glsl",
 			"shaders/tcs_bezier_quads.glsl", "shaders/tes_bspline_quads.glsl");
+
+		m_gregory_surf_shader = m_load_shader ("shaders/vs_pass.glsl", "shaders/fs_solidcolor.glsl",
+			"shaders/tcs_gregory_isolines.glsl", "shaders/tes_gregory_isolines.glsl", "shaders/gs_lines.glsl");
+
+		m_gregory_surf_solid_shader = m_load_shader ("shaders/vs_pass.glsl", "shaders/fs_solidcolor.glsl",
+			"shaders/tcs_gregory_quads.glsl", "shaders/tes_gregory_quads.glsl");
 
 		// box select
 		m_box_select_shader = m_load_shader ("shaders/vs_sprite.glsl", "shaders/fs_boxselect.glsl");

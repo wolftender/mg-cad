@@ -15,6 +15,8 @@ namespace mini {
 	constexpr const int KEY_AXIS_Y = GLFW_KEY_Y;
 	constexpr const int KEY_AXIS_Z = GLFW_KEY_Z;
 	constexpr const int KEY_SELECT_ALL = GLFW_KEY_A;
+	constexpr const int KEY_MERGE = GLFW_KEY_M;
+	constexpr const int KEY_FILLIN = GLFW_KEY_G;
 
 	enum class axis_t {
 		none, x, y, z
@@ -67,6 +69,7 @@ namespace mini {
 	class translation_tool : public tool_base {
 		private:
 			glm::vec3 m_original_transform;
+			glm::vec3 m_original_origin;
 			int m_offset_x, m_offset_y;
 
 			std::shared_ptr<scene_obj_t> m_selection;

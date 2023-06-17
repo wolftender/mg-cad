@@ -54,8 +54,8 @@ namespace mini {
 		unsigned int patches_y, 
 		const std::vector<point_ptr> & points)
 		: bicubic_surface (
-			"bezier_surf_c0",
 			scene,
+			"bezier_surf_c0",
 			shader,
 			solid_shader,
 			grid_shader,
@@ -80,8 +80,8 @@ namespace mini {
 		const std::vector<point_ptr> & points, 
 		const std::vector<GLuint> & topology)
 		: bicubic_surface (
-			"bezier_surf_c0",
 			scene,
+			"bezier_surf_c0",
 			shader,
 			solid_shader,
 			grid_shader,

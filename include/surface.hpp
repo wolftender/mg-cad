@@ -3,7 +3,15 @@
 #include "bezier.hpp"
 
 namespace mini {
-	class bicubic_surface : public scene_obj_t {
+	class bicubic_surface : public point_family_base {
+		public:
+			struct surface_patch {
+				std::array<std::array<point_ptr, 4>, 4> points;
+				std::weak_ptr<bicubic_surface> surface;
+
+				unsigned int patch_x, patch_y;
+			};
+
 		private:
 			static constexpr unsigned int num_control_points = 16;
 
@@ -55,9 +63,15 @@ namespace mini {
 			void set_res_u (int u);
 			void set_res_v (int v);
 
-			bicubic_surface (
-				const std::string & type_name, 
+			bool is_solid () const;
+			void set_solid (bool solid);
+
+			bool is_wireframe () const;
+			void set_wireframe (bool wireframe);
+
+			bicubic_surface ( 
 				scene_controller_base & scene, 
+				const std::string & type_name,
 				std::shared_ptr<shader_t> shader, 
 				std::shared_ptr<shader_t> solid_shader,
 				std::shared_ptr<shader_t> grid_shader, 
@@ -67,8 +81,8 @@ namespace mini {
 			);
 
 			bicubic_surface (
-				const std::string & type_name, 
 				scene_controller_base & scene, 
+				const std::string & type_name,
 				std::shared_ptr<shader_t> shader, 
 				std::shared_ptr<shader_t> solid_shader,
 				std::shared_ptr<shader_t> grid_shader, 
@@ -93,6 +107,8 @@ namespace mini {
 			std::vector<uint64_t> serialize_points ();
 			std::vector<serialized_patch> serialize_patches ();
 
+			surface_patch get_patch (unsigned int x, unsigned int y);
+
 		private:
 			void m_bind_shader (app_context & context, shader_t & shader, const glm::mat4x4 & world_matrix) const;
 			void m_rebuild_buffers (bool recalculate_indices);
@@ -104,5 +120,10 @@ namespace mini {
 
 		protected:
 			virtual void t_calc_idx_buffer (std::vector<GLuint> & indices, std::vector<GLuint> & grid_indices) = 0;
+
+			virtual void t_on_point_destroy (const point_ptr point) override;
+			virtual void t_on_point_merge (const point_ptr point, const point_ptr merge) override;
+
+			virtual void t_on_alt_select () override;
 	};
 }
