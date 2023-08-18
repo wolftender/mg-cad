@@ -299,6 +299,14 @@ namespace mini {
 		return patch;
 	}
 
+	const glm::vec3 & bicubic_surface::point_at(unsigned int px, unsigned int py, unsigned int x, unsigned int y) const {
+		unsigned int patch_idx = py * m_patches_x + px;
+		unsigned int base_idx = patch_idx * num_control_points;
+		unsigned int local_idx = (4 * y) + x;
+		
+		return m_points[m_indices[base_idx + local_idx]]->get_translation ();
+	}
+
 	constexpr GLuint a_position = 0;
 
 	void bicubic_surface::m_bind_shader (app_context & context, shader_t & shader, const glm::mat4x4 & world_matrix) const {

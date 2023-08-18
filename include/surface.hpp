@@ -3,6 +3,24 @@
 #include "bezier.hpp"
 
 namespace mini {
+	class differentiable_surface_base {
+		public:
+			// domain information
+			virtual float get_min_u() const = 0;
+			virtual float get_max_u() const = 0;
+			virtual float get_min_v() const = 0;
+			virtual float get_max_v() const = 0;
+
+			// surface point
+			virtual glm::vec3 sample(float u, float v) const = 0;
+
+			// first derivatives
+			virtual glm::vec3 ddu(float u, float v) const = 0;
+			virtual glm::vec3 ddv(float u, float v) const = 0;
+
+			virtual ~differentiable_surface_base() {}
+	};
+
 	class bicubic_surface : public point_family_base {
 		public:
 			struct surface_patch {
@@ -108,6 +126,7 @@ namespace mini {
 			std::vector<serialized_patch> serialize_patches ();
 
 			surface_patch get_patch (unsigned int x, unsigned int y);
+			const glm::vec3 & point_at (unsigned int px, unsigned int py, unsigned int x, unsigned int y) const;
 
 		private:
 			void m_bind_shader (app_context & context, shader_t & shader, const glm::mat4x4 & world_matrix) const;
