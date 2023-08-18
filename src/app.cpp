@@ -9,6 +9,7 @@
 #include "point.hpp"
 #include "serializer.hpp"
 #include "gapfilling.hpp"
+#include "intersection.hpp"
 
 namespace mini {
 	constexpr const std::string_view app_title = "modelowanie geometryczne 1";
@@ -833,6 +834,10 @@ namespace mini {
 					m_fillin_selection ();
 				}
 
+				if (ImGui::MenuItem("Intersect", "I", nullptr, selected_objects)) {
+					m_find_intersection();
+				}
+
 				ImGui::Separator ();
 
 				if (ImGui::MenuItem ("Translate", "T", nullptr, selected_objects)) {
@@ -1217,6 +1222,10 @@ namespace mini {
 	void application::m_fillin_selection () {
 		gap_filling_controller algorithm (*this, m_store);
 		algorithm.create_surfaces ();
+	}
+
+	void application::m_find_intersection() {
+		intersection_controller algorithm (*this, m_store);
 	}
 
 	void application::m_begin_box_select () {
