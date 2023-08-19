@@ -22,6 +22,6 @@ namespace mini {
 			intersection_controller& operator= (const intersection_controller &) = delete;
 
 		private:
-			void m_find_starting_points(const glm::vec2 & p1, const glm::vec2 & p2) const;
+			bool m_find_starting_points(glm::vec2 & p1, glm::vec2 & p2, const glm::vec2 & s1, const glm::vec2 & s2) const;
 	};
 }
