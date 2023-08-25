@@ -625,7 +625,7 @@ namespace mini {
 			store->get_bezier_surf_shader (),
 			store->get_bezier_surf_solid_shader (),
 			store->get_line_shader (),
-			patches_x, patches_y, control_points, topology);
+			patches_x, patches_y, control_points, topology, false, false);
 
 		patch->set_name (data["name"].get<std::string> ());
 		return patch;

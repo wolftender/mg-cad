@@ -14,11 +14,17 @@ namespace mini {
 			// surface point
 			virtual glm::vec3 sample(float u, float v) const = 0;
 
+			// normal
+			virtual glm::vec3 normal(float u, float v) const = 0;
+
 			// first derivatives
 			virtual glm::vec3 ddu(float u, float v) const = 0;
 			virtual glm::vec3 ddv(float u, float v) const = 0;
 
 			virtual ~differentiable_surface_base() {}
+
+			virtual bool is_u_wrapped() const = 0;
+			virtual bool is_v_wrapped() const = 0;
 	};
 
 	class bicubic_surface : public point_family_base {
