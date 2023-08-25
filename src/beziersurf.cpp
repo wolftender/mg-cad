@@ -52,7 +52,9 @@ namespace mini {
 		std::shared_ptr<shader_t> grid_shader, 
 		unsigned int patches_x, 
 		unsigned int patches_y, 
-		const std::vector<point_ptr> & points)
+		const std::vector<point_ptr> & points,
+		bool u_wrapped,
+		bool v_wrapped)
 		: bicubic_surface (
 			scene,
 			"bezier_surf_c0",
@@ -62,7 +64,10 @@ namespace mini {
 			patches_x,
 			patches_y,
 			points
-		) { 
+		) {
+
+		m_u_wrapped = u_wrapped;
+		m_v_wrapped = v_wrapped;
 		
 		// validity check
 		if ((patches_y * patches_x * 9 + patches_x * 3 + patches_y * 3 + 1) != points.size ()) {
@@ -78,7 +83,9 @@ namespace mini {
 		unsigned int patches_x, 
 		unsigned int patches_y, 
 		const std::vector<point_ptr> & points, 
-		const std::vector<GLuint> & topology)
+		const std::vector<GLuint> & topology,
+		bool u_wrapped,
+		bool v_wrapped)
 		: bicubic_surface (
 			scene,
 			"bezier_surf_c0",
@@ -90,7 +97,10 @@ namespace mini {
 			points,
 			topology,
 			s_gen_grid_topology (patches_x, patches_y, topology)
-		) { 
+		) {
+
+		m_u_wrapped = u_wrapped;
+		m_v_wrapped = v_wrapped;
 		
 		// topology validity check
 		if ((patches_x * patches_y * 16) != topology.size ()) {
@@ -180,8 +190,8 @@ namespace mini {
 		float nu = glm::clamp(u / (get_max_u() - get_min_u()), 0.0f, 1.0f);
 		float nv = glm::clamp(v / (get_max_v() - get_min_v()), 0.0f, 1.0f);
 
-		int patch_x = get_patches_x() * nu;
-		int patch_y = get_patches_y() * nv;
+		int patch_x = glm::min(static_cast<unsigned int>(get_patches_x() * nu), get_patches_x() - 1);
+		int patch_y = glm::min(static_cast<unsigned int>(get_patches_y() * nv), get_patches_y() - 1);
 
 		const auto p = [this, &patch_x, &patch_y](int x, int y) -> const glm::vec3 & {
 			return point_at(patch_x, patch_y, x, y);
@@ -198,12 +208,19 @@ namespace mini {
 		return bezier_evaluate(p0, p1, p2, p3, lu);
 	}
 
-	glm::vec3 bezier_surface_c0::ddu(float u, float v) const {
-		float nu = u / (get_max_u() - get_min_u());
-		float nv = v / (get_max_v() - get_min_v());
+	glm::vec3 bezier_surface_c0::normal(float u, float v) const {
+		auto du = ddu(u, v);
+		auto dv = ddv(u, v);
 
-		int patch_x = get_patches_x() * nu;
-		int patch_y = get_patches_y() * nv;
+		return glm::normalize(glm::cross(du, dv));
+	}
+
+	glm::vec3 bezier_surface_c0::ddu(float u, float v) const {
+		float nu = glm::clamp(u / (get_max_u() - get_min_u()), 0.0f, 1.0f);
+		float nv = glm::clamp(v / (get_max_v() - get_min_v()), 0.0f, 1.0f);
+
+		int patch_x = glm::min(static_cast<unsigned int>(get_patches_x() * nu), get_patches_x() - 1);
+		int patch_y = glm::min(static_cast<unsigned int>(get_patches_y() * nv), get_patches_y() - 1);
 
 		const auto p = [this, &patch_x, &patch_y](int x, int y) -> const glm::vec3 & {
 			return point_at(patch_x, patch_y, x, y);
@@ -221,11 +238,11 @@ namespace mini {
 	}
 
 	glm::vec3 bezier_surface_c0::ddv(float u, float v) const {
-		float nu = u / (get_max_u() - get_min_u());
-		float nv = v / (get_max_v() - get_min_v());
+		float nu = glm::clamp(u / (get_max_u() - get_min_u()), 0.0f, 1.0f);
+		float nv = glm::clamp(v / (get_max_v() - get_min_v()), 0.0f, 1.0f);
 
-		int patch_x = get_patches_x() * nu;
-		int patch_y = get_patches_y() * nv;
+		int patch_x = glm::min(static_cast<unsigned int>(get_patches_x() * nu), get_patches_x() - 1);
+		int patch_y = glm::min(static_cast<unsigned int>(get_patches_y() * nv), get_patches_y() - 1);
 
 		const auto p = [this, &patch_x, &patch_y](int x, int y) -> const glm::vec3 & {
 			return point_at(patch_x, patch_y, x, y);
@@ -240,6 +257,14 @@ namespace mini {
 		auto p3 = bezier_evaluate(p(0, 3), p(1, 3), p(2, 3), p(3, 3), lu);
 
 		return bezier_derivative(p0, p1, p2, p3, lv);
+	}
+
+	bool bezier_surface_c0::is_u_wrapped() const {
+		return m_u_wrapped;
+	}
+
+	bool bezier_surface_c0::is_v_wrapped() const {
+		return m_v_wrapped;
 	}
 
 	void bezier_surface_c0::t_calc_idx_buffer (std::vector<GLuint> & indices, std::vector<GLuint> & grid_indices) {
@@ -409,7 +434,9 @@ namespace mini {
 			m_grid_shader, 
 			get_patches_x (),
 			get_pathces_y (), 
-			m_points
+			m_points,
+			false,
+			false
 		);
 	}
 

@@ -12,6 +12,8 @@ namespace mini {
 				const std::vector<GLuint> & topology
 			);
 
+			bool m_u_wrapped, m_v_wrapped;
+
 		public:
 			bezier_surface_c0 (
 				scene_controller_base & scene, 
@@ -20,7 +22,9 @@ namespace mini {
 				std::shared_ptr<shader_t> grid_shader, 
 				unsigned int patches_x, 
 				unsigned int patches_y, 
-				const std::vector<point_ptr> & points
+				const std::vector<point_ptr> & points,
+				bool u_wrapped,
+				bool v_wrapped
 			);
 
 			bezier_surface_c0 (
@@ -31,7 +35,9 @@ namespace mini {
 				unsigned int patches_x, 
 				unsigned int patches_y, 
 				const std::vector<point_ptr> & points,
-				const std::vector<GLuint> & topology
+				const std::vector<GLuint> & topology,
+				bool u_wrapped,
+				bool v_wrapped
 			);
 
 			virtual const object_serializer_base & get_serializer () const;
@@ -47,9 +53,15 @@ namespace mini {
 			// surface point
 			virtual glm::vec3 sample(float u, float v) const override;
 
+			// normal
+			virtual glm::vec3 normal(float u, float v) const override;
+
 			// first derivatives
 			virtual glm::vec3 ddu(float u, float v) const override;
 			virtual glm::vec3 ddv(float u, float v) const override;
+
+			virtual bool is_u_wrapped() const;
+			virtual bool is_v_wrapped() const;
 			
 		protected:
 			virtual void t_calc_idx_buffer (std::vector<GLuint> & indices, std::vector<GLuint> & grid_indices) override;

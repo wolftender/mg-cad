@@ -23,5 +23,6 @@ namespace mini {
 
 		private:
 			bool m_find_starting_points(glm::vec2 & p1, glm::vec2 & p2, const glm::vec2 & s1, const glm::vec2 & s2) const;
+			void m_trace_intersection(const glm::vec2 & s1, const glm::vec2 & s2) const;
 	};
 }
