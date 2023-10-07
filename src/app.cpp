@@ -983,7 +983,8 @@ namespace mini {
 
 		// render controls
 		if (ImGui::BeginListBox ("##objectlist", ImVec2 (-1.0f, ImGui::GetWindowHeight () - 110.0f))) {
-			ImGuiListClipper clipper (m_objects.size ());
+			ImGuiListClipper clipper;
+			clipper.Begin(m_objects.size());
 
 			while (clipper.Step ()) {
 				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd && i < m_objects.size (); ++i) {
