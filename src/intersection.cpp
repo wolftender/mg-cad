@@ -1,3 +1,5 @@
+#include <array>
+
 #include "intersection.hpp"
 
 namespace mini {
@@ -70,31 +72,59 @@ namespace mini {
 		}
 
 		glm::vec2 p1, p2;
-		glm::vec2 s1 = { 0.5f, 0.5f };
-		glm::vec2 s2 = { 0.5f, 0.5f };
+		std::array<glm::vec2, 3> s = {glm::vec2{0.0f, 0.0f}, {0.5f, 0.5f}, {1.0f, 1.0f}};
 
-		if (!m_find_starting_points(p1, p2, s1, s2)) {
+		bool starting_points_found = false;
+		for (int i = 0; i < 3; ++i) {
+			if (m_find_starting_points(p1, p2, s[i], s[i])) {
+				starting_points_found = true;
+				break;
+			}
+		}
+
+		if (!starting_points_found) {
 			std::cout << "no intersection found between surfaces" << std::endl;
 			return;
 		}
 
+		std::cout << "begin tracing intersection..." << std::endl;
 		m_trace_intersection(p1, p2);
-
-		/*glm::mat4x4 A{
-			1.0f, 2.0f, 3.0f, 4.0f,
-			3.0f, 5.0f, 10.0f, 12.0f,
-			2.0f, 11.0f, 0.0f, 0.0f,
-			4.0f, 5.0f, 6.0f, 8.0f
-		};
-
-		glm::vec4 b{5.0f, 4.0f, 11.0f, 0.0f};
-		glm::vec4 x;
-
-		gauss(glm::transpose(A), b, x);
-		std::cout << x.x << " " << x.y << " " << x.z << " " << x.w << std::endl;*/
 	}
 
 	intersection_controller::~intersection_controller() { }
+
+	inline void intersection_controller::m_wrap_coordinates(const generic_surface_ptr& surface, float& u, float& v) const {
+		bool is_u_wrapped = surface->is_u_wrapped();
+		bool is_v_wrapped = surface->is_v_wrapped();
+
+		if (u > 1.0f) {
+			if (is_u_wrapped) {
+				u = u - 1.0f;
+			} else {
+				u = 1.0f;
+			}
+		} else if (u < 0.0f) {
+			if (is_u_wrapped) {
+				u = u + 1.0f;
+			} else {
+				u = 0.0f;
+			}
+		}
+
+		if (v > 1.0f) {
+			if (is_v_wrapped) {
+				v = v - 1.0f;
+			} else {
+				v = 1.0f;
+			}
+		} else if (v < 0.0f) {
+			if (is_v_wrapped) {
+				v = v + 1.0f;
+			} else {
+				v = 0.0f;
+			}
+		}
+	}
 
 	bool intersection_controller::m_find_starting_points(glm::vec2 & p1, glm::vec2 & p2, const glm::vec2 & s1, const glm::vec2 & s2) const {
 		if (!m_surface1 || !m_surface2) {
@@ -136,8 +166,8 @@ namespace mini {
 		glm::vec4 current = { s1.x, s1.y, s2.x, s2.y };
 		glm::vec4 previous = current;
 
-		constexpr float c_start_step = 0.001f;
-		constexpr float c_start_epsilon = 0.00001f;
+		constexpr float c_start_step = 0.005f;
+		constexpr float c_start_epsilon = 0.0001f;
 		constexpr float c_step_mult = 1.0f / 2.0f;
 		constexpr float c_eps_mult = 1.0f / 10.0f;
 		constexpr int c_max_steps = 1000;
@@ -160,7 +190,10 @@ namespace mini {
 			direction = direction * step;
 			previous = current;
 
-			current = glm::clamp(current - direction, 0.0f, 1.0f);
+			current = current - direction;
+
+			m_wrap_coordinates(m_surface1, current.x, current.y);
+			m_wrap_coordinates(m_surface2, current.z, current.w);
 			
 			float du = current[0] - previous[0];
 			float dv = current[1] - previous[1];
@@ -219,17 +252,12 @@ namespace mini {
 	}
 
 	void intersection_controller::m_trace_intersection(const glm::vec2 & s1, const glm::vec2 & s2) const {		
-		glm::vec2 p1 = s1;
-		glm::vec2 p2 = s2;
-
-		glm::vec3 n1, n2;
 		glm::vec3 t;
-
-		glm::vec3 P0 = m_surface1->sample(p1.x, p1.y);
+		glm::vec3 P0;
 
 		const float d = 0.01f;
 
-		const auto f = [this, &P0, &t, &d](float u, float v, float p, float q) -> glm::vec4 {
+		const auto f = [&](float u, float v, float p, float q) -> glm::vec4 {
 			auto P = m_surface1->sample(u,v);
 			auto Q = m_surface2->sample(p,q);
 
@@ -241,7 +269,7 @@ namespace mini {
 			};
 		};
 
-		const auto J = [this, &P0, &t, &d](float u, float v, float p, float q) -> glm::mat4x4 {
+		const auto J = [&](float u, float v, float p, float q) -> glm::mat4x4 {
 			auto dPdu = m_surface1->ddu(u, v);
 			auto dPdv = m_surface1->ddv(u, v);
 			auto dQdp = m_surface2->ddu(p, q);
@@ -269,58 +297,66 @@ namespace mini {
 			return jacobian;
 		};
 
-		for (int i = 0; i < 1000; ++i) {
-			n1 = m_surface1->normal(p1.x, p1.y);
-			n2 = m_surface2->normal(p2.x, p2.y);
-			t = glm::normalize(glm::cross(n1, n2));
+		const auto trace = [&](glm::vec2 p1, glm::vec2 p2, float sign) {
+			P0 = m_surface1->sample(p1.x, p1.y);
 
-			// newton method
-			glm::vec4 x = {p1.x, p1.y, p2.x, p2.y};
-			
-			for (int j = 0; j < 50; ++j) {
-				auto value = f(x[0], x[1], x[2], x[3]);
-				auto jacobian = J(x[0], x[1], x[2], x[3]);
+			for (int i = 0; i < 1000; ++i) {
+				auto n1 = m_surface1->normal(p1.x, p1.y);
+				auto n2 = m_surface2->normal(p2.x, p2.y);
 
-				auto dist = glm::length(value);
-				if (dist < 0.0001f) {
-					break;
+				t = sign * glm::normalize(glm::cross(n1, n2));
+
+				// newton method
+				glm::vec4 x = { p1.x, p1.y, p2.x, p2.y };
+
+				for (int j = 0; j < 50; ++j) {
+					auto value = f(x[0], x[1], x[2], x[3]);
+					auto jacobian = J(x[0], x[1], x[2], x[3]);
+
+					auto dist = glm::length(value);
+					if (dist < 0.0001f) {
+						break;
+					}
+
+					//glm::vec4 next = x - glm::inverse(jacobian) * value;
+
+					glm::vec4 s;
+					gauss(jacobian, -value, s);
+
+					x = x + s * 0.05f;
 				}
 
-				//glm::vec4 next = x - glm::inverse(jacobian) * value;
+				p1.x = x.x;
+				p1.y = x.y;
+				p2.x = x.z;
+				p2.y = x.w;
 
-				glm::vec4 s;
-				gauss(jacobian, -value, s);
+				m_wrap_coordinates(m_surface1, p1.x, p1.y);
+				m_wrap_coordinates(m_surface2, p2.x, p2.y);
 
-				x = x + s * 0.05f;
+				P0 = m_surface1->sample(p1.x, p1.y);
+				auto P1 = m_surface2->sample(p2.x, p2.y);
+				//std::cout << glm::length(P0 - P1) << std::endl;
+
+				if (i % 20 == 0) {
+					const auto point_obj1 = std::make_shared<point_object>(m_scene,
+						m_store->get_billboard_s_shader(),
+						m_store->get_point_texture());
+
+					point_obj1->set_translation(m_surface1->sample(p1.x, p1.y));
+					
+					if (sign < 0.0f) {
+						point_obj1->set_color({ 0.0f, 1.0f, 0.0f, 1.0f });
+					} else {
+						point_obj1->set_color({ 1.0f, 0.0f, 0.0f, 1.0f });
+					}
+
+					m_scene.add_object("debug_point", point_obj1);
+				}
 			}
+		};
 
-			p1.x = x.x;
-			p1.y = x.y;
-			p2.x = x.z;
-			p2.y = x.w;
-
-			P0 = m_surface1->sample(p1.x, p1.y);
-			auto P1 = m_surface2->sample(p2.x, p2.y);
-			//std::cout << glm::length(P0 - P1) << std::endl;
-
-			if (i % 20 == 0) {
-				const auto point_obj1 = std::make_shared<point_object>(m_scene,
-					m_store->get_billboard_s_shader(),
-					m_store->get_point_texture());
-
-				const auto point_obj2 = std::make_shared<point_object>(m_scene,
-					m_store->get_billboard_s_shader(),
-					m_store->get_point_texture());
-
-				point_obj1->set_translation(m_surface1->sample(p1.x, p1.y));
-				point_obj2->set_translation(m_surface2->sample(p2.x, p2.y));
-
-				point_obj1->set_color({ 0.0f, 1.0f, 0.0f, 1.0f });
-				point_obj2->set_color({ 0.0f, 1.0f, 0.0f, 1.0f });
-
-				m_scene.add_object("debug_point", point_obj1);
-				m_scene.add_object("debug_point", point_obj2);
-			}
-		}
+		trace(s1, s2, +1.0f);
+		trace(s1, s2, -1.0f);
 	}
 }

@@ -340,6 +340,13 @@ namespace mini {
 			center.z - (static_cast<float>(points_y - 1) * spacing / 2.0f)
 		};
 
+		bool u_wrapped = false;
+		bool v_wrapped = false;
+
+		if (mode == build_mode_t::mode_cylinder) {
+			u_wrapped = true;
+		}
+
 		for (unsigned int x = 0; x < points_x; ++x) {
 			for (unsigned int y = 0; y < points_y; ++y) {
 				unsigned int index = (y * points_x) + x;
@@ -429,8 +436,8 @@ namespace mini {
 			get_patches_x (),
 			get_pathces_y (), 
 			m_points,
-			false,
-			false
+			u_wrapped,
+			v_wrapped
 		);
 	}
 

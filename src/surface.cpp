@@ -477,9 +477,14 @@ namespace mini {
 	}
 
 	void bicubic_surface::t_on_alt_select () {
+		std::set<uint64_t> selected;
+
 		for (const auto & point : m_points) {
-			if (!point->is_selected ()) {
-				get_scene ().select_by_id (point->get_id ());
+			uint64_t point_id = point->get_id();
+
+			if (!point->is_selected () && selected.find(point_id) == selected.end()) {
+				get_scene ().select_by_id (point_id);
+				selected.insert(point_id);
 			}
 		}
 	}

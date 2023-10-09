@@ -22,6 +22,8 @@ namespace mini {
 			intersection_controller& operator= (const intersection_controller &) = delete;
 
 		private:
+			inline void m_wrap_coordinates(const generic_surface_ptr& surface, float& u, float& v) const;
+
 			bool m_find_starting_points(glm::vec2 & p1, glm::vec2 & p2, const glm::vec2 & s1, const glm::vec2 & s2) const;
 			void m_trace_intersection(const glm::vec2 & s1, const glm::vec2 & s2) const;
 	};
