@@ -275,10 +275,10 @@ namespace mini {
 		std::shared_ptr<bspline_surface> surface = std::dynamic_pointer_cast<bspline_surface> (object);
 		auto j = s_serialize_bicubic(id, surface, cache, "bezierPatchC2", "bezierSurfaceC2");
 
-		/*j["parameterWrapped"] = {
+		j["parameterWrapped"] = {
 			{ "u", surface->is_u_wrapped() },
 			{ "v", surface->is_v_wrapped() }
-		};*/
+		};
 
 		return j;
 	}
@@ -735,7 +735,7 @@ namespace mini {
 			store->get_bspline_surf_shader (),
 			store->get_bspline_surf_solid_shader (),
 			store->get_line_shader (),
-			patches_x, patches_y, control_points, topology);
+			patches_x, patches_y, control_points, topology, u_wrapped, v_wrapped);
 
 		patch->set_name (data["name"].get<std::string> ());
 		return patch;
