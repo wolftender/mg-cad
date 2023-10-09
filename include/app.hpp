@@ -144,6 +144,10 @@ namespace mini {
 			// gizmos
 			std::shared_ptr<gizmo> m_gizmo;
 
+			// name cache
+			std::unordered_map<uint64_t, std::string> m_name_cache;
+			std::unordered_set<std::string> m_taken_names;
+
 		public:
 			// api for tools
 			float get_cam_yaw () const;
@@ -171,6 +175,8 @@ namespace mini {
 			virtual selected_object_iter_ptr get_selected_objects () override;
 			virtual void select_by_id (uint64_t id) override;
 			virtual void clear_selection () override;
+
+			virtual void refresh_by_id (uint64_t id) override;
 			
 			virtual void set_cursor_pos (const glm::vec3 & position) override;
 			void set_cursor_screen_pos (const glm::vec2 & screen_pos);

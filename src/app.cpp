@@ -176,6 +176,22 @@ namespace mini {
 		m_reset_selection ();
 	}
 
+	void application::refresh_by_id(uint64_t id) {
+		auto object = get_object(id);
+
+		if (object) {
+			auto it = m_name_cache.find(id);
+			if (it != m_name_cache.end()) {
+				auto old_name = it->second;
+
+				it->second = object->get_name();
+				
+				m_taken_names.erase(old_name);
+				m_taken_names.insert(it->second);
+			}
+		}
+	}
+
 	void application::set_cursor_pos (const glm::vec3 & position) {
 		m_cursor_position = position;
 	}
@@ -656,6 +672,10 @@ namespace mini {
 				// unparent
 				auto old_id = t_unparent_object (*(*iter)->object);
 				m_id_cache.erase (old_id);
+
+				// update taken names
+				m_name_cache.erase (old_id);
+				m_taken_names.erase ((*iter)->name);
 
 				iter = m_objects.erase (iter);
 			}
@@ -1154,11 +1174,7 @@ namespace mini {
 				return self;
 			}
 
-			for (const auto & object : m_objects) {
-				if (object->name == real_name) {
-					name_free = false;
-				}
-			}
+			name_free = (m_taken_names.find(real_name) == m_taken_names.end());
 		} while (!name_free);
 
 		return real_name;
@@ -1177,6 +1193,9 @@ namespace mini {
 
 		auto id = t_parent_object (*object);
 		m_id_cache.insert ({ id, wrapper });
+
+		m_name_cache.insert ({ id, real_name });
+		m_taken_names.insert (real_name);
 
 		if (select) {
 			m_reset_selection ();
