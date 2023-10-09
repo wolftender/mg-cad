@@ -175,30 +175,24 @@ namespace mini {
 		return d30;
 	}
 
-	inline void local_param(int px, int py, int npx, int npy, float nu, float nv, float & lu, float & lv) {
-		float su = static_cast<float>(px) / npx;
-		float sv = static_cast<float>(py) / npy;
-		float eu = static_cast<float>(px + 1) / npx;
-		float ev = static_cast<float>(py + 1) / npy;
-
-		lu = (nu - su) / (eu - su);
-		lv = (nv - sv) / (ev - sv);
+	inline void local_param(int px, int py, float nu, float nv, float & lu, float & lv) {
+		lu = nu - static_cast<float>(px);
+		lv = nv - static_cast<float>(py);
 	}
 
 	glm::vec3 bezier_surface_c0::sample(float u, float v) const {
-		// find patch
-		float nu = glm::clamp(u / (get_max_u() - get_min_u()), 0.0f, 1.0f);
-		float nv = glm::clamp(v / (get_max_v() - get_min_v()), 0.0f, 1.0f);
+		float nu = static_cast<float>(get_patches_x()) * glm::clamp(u, 0.0f, 1.0f);
+		float nv = static_cast<float>(get_patches_y()) * glm::clamp(v, 0.0f, 1.0f);
 
-		int patch_x = glm::min(static_cast<unsigned int>(get_patches_x() * nu), get_patches_x() - 1);
-		int patch_y = glm::min(static_cast<unsigned int>(get_patches_y() * nv), get_patches_y() - 1);
+		int patch_x = glm::min(static_cast<unsigned int>(floorf(nu)), get_patches_x() - 1);
+		int patch_y = glm::min(static_cast<unsigned int>(floorf(nv)), get_patches_y() - 1);
 
 		const auto p = [this, &patch_x, &patch_y](int x, int y) -> const glm::vec3 & {
 			return point_at(patch_x, patch_y, x, y);
 		};
 
 		float lu, lv;
-		local_param(patch_x, patch_y, get_patches_x(), get_patches_y(), nu, nv, lu, lv);
+		local_param(patch_x, patch_y, nu, nv, lu, lv);
 		
 		auto p0 = bezier_evaluate(p(0, 0), p(0, 1), p(0, 2), p(0, 3), lv);
 		auto p1 = bezier_evaluate(p(1, 0), p(1, 1), p(1, 2), p(1, 3), lv);
@@ -216,18 +210,18 @@ namespace mini {
 	}
 
 	glm::vec3 bezier_surface_c0::ddu(float u, float v) const {
-		float nu = glm::clamp(u / (get_max_u() - get_min_u()), 0.0f, 1.0f);
-		float nv = glm::clamp(v / (get_max_v() - get_min_v()), 0.0f, 1.0f);
+		float nu = static_cast<float>(get_patches_x()) * glm::clamp(u, 0.0f, 1.0f);
+		float nv = static_cast<float>(get_patches_y()) * glm::clamp(v, 0.0f, 1.0f);
 
-		int patch_x = glm::min(static_cast<unsigned int>(get_patches_x() * nu), get_patches_x() - 1);
-		int patch_y = glm::min(static_cast<unsigned int>(get_patches_y() * nv), get_patches_y() - 1);
+		int patch_x = glm::min(static_cast<unsigned int>(floorf(nu)), get_patches_x() - 1);
+		int patch_y = glm::min(static_cast<unsigned int>(floorf(nv)), get_patches_y() - 1);
 
 		const auto p = [this, &patch_x, &patch_y](int x, int y) -> const glm::vec3 & {
 			return point_at(patch_x, patch_y, x, y);
 		};
 
 		float lu, lv;
-		local_param(patch_x, patch_y, get_patches_x(), get_patches_y(), nu, nv, lu, lv);
+		local_param(patch_x, patch_y, nu, nv, lu, lv);
 
 		auto p0 = bezier_evaluate(p(0, 0), p(0, 1), p(0, 2), p(0, 3), lv);
 		auto p1 = bezier_evaluate(p(1, 0), p(1, 1), p(1, 2), p(1, 3), lv);
@@ -238,18 +232,18 @@ namespace mini {
 	}
 
 	glm::vec3 bezier_surface_c0::ddv(float u, float v) const {
-		float nu = glm::clamp(u / (get_max_u() - get_min_u()), 0.0f, 1.0f);
-		float nv = glm::clamp(v / (get_max_v() - get_min_v()), 0.0f, 1.0f);
+		float nu = static_cast<float>(get_patches_x()) * glm::clamp(u, 0.0f, 1.0f);
+		float nv = static_cast<float>(get_patches_y()) * glm::clamp(v, 0.0f, 1.0f);
 
-		int patch_x = glm::min(static_cast<unsigned int>(get_patches_x() * nu), get_patches_x() - 1);
-		int patch_y = glm::min(static_cast<unsigned int>(get_patches_y() * nv), get_patches_y() - 1);
+		int patch_x = glm::min(static_cast<unsigned int>(floorf(nu)), get_patches_x() - 1);
+		int patch_y = glm::min(static_cast<unsigned int>(floorf(nv)), get_patches_y() - 1);
 
 		const auto p = [this, &patch_x, &patch_y](int x, int y) -> const glm::vec3 & {
 			return point_at(patch_x, patch_y, x, y);
 		};
 
 		float lu, lv;
-		local_param(patch_x, patch_y, get_patches_x(), get_patches_y(), nu, nv, lu, lv);
+		local_param(patch_x, patch_y, nu, nv, lu, lv);
 
 		auto p0 = bezier_evaluate(p(0, 0), p(1, 0), p(2, 0), p(3, 0), lu);
 		auto p1 = bezier_evaluate(p(0, 1), p(1, 1), p(2, 1), p(3, 1), lu);

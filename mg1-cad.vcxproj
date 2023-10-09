@@ -247,6 +247,9 @@
     <Image Include="assets\point.png" />
     <Image Include="assets\test.png" />
   </ItemGroup>
+  <ItemGroup>
+    <Font Include="opensans.ttf" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

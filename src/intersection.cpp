@@ -227,7 +227,7 @@ namespace mini {
 
 		glm::vec3 P0 = m_surface1->sample(p1.x, p1.y);
 
-		const float d = 0.005f;
+		const float d = 0.01f;
 
 		const auto f = [this, &P0, &t, &d](float u, float v, float p, float q) -> glm::vec4 {
 			auto P = m_surface1->sample(u,v);
@@ -277,12 +277,12 @@ namespace mini {
 			// newton method
 			glm::vec4 x = {p1.x, p1.y, p2.x, p2.y};
 			
-			for (int j = 0; j < 5; ++j) {
+			for (int j = 0; j < 50; ++j) {
 				auto value = f(x[0], x[1], x[2], x[3]);
 				auto jacobian = J(x[0], x[1], x[2], x[3]);
 
 				auto dist = glm::length(value);
-				if (dist < 0.00001f) {
+				if (dist < 0.0001f) {
 					break;
 				}
 
@@ -291,17 +291,17 @@ namespace mini {
 				glm::vec4 s;
 				gauss(jacobian, -value, s);
 
-				x = glm::clamp(x + s, 0.0f, 1.0f);
+				x = x + s * 0.05f;
 			}
 
-			p1.x = glm::clamp(x.x, 0.0f, 1.0f);
-			p1.y = glm::clamp(x.y, 0.0f, 1.0f);
-			p2.x = glm::clamp(x.z, 0.0f, 1.0f);
-			p2.y = glm::clamp(x.w, 0.0f, 1.0f);
+			p1.x = x.x;
+			p1.y = x.y;
+			p2.x = x.z;
+			p2.y = x.w;
 
 			P0 = m_surface1->sample(p1.x, p1.y);
 			auto P1 = m_surface2->sample(p2.x, p2.y);
-			std::cout << glm::length(P0 - P1) << std::endl;
+			//std::cout << glm::length(P0 - P1) << std::endl;
 
 			if (i % 20 == 0) {
 				const auto point_obj1 = std::make_shared<point_object>(m_scene,
