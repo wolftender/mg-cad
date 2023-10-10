@@ -135,6 +135,20 @@ namespace mini {
 	}
 
 	void point_object::add_parent (std::shared_ptr<point_family_base> family) {
+		for (auto iter = m_parents.begin (); iter != m_parents.end (); ) {
+			auto parent = iter->lock();
+			if (!parent) {
+				iter = m_parents.erase(iter);
+				continue;
+			}
+
+			if (parent->get_id() == family->get_id()) {
+				return;
+			}
+
+			++iter;
+		}
+
 		if (!family->get_destroy_allowed ()) {
 			set_deletable (false);
 		}
