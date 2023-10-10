@@ -1,4 +1,6 @@
 #include "curve.hpp"
+#include "point.hpp"
+#include "gui.hpp"
 
 namespace mini {
     curve::curve(
@@ -11,6 +13,9 @@ namespace mini {
         m_position_buffer = 0;
         m_index_buffer = 0;
         m_ready = false;
+        m_line_width = 2.0f;
+
+        m_color = { 1.0f, 1.0f, 1.0f, 1.0f };
     }
 
     curve::curve(
@@ -24,9 +29,28 @@ namespace mini {
         m_position_buffer = 0;
         m_index_buffer = 0;
         m_ready = false;
+        m_line_width = 2.0f;
+
+        m_color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
         m_points = points;
         m_rebuild_buffers();
+    }
+
+    float curve::get_line_width() const {
+        return m_line_width;
+    }
+
+    const glm::vec4& curve::get_color() const {
+        return m_color;
+    }
+
+    void curve::set_line_width(float width) {
+        m_line_width = width;
+    }
+
+    void curve::set_color(const glm::vec4& color) {
+        m_color = color;
     }
 
     void curve::append_position(const glm::vec3& position) {
@@ -67,7 +91,19 @@ namespace mini {
         m_rebuild_buffers();
     }
 
-    void curve::configure () { }
+    void curve::configure () { 
+        if (ImGui::CollapsingHeader("Curve Settings")) {
+            gui::prefix_label("Line Width: ", 250.0f);
+            ImGui::InputFloat("##gcurve_line_w", &m_line_width);
+
+            gui::prefix_label("Color: ", 250.0f);
+            gui::color_editor("##gcurve_color", m_color);
+            ImGui::NewLine();
+        }
+
+        gui::clamp(m_line_width, 1.0f, 25.0f);
+    }
+
 	void curve::integrate (float delta_time) { }
     
     void curve::render (app_context & context, const glm::mat4x4 & world_matrix) const {
@@ -75,10 +111,32 @@ namespace mini {
             return;
         }
 
+        const auto& view_matrix = context.get_view_matrix();
+        const auto& proj_matrix = context.get_projection_matrix();
+
+        const auto& video_mode = context.get_video_mode();
+
+        glm::vec2 resolution = {
+            static_cast<float> (video_mode.get_buffer_width()),
+            static_cast<float> (video_mode.get_buffer_height())
+        };
+
         glBindVertexArray(m_vao);
 
-        
+        m_line_shader->bind();
+        m_line_shader->set_uniform("u_world", world_matrix);
+        m_line_shader->set_uniform("u_view", view_matrix);
+        m_line_shader->set_uniform("u_projection", proj_matrix);
+        m_line_shader->set_uniform("u_resolution", resolution);
+        m_line_shader->set_uniform("u_line_width", m_line_width);
 
+        if (!is_selected()) {
+            m_line_shader->set_uniform("u_color", m_color);
+        } else {
+            m_line_shader->set_uniform("u_color", m_color * point_object::s_select_default);
+        }
+
+        glDrawElements(GL_LINES, m_indices.size(), GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
     };
 
@@ -129,6 +187,7 @@ namespace mini {
 		glBufferData (GL_ELEMENT_ARRAY_BUFFER, sizeof (GLuint) * m_indices.size (), m_indices.data (), GL_STATIC_DRAW);
 
         glBindVertexArray(0);
+        m_ready = true;
     }
 
     void curve::m_free_buffers() {

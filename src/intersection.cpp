@@ -1,6 +1,7 @@
 #include <array>
 
 #include "intersection.hpp"
+#include "curve.hpp"
 
 namespace mini {
 	// gaussian method
@@ -297,7 +298,7 @@ namespace mini {
 			return jacobian;
 		};
 
-		const auto trace = [&](glm::vec2 p1, glm::vec2 p2, float sign) {
+		const auto trace = [&](glm::vec2 p1, glm::vec2 p2, float sign, std::vector<glm::vec2> & s1_out, std::vector<glm::vec2> & s2_out) {
 			P0 = m_surface1->sample(p1.x, p1.y);
 
 			for (int i = 0; i < 1000; ++i) {
@@ -338,25 +339,36 @@ namespace mini {
 				auto P1 = m_surface2->sample(p2.x, p2.y);
 				//std::cout << glm::length(P0 - P1) << std::endl;
 
-				if (i % 20 == 0) {
-					const auto point_obj1 = std::make_shared<point_object>(m_scene,
-						m_store->get_billboard_s_shader(),
-						m_store->get_point_texture());
-
-					point_obj1->set_translation(m_surface1->sample(p1.x, p1.y));
-					
-					if (sign < 0.0f) {
-						point_obj1->set_color({ 0.0f, 1.0f, 0.0f, 1.0f });
-					} else {
-						point_obj1->set_color({ 1.0f, 0.0f, 0.0f, 1.0f });
-					}
-
-					m_scene.add_object("debug_point", point_obj1);
-				}
+				s1_out.push_back(p1);
+				s2_out.push_back(p2);
 			}
 		};
 
-		trace(s1, s2, +1.0f);
-		trace(s1, s2, -1.0f);
+		std::vector<glm::vec2> s11, s21;
+		std::vector<glm::vec2> s12, s22;
+
+		trace(s1, s2, +1.0f, s11, s21);
+		trace(s1, s2, -1.0f, s12, s22);
+
+		std::vector<glm::vec3> curve_points1, curve_points2;
+		for (const auto& p : s11) {
+			curve_points1.push_back(m_surface1->sample(p.x, p.y));
+		}
+
+		for (const auto& p : s22) {
+			curve_points2.push_back(m_surface1->sample(p.x, p.y));
+		}
+
+		auto curve1 = std::make_shared<curve>(m_scene, m_store->get_line_shader(), curve_points1);
+		auto curve2 = std::make_shared<curve>(m_scene, m_store->get_line_shader(), curve_points1);
+
+		curve1->set_color({ 1.0f, 0.0f, 0.0f, 1.0f });
+		curve2->set_color({ 1.0f, 0.0f, 0.0f, 1.0f });
+
+		curve1->set_line_width(3.0f);
+		curve2->set_line_width(3.0f);
+
+		m_scene.add_object("intersection_curve", curve1);
+		m_scene.add_object("intersection_curve", curve2);
 	}
 }

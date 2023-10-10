@@ -16,6 +16,9 @@ namespace mini {
 
             bool m_ready;
 
+            glm::vec4 m_color;
+            float m_line_width;
+
         public:
             curve(
                 scene_controller_base& scene, 
@@ -30,6 +33,12 @@ namespace mini {
 
             curve(const curve&) = delete;
             curve& operator=(const curve&) = delete;
+
+            float get_line_width() const;
+            const glm::vec4 & get_color() const;
+
+            void set_line_width(float width);
+            void set_color(const glm::vec4 & color);
 
             void append_position(const glm::vec3& position);
             void prepend_position(const glm::vec3& position);

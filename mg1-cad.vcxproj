@@ -145,6 +145,7 @@
     <ClInclude Include="include\context.hpp" />
     <ClInclude Include="include\cube.hpp" />
     <ClInclude Include="include\billboard.hpp" />
+    <ClInclude Include="include\curve.hpp" />
     <ClInclude Include="include\event.hpp" />
     <ClInclude Include="include\factory.hpp" />
     <ClInclude Include="include\gapfilling.hpp" />
@@ -176,6 +177,7 @@
     <ClCompile Include="src\billboard.cpp" />
     <ClCompile Include="src\bspline.cpp" />
     <ClCompile Include="src\bsplinesurf.cpp" />
+    <ClCompile Include="src\curve.cpp" />
     <ClCompile Include="src\factory.cpp" />
     <ClCompile Include="src\gapfilling.cpp" />
     <ClCompile Include="src\gizmo.cpp" />
