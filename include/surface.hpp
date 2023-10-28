@@ -60,11 +60,13 @@ namespace mini {
 			bool m_signals_setup;
 
 			GLuint m_vao, m_grid_vao;
-			GLuint m_pos_buffer, m_index_buffer, m_grid_index_buffer;
+			GLuint m_pos_buffer, m_uv_buffer, m_index_buffer, m_grid_index_buffer;
 
 			glm::vec4 m_color;
 
 			std::vector<float> m_positions;
+			std::vector<float> m_uv;
+
 			std::vector<GLuint> m_indices;
 			std::vector<GLuint> m_grid_indices;
 
@@ -113,6 +115,7 @@ namespace mini {
 				unsigned int patches_x, 
 				unsigned int patches_y, 
 				const std::vector<point_ptr> & points,
+				const std::vector<float> & uv,
 				const std::vector<GLuint> & topology,
 				const std::vector<GLuint> & grid_topology
 			);
@@ -145,6 +148,7 @@ namespace mini {
 
 		protected:
 			virtual void t_calc_idx_buffer (std::vector<GLuint> & indices, std::vector<GLuint> & grid_indices) = 0;
+			virtual void t_calc_uv_buffer (std::vector<float> & uv, const std::vector<GLuint>& indices) = 0;
 
 			virtual void t_on_point_destroy (const point_ptr point) override;
 			virtual void t_on_point_merge (const point_ptr point, const point_ptr merge) override;

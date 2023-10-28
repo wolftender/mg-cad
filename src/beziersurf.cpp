@@ -45,6 +45,47 @@ namespace mini {
 		return grid_indices;
 	}
 
+	std::vector<float> bezier_surface_c0::s_gen_uv(
+		unsigned int patches_x, 
+		unsigned int patches_y, 
+		unsigned int num_points, 
+		const std::vector<GLuint>& topology) {
+
+		std::vector<float> uv;
+		uv.resize(2 * num_points);
+
+		float u_step = 1.0f / static_cast<float>(patches_x * 3);
+		float v_step = 1.0f / static_cast<float>(patches_y * 3);
+
+		for (unsigned int py = 0; py < patches_y; ++py) {
+			for (unsigned int px = 0; px < patches_x; ++px) {
+				unsigned int patch_idx = py * patches_x + px;
+				unsigned int base_idx = patch_idx * 16;
+				
+				for (unsigned int y = 0; y < 4; ++y) {
+					for (unsigned int x = 0; x < 4; ++x) {
+						float fpx = static_cast<float>(px);
+						float fpy = static_cast<float>(py);
+						float fx = static_cast<float>(x);
+						float fy = static_cast<float>(y);
+
+						unsigned int local_idx = (4 * y) + x;
+
+						float u = (3.0f * fpx * u_step) + (fx * u_step);
+						float v = (3.0f * fpy * v_step) + (fy * v_step);
+
+						unsigned int base = 2 * topology[base_idx + local_idx];
+
+						uv[base + 0] = u;
+						uv[base + 1] = v;
+					}
+				}
+			}
+		}
+
+		return uv;
+	}
+
 	bezier_surface_c0::bezier_surface_c0 (
 		scene_controller_base & scene, 
 		std::shared_ptr<shader_t> shader, 
@@ -82,7 +123,7 @@ namespace mini {
 		std::shared_ptr<shader_t> grid_shader, 
 		unsigned int patches_x, 
 		unsigned int patches_y, 
-		const std::vector<point_ptr> & points, 
+		const std::vector<point_ptr> & points,
 		const std::vector<GLuint> & topology,
 		bool u_wrapped,
 		bool v_wrapped)
@@ -95,6 +136,7 @@ namespace mini {
 			patches_x,
 			patches_y,
 			points,
+			s_gen_uv(patches_x, patches_y, points.size(), topology),
 			topology,
 			s_gen_grid_topology (patches_x, patches_y, topology)
 		) {
@@ -312,6 +354,10 @@ namespace mini {
 				grid_indices[i++] = i2;
 			}
 		}
+	}
+
+	void bezier_surface_c0::t_calc_uv_buffer(std::vector<float>& uv, const std::vector<GLuint>& indices) {
+		uv = s_gen_uv(get_patches_x(), get_patches_y(), get_num_points(), indices);
 	}
 
 

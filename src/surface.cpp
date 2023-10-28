@@ -86,7 +86,7 @@ namespace mini {
 		m_show_polygon = false;
 
 		m_vao = 0;
-		m_pos_buffer = m_index_buffer = 0;
+		m_pos_buffer = m_index_buffer = m_uv_buffer = 0;
 		m_color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 		m_shader = shader;
@@ -112,6 +112,7 @@ namespace mini {
 		unsigned int patches_x, 
 		unsigned int patches_y,
 		const std::vector<point_ptr> & points, 
+		const std::vector<float>& uv,
 		const std::vector<GLuint> & topology,
 		const std::vector<GLuint> & grid_topology) :
 		point_family_base (scene, type_name, false, true),
@@ -129,7 +130,7 @@ namespace mini {
 		m_show_polygon = true;
 
 		m_vao = 0;
-		m_pos_buffer = m_index_buffer = 0;
+		m_pos_buffer = m_index_buffer = m_uv_buffer = 0;
 		m_color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 		m_shader = shader;
@@ -146,6 +147,7 @@ namespace mini {
 		}
 
 		// do not create topology automatically
+		m_uv = uv;
 		m_indices = topology;
 		m_grid_indices = grid_topology;
 	}
@@ -308,6 +310,7 @@ namespace mini {
 	}
 
 	constexpr GLuint a_position = 0;
+	constexpr GLuint a_uv = 1;
 
 	void bicubic_surface::m_bind_shader (app_context & context, shader_t & shader, const glm::mat4x4 & world_matrix) const {
 		shader.bind ();
@@ -352,12 +355,17 @@ namespace mini {
 			m_indices.clear ();
 			m_indices.resize (get_num_patches () * num_control_points);
 			t_calc_idx_buffer (m_indices, m_grid_indices);
+
+			m_uv.clear();
+			m_uv.resize (get_num_points() * num_control_points);
+			t_calc_uv_buffer(m_uv, m_indices);
 		}
 
 		// put data into buffers
 		glGenVertexArrays (1, &m_vao);
 		glGenBuffers (1, &m_pos_buffer);
 		glGenBuffers (1, &m_index_buffer);
+		glGenBuffers (1, &m_uv_buffer);
 
 		glBindVertexArray (m_vao);
 
@@ -365,6 +373,11 @@ namespace mini {
 		glBufferData (GL_ARRAY_BUFFER, sizeof (float) * m_positions.size (), reinterpret_cast<void *> (m_positions.data ()), GL_DYNAMIC_DRAW);
 		glVertexAttribPointer (a_position, 3, GL_FLOAT, false, sizeof (float) * 3, (void *)0);
 		glEnableVertexAttribArray (a_position);
+
+		glBindBuffer(GL_ARRAY_BUFFER, m_uv_buffer);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * m_uv.size(), reinterpret_cast<void*> (m_uv.data()), GL_DYNAMIC_DRAW);
+		glVertexAttribPointer(a_uv, 2, GL_FLOAT, false, sizeof(float) * 2, (void*)0);
+		glEnableVertexAttribArray(a_uv);
 
 		glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, m_index_buffer);
 		glBufferData (GL_ELEMENT_ARRAY_BUFFER, sizeof (GLuint) * m_indices.size (), m_indices.data (), GL_STATIC_DRAW);
@@ -438,6 +451,11 @@ namespace mini {
 		if (m_index_buffer) {
 			glDeleteBuffers (1, &m_index_buffer);
 			m_index_buffer = 0;
+		}
+
+		if (m_uv_buffer) {
+			glDeleteBuffers(1, &m_uv_buffer);
+			m_uv_buffer = 0;
 		}
 
 		m_ready = false;

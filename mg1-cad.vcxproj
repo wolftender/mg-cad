@@ -216,6 +216,8 @@
     <None Include="shaders\fs_basic.glsl" />
     <None Include="shaders\fs_boxselect.glsl" />
     <None Include="shaders\fs_solidcolor.glsl" />
+    <None Include="shaders\fs_trimming.glsl" />
+    <None Include="shaders\fs_trimming_isolines.glsl" />
     <None Include="shaders\fs_white.glsl" />
     <None Include="shaders\fs_billboard.glsl" />
     <None Include="shaders\fs_grid_xy.glsl" />
@@ -224,6 +226,7 @@
     <None Include="shaders\fs_meshgrid_s.glsl" />
     <None Include="shaders\gs_bezier.glsl" />
     <None Include="shaders\gs_bezier2.glsl" />
+    <None Include="shaders\gs_isolines_uv.glsl" />
     <None Include="shaders\gs_lines.glsl" />
     <None Include="shaders\gs_polyline1.glsl" />
     <None Include="shaders\gs_polyline2.glsl" />
@@ -243,6 +246,7 @@
     <None Include="shaders\vs_grid.glsl" />
     <None Include="shaders\vs_meshgrid.glsl" />
     <None Include="shaders\vs_pass.glsl" />
+    <None Include="shaders\vs_pass_uv.glsl" />
     <None Include="shaders\vs_position.glsl" />
     <None Include="shaders\vs_sprite.glsl" />
   </ItemGroup>

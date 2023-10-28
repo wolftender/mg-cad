@@ -48,6 +48,42 @@ namespace mini {
 		return grid_indices;
 	}
 
+	std::vector<float> bspline_surface::s_gen_uv(
+		unsigned int patches_x, 
+		unsigned int patches_y, 
+		unsigned int num_points,
+		const std::vector<GLuint>& topology) {
+
+		std::vector<float> uv;
+		uv.resize(2 * num_points);
+
+		float u_step = 1.0f / static_cast<float>(patches_x + 3);
+		float v_step = 1.0f / static_cast<float>(patches_y + 3);
+
+		for (unsigned int py = 0; py < patches_y; ++py) {
+			for (unsigned int px = 0; px < patches_x; ++px) {
+				unsigned int patch_idx = py * patches_x + px;
+				unsigned int base_idx = patch_idx * 16;
+
+				for (unsigned int y = 0; y < 4; ++y) {
+					for (unsigned int x = 0; x < 4; ++x) {
+						unsigned int local_idx = (4 * y) + x;
+
+						float u = (py * u_step) + u_step;
+						float v = (px * v_step) + v_step;
+
+						unsigned int base = 2 * topology[base_idx + local_idx];
+
+						uv[base + 0] = u;
+						uv[base + 1] = v;
+					}
+				}
+			}
+		}
+
+		return uv;
+	}
+
 	bspline_surface::bspline_surface (
 		scene_controller_base & scene,
 		std::shared_ptr<shader_t> shader,
@@ -98,6 +134,7 @@ namespace mini {
 			patches_x,
 			patches_y,
 			points,
+			s_gen_uv(patches_x, patches_y, points.size(), topology),
 			topology,
 			s_gen_grid_topology (patches_x, patches_y, topology)
 		) { 
@@ -300,6 +337,11 @@ namespace mini {
 			}
 		}
 	}
+
+	void bspline_surface::t_calc_uv_buffer(std::vector<float>& uv, const std::vector<GLuint>& indices) {
+		 uv = s_gen_uv(get_patches_x(), get_patches_y(), get_num_points(), indices);
+	}
+
 
 	////////////////////////////////////////////////////////
 

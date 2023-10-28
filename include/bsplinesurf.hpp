@@ -11,6 +11,13 @@ namespace mini {
 				const std::vector<GLuint> & topology
 			);
 
+			static std::vector<float> s_gen_uv(
+				unsigned int patches_x,
+				unsigned int patches_y,
+				unsigned int num_points,
+				const std::vector<GLuint>& topology
+			);
+
 			bool m_u_wrapped, m_v_wrapped;
 
 		public:
@@ -64,5 +71,6 @@ namespace mini {
 
 		protected:
 			virtual void t_calc_idx_buffer (std::vector<GLuint> & indices, std::vector<GLuint> & grid_indices) override;
+			virtual void t_calc_uv_buffer(std::vector<float>& uv, const std::vector<GLuint>& indices) override;
 	};
 }
