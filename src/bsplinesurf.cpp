@@ -290,6 +290,14 @@ namespace mini {
 		return m_v_wrapped;
 	}
 
+	bool bspline_surface::is_trimmable() const {
+		return true;
+	}
+
+	trimmable_surface_domain& bspline_surface::get_trimmable_domain() {
+		return get_domain();
+	}
+
 	void bspline_surface::t_calc_idx_buffer (std::vector<GLuint> & indices, std::vector<GLuint> & grid_indices) {
 		// create indices for patches
 		unsigned int i = 0;

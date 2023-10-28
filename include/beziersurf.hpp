@@ -69,6 +69,9 @@ namespace mini {
 
 			virtual bool is_u_wrapped() const;
 			virtual bool is_v_wrapped() const;
+
+			virtual bool is_trimmable() const override;
+			virtual trimmable_surface_domain& get_trimmable_domain() override;
 			
 		protected:
 			virtual void t_calc_idx_buffer (std::vector<GLuint> & indices, std::vector<GLuint> & grid_indices) override;

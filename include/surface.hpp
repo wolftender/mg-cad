@@ -1,6 +1,7 @@
 #pragma once
 #include "object.hpp"
 #include "bezier.hpp"
+#include "trimmable.hpp"
 
 namespace mini {
 	class differentiable_surface_base {
@@ -25,6 +26,9 @@ namespace mini {
 
 			virtual bool is_u_wrapped() const = 0;
 			virtual bool is_v_wrapped() const = 0;
+
+			virtual bool is_trimmable() const;
+			virtual trimmable_surface_domain& get_trimmable_domain();
 	};
 
 	class bicubic_surface : public point_family_base {
@@ -70,10 +74,14 @@ namespace mini {
 			std::vector<GLuint> m_indices;
 			std::vector<GLuint> m_grid_indices;
 
+			trimmable_surface_domain m_domain;
+
 		protected:
 			const std::vector<point_ptr> & t_get_points () const;
 
 		public:
+			trimmable_surface_domain& get_domain();
+
 			bool is_showing_polygon () const;
 			void set_showing_polygon (bool show);
 

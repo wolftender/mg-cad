@@ -25,14 +25,14 @@ namespace mini {
 	}
 
 	void trimmable_surface_domain::trim_curve(const std::vector<glm::vec2>& curve_points) {
-		for (int i = 0; i < curve_points.size(); ++i) {
+		for (int i = 0; i < curve_points.size() - 1; ++i) {
 			const auto& p1 = curve_points[i + 0];
 			const auto& p2 = curve_points[i + 1];
 
 			uint32_t x0 = static_cast<uint32_t>(p1.x * m_domain_width);
-			uint32_t y0 = static_cast<uint32_t>(p1.y * m_domain_width);
+			uint32_t y0 = static_cast<uint32_t>(p1.y * m_domain_height);
 			uint32_t x1 = static_cast<uint32_t>(p2.x * m_domain_width);
-			uint32_t y1 = static_cast<uint32_t>(p2.y * m_domain_width);
+			uint32_t y1 = static_cast<uint32_t>(p2.y * m_domain_height);
 
 			m_draw_line(x0, y0, x1, y1, CURVE);
 		}
@@ -76,7 +76,7 @@ namespace mini {
 
 	void trimmable_surface_domain::m_init_texture() {
 		m_domain.resize(m_domain_width * m_domain_height);
-		std::fill(m_domain.begin(), m_domain.end(), 255);
+		std::fill(m_domain.begin(), m_domain.end(), VISIBLE);
 
 		if (m_texture) {
 			m_free_texture();

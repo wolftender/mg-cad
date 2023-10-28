@@ -303,6 +303,14 @@ namespace mini {
 		return m_v_wrapped;
 	}
 
+	bool bezier_surface_c0::is_trimmable() const {
+		return true;
+	}
+
+	trimmable_surface_domain& bezier_surface_c0::get_trimmable_domain() {
+		return get_domain();
+	}
+
 	void bezier_surface_c0::t_calc_idx_buffer (std::vector<GLuint> & indices, std::vector<GLuint> & grid_indices) {
 		// create indices for patches
 		unsigned int i = 0;

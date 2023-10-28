@@ -6,6 +6,10 @@ namespace mini {
 		return m_points;
 	}
 
+	trimmable_surface_domain& bicubic_surface::get_domain() {
+		return m_domain;
+	}
+
 	bool bicubic_surface::is_showing_polygon () const {
 		return m_show_polygon;
 	}
@@ -73,7 +77,11 @@ namespace mini {
 		const std::vector<point_ptr> & points) :
 		point_family_base (scene, type_name, false, true),
 		m_patches_x (patches_x), 
-		m_patches_y (patches_y) {
+		m_patches_y (patches_y),
+		m_domain(
+			glm::min(2048U, 512 * patches_x),
+			glm::min(2048U, 512 * patches_y),
+			0.0f, 0.0f, 1.0f, 1.0f) {
 
 		m_res_u = 25;
 		m_res_v = 25;
@@ -117,7 +125,11 @@ namespace mini {
 		const std::vector<GLuint> & grid_topology) :
 		point_family_base (scene, type_name, false, true),
 		m_patches_x (patches_x), 
-		m_patches_y (patches_y) {
+		m_patches_y (patches_y),
+		m_domain(
+			glm::min(2048U, 512 * patches_x),
+			glm::min(2048U, 512 * patches_y),
+			0.0f, 0.0f, 1.0f, 1.0f) {
 
 		m_res_u = 25;
 		m_res_v = 25;
@@ -203,6 +215,9 @@ namespace mini {
 		if (m_ready) {
 			glBindVertexArray (m_vao);
 
+			// bind domain texture
+			m_domain.bind(0);
+
 			if (m_use_solid) {
 				const auto & view_matrix = context.get_view_matrix ();
 				const auto & proj_matrix = context.get_projection_matrix ();
@@ -216,6 +231,7 @@ namespace mini {
 				// first render pass - u,v
 				m_solid_shader->set_uniform_uint ("u_resolution_v", static_cast<GLuint> (m_res_v));
 				m_solid_shader->set_uniform_uint ("u_resolution_u", static_cast<GLuint> (m_res_u));
+				m_solid_shader->set_uniform_int ("u_domain_sampler", 0);
 
 				glPatchParameteri (GL_PATCH_VERTICES, 16);
 				glDrawElements (GL_PATCHES, m_indices.size (), GL_UNSIGNED_INT, 0);
@@ -228,6 +244,7 @@ namespace mini {
 				m_shader->set_uniform_int ("u_vertical", true);
 				m_shader->set_uniform_uint ("u_resolution_v", static_cast<GLuint> (m_res_v));
 				m_shader->set_uniform_uint ("u_resolution_u", static_cast<GLuint> (m_res_u));
+				m_shader->set_uniform_int("u_domain_sampler", 0);
 
 				glPatchParameteri (GL_PATCH_VERTICES, 16);
 				glDrawElements (GL_PATCHES, m_indices.size (), GL_UNSIGNED_INT, 0);
@@ -236,6 +253,7 @@ namespace mini {
 				m_shader->set_uniform_int ("u_vertical", false);
 				m_shader->set_uniform_uint ("u_resolution_v", static_cast<GLuint> (m_res_u));
 				m_shader->set_uniform_uint ("u_resolution_u", static_cast<GLuint> (m_res_v));
+				m_shader->set_uniform_int("u_domain_sampler", 0);
 
 				glPatchParameteri (GL_PATCH_VERTICES, 16);
 				glDrawElements (GL_PATCHES, m_indices.size (), GL_UNSIGNED_INT, 0);
@@ -505,5 +523,13 @@ namespace mini {
 				selected.insert(point_id);
 			}
 		}
+	}
+
+	bool differentiable_surface_base::is_trimmable() const {
+		return false;
+	}
+
+	trimmable_surface_domain& differentiable_surface_base::get_trimmable_domain() {
+		throw std::runtime_error("this surface is not trimmable");
 	}
 }

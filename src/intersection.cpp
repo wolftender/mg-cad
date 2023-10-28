@@ -360,12 +360,30 @@ namespace mini {
 			curve_points1.push_back(m_surface1->sample(p.x, p.y));
 		}
 
-		for (const auto& p : s22) {
+		for (const auto& p : s12) {
 			curve_points2.push_back(m_surface1->sample(p.x, p.y));
 		}
 
+		if (m_surface1->is_trimmable()) {
+			auto& domain = m_surface1->get_trimmable_domain();
+
+			domain.trim_curve(s11);
+			domain.trim_curve(s12);
+
+			domain.update_texture();
+		}
+
+		if (m_surface2->is_trimmable()) {
+			auto& domain = m_surface2->get_trimmable_domain();
+
+			domain.trim_curve(s21);
+			domain.trim_curve(s22);
+
+			domain.update_texture();
+		}
+
 		auto curve1 = std::make_shared<curve>(m_scene, m_store->get_line_shader(), curve_points1);
-		auto curve2 = std::make_shared<curve>(m_scene, m_store->get_line_shader(), curve_points1);
+		auto curve2 = std::make_shared<curve>(m_scene, m_store->get_line_shader(), curve_points2);
 
 		curve1->set_color({ 1.0f, 0.0f, 0.0f, 1.0f });
 		curve2->set_color({ 1.0f, 0.0f, 0.0f, 1.0f });

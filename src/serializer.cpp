@@ -612,12 +612,12 @@ namespace mini {
 			for (const auto & point_s : patch["controlPoints"]) {
 				int id = point_s["id"].get<int> ();
 
-				auto iter_id_map = id_map.find (id);
+				/*auto iter_id_map = id_map.find(id);
 				if (iter_id_map != id_map.end ()) {
 					patch_topology[patch_index] = iter_id_map->second;
 					patch_index++;
 					continue;
-				}
+				}*/
 
 				// point was not yet indexed, add it to the index
 				auto iter_cache = cache.find (id);
@@ -696,12 +696,12 @@ namespace mini {
 			for (const auto & point_s : patch["controlPoints"]) {
 				int id = point_s["id"].get<int> ();
 
-				auto iter_id_map = id_map.find (id);
+				/*auto iter_id_map = id_map.find(id);
 				if (iter_id_map != id_map.end ()) {
 					patch_topology[patch_index] = iter_id_map->second;
 					patch_index++;
 					continue;
-				}
+				}*/
 
 				// point was not yet indexed, add it to the index
 				auto iter_cache = cache.find (id);
