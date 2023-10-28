@@ -98,31 +98,36 @@ namespace mini {
 		bool is_u_wrapped = surface->is_u_wrapped();
 		bool is_v_wrapped = surface->is_v_wrapped();
 
-		if (u > 1.0f) {
+		const auto min_u = surface->get_min_u();
+		const auto min_v = surface->get_min_v();
+		const auto max_u = surface->get_max_u();
+		const auto max_v = surface->get_max_v();
+
+		if (u > max_u) {
 			if (is_u_wrapped) {
-				u = u - 1.0f;
+				u = u - max_u;
 			} else {
-				u = 1.0f;
+				u = max_u;
 			}
-		} else if (u < 0.0f) {
+		} else if (u < min_u) {
 			if (is_u_wrapped) {
-				u = u + 1.0f;
+				u = u + max_u;
 			} else {
-				u = 0.0f;
+				u = min_u;
 			}
 		}
 
-		if (v > 1.0f) {
+		if (v > max_v) {
 			if (is_v_wrapped) {
-				v = v - 1.0f;
+				v = v - max_v;
 			} else {
-				v = 1.0f;
+				v = max_v;
 			}
-		} else if (v < 0.0f) {
+		} else if (v < min_v) {
 			if (is_v_wrapped) {
-				v = v + 1.0f;
+				v = v + max_v;
 			} else {
-				v = 0.0f;
+				v = min_v;
 			}
 		}
 	}

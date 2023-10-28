@@ -167,6 +167,7 @@
     <ClInclude Include="include\texture.hpp" />
     <ClInclude Include="include\tool.hpp" />
     <ClInclude Include="include\torus.hpp" />
+    <ClInclude Include="include\trimmable.hpp" />
     <ClInclude Include="include\window.hpp" />
     <ClInclude Include="include\beziersurf.hpp" />
   </ItemGroup>
@@ -205,6 +206,7 @@
     <ClCompile Include="src\texture.cpp" />
     <ClCompile Include="src\tool.cpp" />
     <ClCompile Include="src\torus.cpp" />
+    <ClCompile Include="src\trimmable.cpp" />
     <ClCompile Include="src\window.cpp" />
   </ItemGroup>
   <ItemGroup>
