@@ -57,8 +57,8 @@ namespace mini {
 		std::vector<float> uv;
 		uv.resize(2 * num_points);
 
-		float u_step = 1.0f / static_cast<float>(patches_x + 3);
-		float v_step = 1.0f / static_cast<float>(patches_y + 3);
+		float u_step = 1.0f / static_cast<float>(patches_x);
+		float v_step = 1.0f / static_cast<float>(patches_y);
 
 		for (unsigned int py = 0; py < patches_y; ++py) {
 			for (unsigned int px = 0; px < patches_x; ++px) {
@@ -67,10 +67,15 @@ namespace mini {
 
 				for (unsigned int y = 0; y < 4; ++y) {
 					for (unsigned int x = 0; x < 4; ++x) {
+						float fpx = static_cast<float>(px);
+						float fpy = static_cast<float>(py);
+						float fx = static_cast<float>(x);
+						float fy = static_cast<float>(y);
+
 						unsigned int local_idx = (4 * y) + x;
 
-						float u = (py * u_step) + u_step;
-						float v = (px * v_step) + v_step;
+						float u = (fpx * u_step) + (fx * u_step) - u_step;
+						float v = (fpy * v_step) + (fy * v_step) - v_step;
 
 						unsigned int base = 2 * topology[base_idx + local_idx];
 
