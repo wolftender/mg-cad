@@ -33,12 +33,17 @@ namespace mini {
 			trimmable_surface_domain& operator=(const trimmable_surface_domain&) = delete;
 
 			void trim_curve(const std::vector<glm::vec2>& curve_points);
+			void trim_directions(const glm::vec2& start, const std::vector<glm::vec2>& directions);
 			void update_texture();
 
 			void bind(uint32_t slot) const;
+			void configure();
+
+			uint8_t at(int32_t x, int32_t y) const;
 
 		private:
 			void m_draw_line(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint8_t color);
+			void m_flood_fill(int32_t x, int32_t y);
 
 			void m_init_texture();
 			void m_free_texture();

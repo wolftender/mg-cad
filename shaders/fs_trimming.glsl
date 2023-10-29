@@ -10,5 +10,11 @@ uniform sampler2D u_domain_sampler;
 uniform vec4 u_color;
 
 void main () {
-    output_color = u_color * texture(u_domain_sampler, fs_in.uv).r;
+    float alpha = texture(u_domain_sampler, fs_in.uv).r;
+
+    if (alpha == 0.0f) {
+        discard;
+    }
+
+    output_color = u_color * alpha;
 }

@@ -303,7 +303,15 @@ namespace mini {
 			return jacobian;
 		};
 
-		const auto trace = [&](glm::vec2 p1, glm::vec2 p2, float sign, std::vector<glm::vec2> & s1_out, std::vector<glm::vec2> & s2_out) {
+		const auto trace = [&](
+			glm::vec2 p1, 
+			glm::vec2 p2, 
+			float sign, 
+			std::vector<glm::vec2> & s1_out, 
+			std::vector<glm::vec2> & s2_out,
+			std::vector<glm::vec2> & d1_out,
+			std::vector<glm::vec2> & d2_out) {
+
 			P0 = m_surface1->sample(p1.x, p1.y);
 
 			for (int i = 0; i < 1000; ++i) {
@@ -332,6 +340,12 @@ namespace mini {
 					x = x + s * 0.05f;
 				}
 
+				glm::vec2 d1, d2;
+				d1.x = x.x - p1.x;
+				d1.y = x.y - p1.y;
+				d2.x = x.z - p2.x;
+				d2.y = x.w - p2.y;
+
 				p1.x = x.x;
 				p1.y = x.y;
 				p2.x = x.z;
@@ -346,14 +360,26 @@ namespace mini {
 
 				s1_out.push_back(p1);
 				s2_out.push_back(p2);
+				d1_out.push_back(d1);
+				d2_out.push_back(d2);
 			}
 		};
 
-		std::vector<glm::vec2> s11, s21;
-		std::vector<glm::vec2> s12, s22;
+		std::vector<glm::vec2> s11, s21, d11, d21;
+		std::vector<glm::vec2> s12, s22, d12, d22;
 
-		trace(s1, s2, +1.0f, s11, s21);
-		trace(s1, s2, -1.0f, s12, s22);
+		// reserve buffer for all
+		s11.reserve(2000);
+		s21.reserve(2000);
+		s12.reserve(2000);
+		s22.reserve(2000);
+		d11.reserve(2000);
+		d21.reserve(2000);
+		d12.reserve(2000);
+		d22.reserve(2000);
+
+		trace(s1, s2, +1.0f, s11, s21, d11, d21);
+		trace(s1, s2, -1.0f, s12, s22, d12, d22);
 
 		std::vector<glm::vec3> curve_points1, curve_points2;
 		for (const auto& p : s11) {
@@ -367,8 +393,8 @@ namespace mini {
 		if (m_surface1->is_trimmable()) {
 			auto& domain = m_surface1->get_trimmable_domain();
 
-			domain.trim_curve(s11);
-			domain.trim_curve(s12);
+			domain.trim_directions(s1, d11);
+			domain.trim_directions(s1, d12);
 
 			domain.update_texture();
 		}
@@ -376,8 +402,8 @@ namespace mini {
 		if (m_surface2->is_trimmable()) {
 			auto& domain = m_surface2->get_trimmable_domain();
 
-			domain.trim_curve(s21);
-			domain.trim_curve(s22);
+			domain.trim_directions(s2, d21);
+			domain.trim_directions(s2, d22);
 
 			domain.update_texture();
 		}

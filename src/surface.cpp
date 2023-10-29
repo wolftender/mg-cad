@@ -194,6 +194,8 @@ namespace mini {
 			ImGui::NewLine ();
 		}
 
+		m_domain.configure();
+
 		gui::clamp (m_res_u, 4, 64);
 		gui::clamp (m_res_v, 4, 64);
 	}
