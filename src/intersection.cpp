@@ -54,8 +54,12 @@ namespace mini {
 		}
 	}
 
+	constexpr std::array<glm::vec2, 3> c_offsets = { glm::vec2{0.0f, 0.0f}, {0.5f, 0.5f}, {1.0f, 1.0f} };
+
 	intersection_controller::intersection_controller(
-		scene_controller_base & scene, std::shared_ptr<resource_store> store) : m_scene(scene) {
+		scene_controller_base & scene, std::shared_ptr<resource_store> store, bool from_cursor) : 
+		m_scene(scene),
+		m_from_cursor(from_cursor) {
 
 		m_store = store;
 
@@ -72,14 +76,25 @@ namespace mini {
 			}
 		}
 
+		std::cout << "finding first intersection point..." << std::endl;
 		glm::vec2 p1, p2;
-		std::array<glm::vec2, 3> s = {glm::vec2{0.0f, 0.0f}, {0.5f, 0.5f}, {1.0f, 1.0f}};
-
 		bool starting_points_found = false;
-		for (int i = 0; i < 3; ++i) {
-			if (m_find_starting_points(p1, p2, s[i], s[i])) {
+
+		if (m_from_cursor) {
+			glm::vec2 s1, s2;
+
+			m_start_by_cursor(s1, s2);
+			if (m_find_starting_points(p1, p2, s1, s2)) {
 				starting_points_found = true;
-				break;
+			}
+		}
+
+		if (!starting_points_found) {
+			for (const auto& sp : c_offsets) {
+				if (m_find_starting_points(p1, p2, sp, sp)) {
+					starting_points_found = true;
+					break;
+				}
 			}
 		}
 
@@ -130,6 +145,98 @@ namespace mini {
 				v = min_v;
 			}
 		}
+	}
+
+	void intersection_controller::m_start_by_cursor(glm::vec2& s1, glm::vec2& s2) const {
+		std::cout << "finding initial points..." << std::endl;
+		glm::vec2 proj1, proj2;
+
+		const auto& cursor = m_scene.get_cursor_pos();
+		auto dist1 = 100000.0f;
+		auto dist2 = 100000.0f;
+
+		for (const auto& sp : c_offsets) {
+			glm::vec2 cproj1, cproj2;
+
+			m_get_cursor_projection(m_surface1, sp, cproj1);
+			m_get_cursor_projection(m_surface2, sp, cproj2);
+
+			auto cdist1 = glm::distance(m_surface1->sample(cproj1.x, cproj1.y), cursor);
+			auto cdist2 = glm::distance(m_surface2->sample(cproj2.x, cproj2.y), cursor);
+
+			if (cdist1 < dist1) {
+				proj1 = cproj1;
+				dist1 = cdist1;
+			}
+
+			if (cdist2 < dist2) {
+				proj2 = cproj2;
+				dist2 = cdist2;
+			}
+		}
+
+		s1 = proj1;
+		s2 = proj2;
+	}
+
+	void intersection_controller::m_get_cursor_projection(const generic_surface_ptr& surface, const glm::vec2& s, glm::vec2& p) const {
+		const auto& cursor = m_scene.get_cursor_pos();
+
+		const auto ddu = [&](float u, float v) -> float {
+			const auto der = -2.0f * (cursor - surface->sample(u, v)) * surface->ddu(u, v);
+			return der.x + der.y + der.z;
+		};
+
+		const auto ddv = [&](float u, float v) -> float {
+			const auto der = -2.0f * (cursor - surface->sample(u, v)) * surface->ddv(u, v);
+			return der.x + der.y + der.z;
+		};
+
+		glm::vec2 current = s;
+		glm::vec2 previous = current;
+
+		constexpr float c_start_step = 0.005f;
+		constexpr float c_start_epsilon = 0.0001f;
+		constexpr float c_step_mult = 1.0f / 2.0f;
+		constexpr float c_eps_mult = 1.0f / 10.0f;
+		constexpr int c_max_steps = 200;
+		constexpr int c_max_epsd = 5;
+
+		float step = c_start_step;
+		float epsilon = c_start_epsilon;
+		float d = 0.0f;
+
+		int num_steps = 0, epsd = 0;
+
+		do {
+			glm::vec2 direction = {
+				ddu(current.x, current.y),
+				ddv(current.x, current.y)
+			};
+
+			direction = direction * step;
+			previous = current;
+
+			current = current - direction;
+
+			m_wrap_coordinates(surface, current.x, current.y);
+
+			float du = current.x - previous.x;
+			float dv = current.y - previous.y;
+
+			d = glm::sqrt(du * du + dv * dv);
+
+			num_steps++;
+			if (d < epsilon && epsd < c_max_epsd) {
+				epsd++;
+				epsilon = epsilon * c_eps_mult;
+				step = step * c_step_mult;
+
+				std::cout << "at step " << num_steps << ": " << epsd << " " << epsilon << " " << step << std::endl;
+			}
+		} while (num_steps < c_max_steps);
+
+		p = current;
 	}
 
 	bool intersection_controller::m_find_starting_points(glm::vec2 & p1, glm::vec2 & p2, const glm::vec2 & s1, const glm::vec2 & s2) const {

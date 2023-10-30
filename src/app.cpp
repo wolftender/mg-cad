@@ -295,6 +295,8 @@ namespace mini {
 			}
 		}
 
+		bool is_alt_down = is_key_down(GLFW_KEY_LEFT_ALT) || is_key_down(GLFW_KEY_RIGHT_ALT);
+
 		if (action == GLFW_RELEASE && !ImGui::GetIO ().WantCaptureKeyboard) {
 			switch (key) {
 				case KEY_TRANSLATE:
@@ -315,6 +317,15 @@ namespace mini {
 
 				case KEY_FILLIN:
 					m_fillin_selection ();
+					break;
+
+				case KEY_INTERSECT:
+					if (!is_alt_down) {
+						m_find_intersection();
+					} else {
+						m_find_intersection_cursor();
+					}
+
 					break;
 					
 				case GLFW_KEY_ESCAPE:
@@ -858,6 +869,10 @@ namespace mini {
 					m_find_intersection();
 				}
 
+				if (ImGui::MenuItem("Intersect by Cursor", "Alt + I", nullptr, selected_objects)) {
+					m_find_intersection_cursor();
+				}
+
 				ImGui::Separator ();
 
 				if (ImGui::MenuItem ("Translate", "T", nullptr, selected_objects)) {
@@ -1245,7 +1260,11 @@ namespace mini {
 	}
 
 	void application::m_find_intersection() {
-		intersection_controller algorithm (*this, m_store);
+		intersection_controller algorithm (*this, m_store, false);
+	}
+
+	void application::m_find_intersection_cursor() {
+		intersection_controller algorithm(*this, m_store, true);
 	}
 
 	void application::m_begin_box_select () {

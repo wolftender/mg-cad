@@ -17,6 +17,7 @@ namespace mini {
 	constexpr const int KEY_SELECT_ALL = GLFW_KEY_A;
 	constexpr const int KEY_MERGE = GLFW_KEY_M;
 	constexpr const int KEY_FILLIN = GLFW_KEY_G;
+	constexpr const int KEY_INTERSECT = GLFW_KEY_I;
 
 	enum class axis_t {
 		none, x, y, z

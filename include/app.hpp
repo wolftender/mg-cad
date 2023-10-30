@@ -245,6 +245,7 @@ namespace mini {
 			void m_merge_selection ();
 			void m_fillin_selection ();
 			void m_find_intersection();
+			void m_find_intersection_cursor();
 
 			// selection methods
 			void m_begin_box_select ();
