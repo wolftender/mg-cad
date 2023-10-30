@@ -54,7 +54,7 @@ namespace mini {
 		}
 	}
 
-	constexpr std::array<glm::vec2, 3> c_offsets = { glm::vec2{0.0f, 0.0f}, {0.5f, 0.5f}, {1.0f, 1.0f} };
+	constexpr std::array<glm::vec2, 5> c_offsets = { glm::vec2{0.0f, 0.0f}, {0.5f, 0.5f}, {1.0f, 1.0f}, {0.0f, 1.0f}, {1.0f, 0.0f} };
 
 	intersection_controller::intersection_controller(
 		scene_controller_base & scene, std::shared_ptr<resource_store> store, bool from_cursor) : 
@@ -86,6 +86,8 @@ namespace mini {
 			m_start_by_cursor(s1, s2);
 			if (m_find_starting_points(p1, p2, s1, s2)) {
 				starting_points_found = true;
+			} else {
+				std::cout << "warning! failed to find intersection by cursor!" << std::endl;
 			}
 		}
 
@@ -158,8 +160,8 @@ namespace mini {
 		for (const auto& sp : c_offsets) {
 			glm::vec2 cproj1, cproj2;
 
-			m_get_cursor_projection(m_surface1, sp, cproj1);
-			m_get_cursor_projection(m_surface2, sp, cproj2);
+			cproj1 = m_get_cursor_projection(m_surface1, sp);
+			cproj2 = m_get_cursor_projection(m_surface2, sp);
 
 			auto cdist1 = glm::distance(m_surface1->sample(cproj1.x, cproj1.y), cursor);
 			auto cdist2 = glm::distance(m_surface2->sample(cproj2.x, cproj2.y), cursor);
@@ -179,7 +181,7 @@ namespace mini {
 		s2 = proj2;
 	}
 
-	void intersection_controller::m_get_cursor_projection(const generic_surface_ptr& surface, const glm::vec2& s, glm::vec2& p) const {
+	glm::vec2 intersection_controller::m_get_cursor_projection(const generic_surface_ptr& surface, const glm::vec2& s) const {
 		const auto& cursor = m_scene.get_cursor_pos();
 
 		const auto ddu = [&](float u, float v) -> float {
@@ -197,10 +199,7 @@ namespace mini {
 
 		constexpr float c_start_step = 0.005f;
 		constexpr float c_start_epsilon = 0.0001f;
-		constexpr float c_step_mult = 1.0f / 2.0f;
-		constexpr float c_eps_mult = 1.0f / 10.0f;
 		constexpr int c_max_steps = 200;
-		constexpr int c_max_epsd = 5;
 
 		float step = c_start_step;
 		float epsilon = c_start_epsilon;
@@ -227,16 +226,9 @@ namespace mini {
 			d = glm::sqrt(du * du + dv * dv);
 
 			num_steps++;
-			if (d < epsilon && epsd < c_max_epsd) {
-				epsd++;
-				epsilon = epsilon * c_eps_mult;
-				step = step * c_step_mult;
-
-				std::cout << "at step " << num_steps << ": " << epsd << " " << epsilon << " " << step << std::endl;
-			}
 		} while (num_steps < c_max_steps);
 
-		p = current;
+		return current;
 	}
 
 	bool intersection_controller::m_find_starting_points(glm::vec2 & p1, glm::vec2 & p2, const glm::vec2 & s1, const glm::vec2 & s2) const {
