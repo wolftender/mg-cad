@@ -1,8 +1,36 @@
 #pragma once
 #include "object.hpp"
 #include "bezier.hpp"
+#include "trimmable.hpp"
 
 namespace mini {
+	class differentiable_surface_base {
+		public:
+			// domain information
+			virtual float get_min_u() const = 0;
+			virtual float get_max_u() const = 0;
+			virtual float get_min_v() const = 0;
+			virtual float get_max_v() const = 0;
+
+			// surface point
+			virtual glm::vec3 sample(float u, float v) const = 0;
+
+			// normal
+			virtual glm::vec3 normal(float u, float v) const = 0;
+
+			// first derivatives
+			virtual glm::vec3 ddu(float u, float v) const = 0;
+			virtual glm::vec3 ddv(float u, float v) const = 0;
+
+			virtual ~differentiable_surface_base() {}
+
+			virtual bool is_u_wrapped() const = 0;
+			virtual bool is_v_wrapped() const = 0;
+
+			virtual bool is_trimmable() const;
+			virtual trimmable_surface_domain& get_trimmable_domain();
+	};
+
 	class bicubic_surface : public point_family_base {
 		public:
 			struct surface_patch {
@@ -36,18 +64,24 @@ namespace mini {
 			bool m_signals_setup;
 
 			GLuint m_vao, m_grid_vao;
-			GLuint m_pos_buffer, m_index_buffer, m_grid_index_buffer;
+			GLuint m_pos_buffer, m_uv_buffer, m_index_buffer, m_grid_index_buffer;
 
 			glm::vec4 m_color;
 
 			std::vector<float> m_positions;
+			std::vector<float> m_uv;
+
 			std::vector<GLuint> m_indices;
 			std::vector<GLuint> m_grid_indices;
+
+			trimmable_surface_domain m_domain;
 
 		protected:
 			const std::vector<point_ptr> & t_get_points () const;
 
 		public:
+			trimmable_surface_domain& get_domain();
+
 			bool is_showing_polygon () const;
 			void set_showing_polygon (bool show);
 
@@ -89,6 +123,7 @@ namespace mini {
 				unsigned int patches_x, 
 				unsigned int patches_y, 
 				const std::vector<point_ptr> & points,
+				const std::vector<float> & uv,
 				const std::vector<GLuint> & topology,
 				const std::vector<GLuint> & grid_topology
 			);
@@ -108,6 +143,7 @@ namespace mini {
 			std::vector<serialized_patch> serialize_patches ();
 
 			surface_patch get_patch (unsigned int x, unsigned int y);
+			const glm::vec3 & point_at (unsigned int px, unsigned int py, unsigned int x, unsigned int y) const;
 
 		private:
 			void m_bind_shader (app_context & context, shader_t & shader, const glm::mat4x4 & world_matrix) const;
@@ -120,6 +156,7 @@ namespace mini {
 
 		protected:
 			virtual void t_calc_idx_buffer (std::vector<GLuint> & indices, std::vector<GLuint> & grid_indices) = 0;
+			virtual void t_calc_uv_buffer (std::vector<float> & uv, const std::vector<GLuint>& indices) = 0;
 
 			virtual void t_on_point_destroy (const point_ptr point) override;
 			virtual void t_on_point_merge (const point_ptr point, const point_ptr merge) override;

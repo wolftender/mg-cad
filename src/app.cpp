@@ -9,6 +9,7 @@
 #include "point.hpp"
 #include "serializer.hpp"
 #include "gapfilling.hpp"
+#include "intersection.hpp"
 
 namespace mini {
 	constexpr const std::string_view app_title = "modelowanie geometryczne 1";
@@ -175,6 +176,22 @@ namespace mini {
 		m_reset_selection ();
 	}
 
+	void application::refresh_by_id(uint64_t id) {
+		auto object = get_object(id);
+
+		if (object) {
+			auto it = m_name_cache.find(id);
+			if (it != m_name_cache.end()) {
+				auto old_name = it->second;
+
+				it->second = object->get_name();
+				
+				m_taken_names.erase(old_name);
+				m_taken_names.insert(it->second);
+			}
+		}
+	}
+
 	void application::set_cursor_pos (const glm::vec3 & position) {
 		m_cursor_position = position;
 	}
@@ -278,6 +295,8 @@ namespace mini {
 			}
 		}
 
+		bool is_alt_down = is_key_down(GLFW_KEY_LEFT_ALT) || is_key_down(GLFW_KEY_RIGHT_ALT);
+
 		if (action == GLFW_RELEASE && !ImGui::GetIO ().WantCaptureKeyboard) {
 			switch (key) {
 				case KEY_TRANSLATE:
@@ -298,6 +317,15 @@ namespace mini {
 
 				case KEY_FILLIN:
 					m_fillin_selection ();
+					break;
+
+				case KEY_INTERSECT:
+					if (!is_alt_down) {
+						m_find_intersection();
+					} else {
+						m_find_intersection_cursor();
+					}
+
 					break;
 					
 				case GLFW_KEY_ESCAPE:
@@ -656,6 +684,10 @@ namespace mini {
 				auto old_id = t_unparent_object (*(*iter)->object);
 				m_id_cache.erase (old_id);
 
+				// update taken names
+				m_name_cache.erase (old_id);
+				m_taken_names.erase ((*iter)->name);
+
 				iter = m_objects.erase (iter);
 			}
 
@@ -831,6 +863,14 @@ namespace mini {
 
 				if (ImGui::MenuItem ("Fill-in Surface", "G", nullptr, selected_objects)) {
 					m_fillin_selection ();
+				}
+
+				if (ImGui::MenuItem("Intersect", "I", nullptr, selected_objects)) {
+					m_find_intersection();
+				}
+
+				if (ImGui::MenuItem("Intersect by Cursor", "Alt + I", nullptr, selected_objects)) {
+					m_find_intersection_cursor();
 				}
 
 				ImGui::Separator ();
@@ -1149,11 +1189,7 @@ namespace mini {
 				return self;
 			}
 
-			for (const auto & object : m_objects) {
-				if (object->name == real_name) {
-					name_free = false;
-				}
-			}
+			name_free = (m_taken_names.find(real_name) == m_taken_names.end());
 		} while (!name_free);
 
 		return real_name;
@@ -1172,6 +1208,9 @@ namespace mini {
 
 		auto id = t_parent_object (*object);
 		m_id_cache.insert ({ id, wrapper });
+
+		m_name_cache.insert ({ id, real_name });
+		m_taken_names.insert (real_name);
 
 		if (select) {
 			m_reset_selection ();
@@ -1218,6 +1257,14 @@ namespace mini {
 	void application::m_fillin_selection () {
 		gap_filling_controller algorithm (*this, m_store);
 		algorithm.create_surfaces ();
+	}
+
+	void application::m_find_intersection() {
+		intersection_controller algorithm (*this, m_store, false);
+	}
+
+	void application::m_find_intersection_cursor() {
+		intersection_controller algorithm(*this, m_store, true);
 	}
 
 	void application::m_begin_box_select () {

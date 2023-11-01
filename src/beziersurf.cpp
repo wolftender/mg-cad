@@ -45,6 +45,47 @@ namespace mini {
 		return grid_indices;
 	}
 
+	std::vector<float> bezier_surface_c0::s_gen_uv(
+		unsigned int patches_x, 
+		unsigned int patches_y, 
+		unsigned int num_points, 
+		const std::vector<GLuint>& topology) {
+
+		std::vector<float> uv;
+		uv.resize(2 * num_points);
+
+		float u_step = 1.0f / static_cast<float>(patches_x * 3);
+		float v_step = 1.0f / static_cast<float>(patches_y * 3);
+
+		for (unsigned int py = 0; py < patches_y; ++py) {
+			for (unsigned int px = 0; px < patches_x; ++px) {
+				unsigned int patch_idx = py * patches_x + px;
+				unsigned int base_idx = patch_idx * 16;
+				
+				for (unsigned int y = 0; y < 4; ++y) {
+					for (unsigned int x = 0; x < 4; ++x) {
+						float fpx = static_cast<float>(px);
+						float fpy = static_cast<float>(py);
+						float fx = static_cast<float>(x);
+						float fy = static_cast<float>(y);
+
+						unsigned int local_idx = (4 * y) + x;
+
+						float u = (3.0f * fpx * u_step) + (fx * u_step);
+						float v = (3.0f * fpy * v_step) + (fy * v_step);
+
+						unsigned int base = 2 * topology[base_idx + local_idx];
+
+						uv[base + 0] = u;
+						uv[base + 1] = v;
+					}
+				}
+			}
+		}
+
+		return uv;
+	}
+
 	bezier_surface_c0::bezier_surface_c0 (
 		scene_controller_base & scene, 
 		std::shared_ptr<shader_t> shader, 
@@ -52,7 +93,9 @@ namespace mini {
 		std::shared_ptr<shader_t> grid_shader, 
 		unsigned int patches_x, 
 		unsigned int patches_y, 
-		const std::vector<point_ptr> & points)
+		const std::vector<point_ptr> & points,
+		bool u_wrapped,
+		bool v_wrapped)
 		: bicubic_surface (
 			scene,
 			"bezier_surf_c0",
@@ -62,7 +105,10 @@ namespace mini {
 			patches_x,
 			patches_y,
 			points
-		) { 
+		) {
+
+		m_u_wrapped = u_wrapped;
+		m_v_wrapped = v_wrapped;
 		
 		// validity check
 		if ((patches_y * patches_x * 9 + patches_x * 3 + patches_y * 3 + 1) != points.size ()) {
@@ -77,8 +123,10 @@ namespace mini {
 		std::shared_ptr<shader_t> grid_shader, 
 		unsigned int patches_x, 
 		unsigned int patches_y, 
-		const std::vector<point_ptr> & points, 
-		const std::vector<GLuint> & topology)
+		const std::vector<point_ptr> & points,
+		const std::vector<GLuint> & topology,
+		bool u_wrapped,
+		bool v_wrapped)
 		: bicubic_surface (
 			scene,
 			"bezier_surf_c0",
@@ -88,9 +136,13 @@ namespace mini {
 			patches_x,
 			patches_y,
 			points,
+			s_gen_uv(patches_x, patches_y, points.size(), topology),
 			topology,
 			s_gen_grid_topology (patches_x, patches_y, topology)
-		) { 
+		) {
+
+		m_u_wrapped = u_wrapped;
+		m_v_wrapped = v_wrapped;
 		
 		// topology validity check
 		if ((patches_x * patches_y * 16) != topology.size ()) {
@@ -100,6 +152,163 @@ namespace mini {
 
 	const object_serializer_base & bezier_surface_c0::get_serializer () const {
 		return generic_object_serializer<bezier_surface_c0>::get_instance ();
+	}
+
+	float bezier_surface_c0::get_min_u() const {
+		return 0.0f;
+	}
+
+	float bezier_surface_c0::get_max_u() const {
+		return 1.0f;
+	}
+
+	float bezier_surface_c0::get_min_v() const {
+		return 0.0f;
+	}
+
+	float bezier_surface_c0::get_max_v() const {
+		return 1.0f;
+	}
+
+	inline glm::vec3 bezier_evaluate(
+		const glm::vec3 & b00, 
+		const glm::vec3 & b01, 
+		const glm::vec3 & b02, 
+		const glm::vec3 & b03, 
+		float t) {
+
+		float t1 = t;
+		float t0 = 1.0 - t;
+
+		glm::vec3 b10, b11, b12;
+		glm::vec3 b20, b21;
+		glm::vec3 b30;
+
+		b10 = t0 * b00 + t1 * b01;
+		b11 = t0 * b01 + t1 * b02;
+		b12 = t0 * b02 + t1 * b03;
+
+		b20 = t0 * b10 + t1 * b11;
+		b21 = t0 * b11 + t1 * b12;
+
+		b30 = t0 * b20 + t1 * b21;
+
+		return b30;
+	}
+
+	inline glm::vec3 bezier_derivative(
+		const glm::vec3 & b00,
+		const glm::vec3 & b01,
+		const glm::vec3 & b02,
+		const glm::vec3 & b03,
+		float t
+	) {
+		float t1 = t;
+		float t0 = 1.0 - t;
+
+		glm::vec3 d10 = -3.0f * b00 + 3.0f * b01;
+		glm::vec3 d11 = -3.0f * b01 + 3.0f * b02;
+		glm::vec3 d12 = -3.0f * b02 + 3.0f * b03;
+
+		glm::vec3 d20 = t0 * d10 + t1 * d11;
+		glm::vec3 d21 = t0 * d11 + t1 * d12;
+
+		glm::vec3 d30 = t0 * d20 + t1 * d21;
+		return d30;
+	}
+
+	inline void local_param(int px, int py, float nu, float nv, float & lu, float & lv) {
+		lu = nu - static_cast<float>(px);
+		lv = nv - static_cast<float>(py);
+	}
+
+	glm::vec3 bezier_surface_c0::sample(float u, float v) const {
+		float nu = static_cast<float>(get_patches_x()) * glm::clamp(u, 0.0f, 1.0f);
+		float nv = static_cast<float>(get_patches_y()) * glm::clamp(v, 0.0f, 1.0f);
+
+		int patch_x = glm::min(static_cast<unsigned int>(floorf(nu)), get_patches_x() - 1);
+		int patch_y = glm::min(static_cast<unsigned int>(floorf(nv)), get_patches_y() - 1);
+
+		const auto p = [this, &patch_x, &patch_y](int x, int y) -> const glm::vec3 & {
+			return point_at(patch_x, patch_y, x, y);
+		};
+
+		float lu, lv;
+		local_param(patch_x, patch_y, nu, nv, lu, lv);
+		
+		auto p0 = bezier_evaluate(p(0, 0), p(0, 1), p(0, 2), p(0, 3), lv);
+		auto p1 = bezier_evaluate(p(1, 0), p(1, 1), p(1, 2), p(1, 3), lv);
+		auto p2 = bezier_evaluate(p(2, 0), p(2, 1), p(2, 2), p(2, 3), lv);
+		auto p3 = bezier_evaluate(p(3, 0), p(3, 1), p(3, 2), p(3, 3), lv);
+
+		return bezier_evaluate(p0, p1, p2, p3, lu);
+	}
+
+	glm::vec3 bezier_surface_c0::normal(float u, float v) const {
+		auto du = ddu(u, v);
+		auto dv = ddv(u, v);
+
+		return glm::normalize(glm::cross(du, dv));
+	}
+
+	glm::vec3 bezier_surface_c0::ddu(float u, float v) const {
+		float nu = static_cast<float>(get_patches_x()) * glm::clamp(u, 0.0f, 1.0f);
+		float nv = static_cast<float>(get_patches_y()) * glm::clamp(v, 0.0f, 1.0f);
+
+		int patch_x = glm::min(static_cast<unsigned int>(floorf(nu)), get_patches_x() - 1);
+		int patch_y = glm::min(static_cast<unsigned int>(floorf(nv)), get_patches_y() - 1);
+
+		const auto p = [this, &patch_x, &patch_y](int x, int y) -> const glm::vec3 & {
+			return point_at(patch_x, patch_y, x, y);
+		};
+
+		float lu, lv;
+		local_param(patch_x, patch_y, nu, nv, lu, lv);
+
+		auto p0 = bezier_evaluate(p(0, 0), p(0, 1), p(0, 2), p(0, 3), lv);
+		auto p1 = bezier_evaluate(p(1, 0), p(1, 1), p(1, 2), p(1, 3), lv);
+		auto p2 = bezier_evaluate(p(2, 0), p(2, 1), p(2, 2), p(2, 3), lv);
+		auto p3 = bezier_evaluate(p(3, 0), p(3, 1), p(3, 2), p(3, 3), lv);
+
+		return bezier_derivative(p0, p1, p2, p3, lu);
+	}
+
+	glm::vec3 bezier_surface_c0::ddv(float u, float v) const {
+		float nu = static_cast<float>(get_patches_x()) * glm::clamp(u, 0.0f, 1.0f);
+		float nv = static_cast<float>(get_patches_y()) * glm::clamp(v, 0.0f, 1.0f);
+
+		int patch_x = glm::min(static_cast<unsigned int>(floorf(nu)), get_patches_x() - 1);
+		int patch_y = glm::min(static_cast<unsigned int>(floorf(nv)), get_patches_y() - 1);
+
+		const auto p = [this, &patch_x, &patch_y](int x, int y) -> const glm::vec3 & {
+			return point_at(patch_x, patch_y, x, y);
+		};
+
+		float lu, lv;
+		local_param(patch_x, patch_y, nu, nv, lu, lv);
+
+		auto p0 = bezier_evaluate(p(0, 0), p(1, 0), p(2, 0), p(3, 0), lu);
+		auto p1 = bezier_evaluate(p(0, 1), p(1, 1), p(2, 1), p(3, 1), lu);
+		auto p2 = bezier_evaluate(p(0, 2), p(1, 2), p(2, 2), p(3, 2), lu);
+		auto p3 = bezier_evaluate(p(0, 3), p(1, 3), p(2, 3), p(3, 3), lu);
+
+		return bezier_derivative(p0, p1, p2, p3, lv);
+	}
+
+	bool bezier_surface_c0::is_u_wrapped() const {
+		return m_u_wrapped;
+	}
+
+	bool bezier_surface_c0::is_v_wrapped() const {
+		return m_v_wrapped;
+	}
+
+	bool bezier_surface_c0::is_trimmable() const {
+		return true;
+	}
+
+	trimmable_surface_domain& bezier_surface_c0::get_trimmable_domain() {
+		return get_domain();
 	}
 
 	void bezier_surface_c0::t_calc_idx_buffer (std::vector<GLuint> & indices, std::vector<GLuint> & grid_indices) {
@@ -155,6 +364,10 @@ namespace mini {
 		}
 	}
 
+	void bezier_surface_c0::t_calc_uv_buffer(std::vector<float>& uv, const std::vector<GLuint>& indices) {
+		uv = s_gen_uv(get_patches_x(), get_patches_y(), get_num_points(), indices);
+	}
+
 
 	//////////////////////////////////////////////////////////
 
@@ -180,6 +393,13 @@ namespace mini {
 			center.y,
 			center.z - (static_cast<float>(points_y - 1) * spacing / 2.0f)
 		};
+
+		bool u_wrapped = false;
+		bool v_wrapped = false;
+
+		if (mode == build_mode_t::mode_cylinder) {
+			u_wrapped = true;
+		}
 
 		for (unsigned int x = 0; x < points_x; ++x) {
 			for (unsigned int y = 0; y < points_y; ++y) {
@@ -269,7 +489,9 @@ namespace mini {
 			m_grid_shader, 
 			get_patches_x (),
 			get_pathces_y (), 
-			m_points
+			m_points,
+			u_wrapped,
+			v_wrapped
 		);
 	}
 

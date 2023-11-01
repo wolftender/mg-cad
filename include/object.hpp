@@ -81,6 +81,8 @@ namespace mini {
 			virtual void select_by_id (uint64_t id) = 0;
 			virtual void clear_selection () = 0;
 
+			virtual void refresh_by_id (uint64_t id) = 0;
+
 			virtual const glm::vec3 & get_cursor_pos () const = 0;
 			virtual const glm::vec3 & get_cam_target () const = 0;
 

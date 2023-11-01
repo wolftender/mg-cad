@@ -6,6 +6,10 @@ namespace mini {
 		return m_points;
 	}
 
+	trimmable_surface_domain& bicubic_surface::get_domain() {
+		return m_domain;
+	}
+
 	bool bicubic_surface::is_showing_polygon () const {
 		return m_show_polygon;
 	}
@@ -73,7 +77,11 @@ namespace mini {
 		const std::vector<point_ptr> & points) :
 		point_family_base (scene, type_name, false, true),
 		m_patches_x (patches_x), 
-		m_patches_y (patches_y) {
+		m_patches_y (patches_y),
+		m_domain(
+			glm::min(2048U, 512 * patches_x),
+			glm::min(2048U, 512 * patches_y),
+			0.0f, 0.0f, 1.0f, 1.0f) {
 
 		m_res_u = 25;
 		m_res_v = 25;
@@ -86,7 +94,7 @@ namespace mini {
 		m_show_polygon = false;
 
 		m_vao = 0;
-		m_pos_buffer = m_index_buffer = 0;
+		m_pos_buffer = m_index_buffer = m_uv_buffer = 0;
 		m_color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 		m_shader = shader;
@@ -112,11 +120,16 @@ namespace mini {
 		unsigned int patches_x, 
 		unsigned int patches_y,
 		const std::vector<point_ptr> & points, 
+		const std::vector<float>& uv,
 		const std::vector<GLuint> & topology,
 		const std::vector<GLuint> & grid_topology) :
 		point_family_base (scene, type_name, false, true),
 		m_patches_x (patches_x), 
-		m_patches_y (patches_y) {
+		m_patches_y (patches_y),
+		m_domain(
+			glm::min(2048U, 512 * patches_x),
+			glm::min(2048U, 512 * patches_y),
+			0.0f, 0.0f, 1.0f, 1.0f) {
 
 		m_res_u = 25;
 		m_res_v = 25;
@@ -129,7 +142,7 @@ namespace mini {
 		m_show_polygon = true;
 
 		m_vao = 0;
-		m_pos_buffer = m_index_buffer = 0;
+		m_pos_buffer = m_index_buffer = m_uv_buffer = 0;
 		m_color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 		m_shader = shader;
@@ -146,6 +159,7 @@ namespace mini {
 		}
 
 		// do not create topology automatically
+		m_uv = uv;
 		m_indices = topology;
 		m_grid_indices = grid_topology;
 	}
@@ -180,6 +194,8 @@ namespace mini {
 			ImGui::NewLine ();
 		}
 
+		m_domain.configure();
+
 		gui::clamp (m_res_u, 4, 64);
 		gui::clamp (m_res_v, 4, 64);
 	}
@@ -201,6 +217,9 @@ namespace mini {
 		if (m_ready) {
 			glBindVertexArray (m_vao);
 
+			// bind domain texture
+			m_domain.bind(0);
+
 			if (m_use_solid) {
 				const auto & view_matrix = context.get_view_matrix ();
 				const auto & proj_matrix = context.get_projection_matrix ();
@@ -214,6 +233,7 @@ namespace mini {
 				// first render pass - u,v
 				m_solid_shader->set_uniform_uint ("u_resolution_v", static_cast<GLuint> (m_res_v));
 				m_solid_shader->set_uniform_uint ("u_resolution_u", static_cast<GLuint> (m_res_u));
+				m_solid_shader->set_uniform_int ("u_domain_sampler", 0);
 
 				glPatchParameteri (GL_PATCH_VERTICES, 16);
 				glDrawElements (GL_PATCHES, m_indices.size (), GL_UNSIGNED_INT, 0);
@@ -226,6 +246,7 @@ namespace mini {
 				m_shader->set_uniform_int ("u_vertical", true);
 				m_shader->set_uniform_uint ("u_resolution_v", static_cast<GLuint> (m_res_v));
 				m_shader->set_uniform_uint ("u_resolution_u", static_cast<GLuint> (m_res_u));
+				m_shader->set_uniform_int("u_domain_sampler", 0);
 
 				glPatchParameteri (GL_PATCH_VERTICES, 16);
 				glDrawElements (GL_PATCHES, m_indices.size (), GL_UNSIGNED_INT, 0);
@@ -234,6 +255,7 @@ namespace mini {
 				m_shader->set_uniform_int ("u_vertical", false);
 				m_shader->set_uniform_uint ("u_resolution_v", static_cast<GLuint> (m_res_u));
 				m_shader->set_uniform_uint ("u_resolution_u", static_cast<GLuint> (m_res_v));
+				m_shader->set_uniform_int("u_domain_sampler", 0);
 
 				glPatchParameteri (GL_PATCH_VERTICES, 16);
 				glDrawElements (GL_PATCHES, m_indices.size (), GL_UNSIGNED_INT, 0);
@@ -299,7 +321,16 @@ namespace mini {
 		return patch;
 	}
 
+	const glm::vec3 & bicubic_surface::point_at(unsigned int px, unsigned int py, unsigned int x, unsigned int y) const {
+		unsigned int patch_idx = py * m_patches_x + px;
+		unsigned int base_idx = patch_idx * num_control_points;
+		unsigned int local_idx = (4 * y) + x;
+		
+		return m_points[m_indices[base_idx + local_idx]]->get_translation ();
+	}
+
 	constexpr GLuint a_position = 0;
+	constexpr GLuint a_uv = 1;
 
 	void bicubic_surface::m_bind_shader (app_context & context, shader_t & shader, const glm::mat4x4 & world_matrix) const {
 		shader.bind ();
@@ -344,12 +375,17 @@ namespace mini {
 			m_indices.clear ();
 			m_indices.resize (get_num_patches () * num_control_points);
 			t_calc_idx_buffer (m_indices, m_grid_indices);
+
+			m_uv.clear();
+			m_uv.resize (get_num_points() * num_control_points);
+			t_calc_uv_buffer(m_uv, m_indices);
 		}
 
 		// put data into buffers
 		glGenVertexArrays (1, &m_vao);
 		glGenBuffers (1, &m_pos_buffer);
 		glGenBuffers (1, &m_index_buffer);
+		glGenBuffers (1, &m_uv_buffer);
 
 		glBindVertexArray (m_vao);
 
@@ -357,6 +393,11 @@ namespace mini {
 		glBufferData (GL_ARRAY_BUFFER, sizeof (float) * m_positions.size (), reinterpret_cast<void *> (m_positions.data ()), GL_DYNAMIC_DRAW);
 		glVertexAttribPointer (a_position, 3, GL_FLOAT, false, sizeof (float) * 3, (void *)0);
 		glEnableVertexAttribArray (a_position);
+
+		glBindBuffer(GL_ARRAY_BUFFER, m_uv_buffer);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * m_uv.size(), reinterpret_cast<void*> (m_uv.data()), GL_DYNAMIC_DRAW);
+		glVertexAttribPointer(a_uv, 2, GL_FLOAT, false, sizeof(float) * 2, (void*)0);
+		glEnableVertexAttribArray(a_uv);
 
 		glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, m_index_buffer);
 		glBufferData (GL_ELEMENT_ARRAY_BUFFER, sizeof (GLuint) * m_indices.size (), m_indices.data (), GL_STATIC_DRAW);
@@ -432,6 +473,11 @@ namespace mini {
 			m_index_buffer = 0;
 		}
 
+		if (m_uv_buffer) {
+			glDeleteBuffers(1, &m_uv_buffer);
+			m_uv_buffer = 0;
+		}
+
 		m_ready = false;
 	}
 
@@ -469,10 +515,23 @@ namespace mini {
 	}
 
 	void bicubic_surface::t_on_alt_select () {
+		std::set<uint64_t> selected;
+
 		for (const auto & point : m_points) {
-			if (!point->is_selected ()) {
-				get_scene ().select_by_id (point->get_id ());
+			uint64_t point_id = point->get_id();
+
+			if (!point->is_selected () && selected.find(point_id) == selected.end()) {
+				get_scene ().select_by_id (point_id);
+				selected.insert(point_id);
 			}
 		}
+	}
+
+	bool differentiable_surface_base::is_trimmable() const {
+		return false;
+	}
+
+	trimmable_surface_domain& differentiable_surface_base::get_trimmable_domain() {
+		throw std::runtime_error("this surface is not trimmable");
 	}
 }

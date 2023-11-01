@@ -271,6 +271,9 @@ namespace mini {
 
 	void scene_obj_t::set_name (const std::string & name) {
 		m_name = name;
+		m_notify(signal_event_t::renamed);
+
+		m_scene.refresh_by_id(get_id());
 	}
 
 	void scene_obj_t::set_deletable (bool deletable) {

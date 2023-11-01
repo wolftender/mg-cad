@@ -218,15 +218,10 @@ namespace mini {
 		return j;
 	}
 
-	template<typename T>
-	static json s_serialize_bicubic (int id, std::shared_ptr<scene_obj_t> object, cache_object_id_t & cache, 
+	static json s_serialize_bicubic (int id, std::shared_ptr<bicubic_surface> surface, cache_object_id_t & cache, 
 		const std::string & patch_type, const std::string & surface_type) {
 
-		static_assert (std::is_base_of<bicubic_surface, T> {});
-
-		json j = s_serialize_base (id, object);
-
-		std::shared_ptr<T> surface = std::dynamic_pointer_cast<T> (object);
+		json j = s_serialize_base (id, surface);
 
 		if (surface) {
 			auto patches = surface->serialize_patches ();
@@ -265,11 +260,27 @@ namespace mini {
 	}
 
 	SERIALIZER (bezier_surface_c0) (int id, std::shared_ptr<scene_obj_t> object, cache_object_id_t & cache) const {
-		return s_serialize_bicubic<bezier_surface_c0> (id, object, cache, "bezierPatchC0", "bezierSurfaceC0");
+		std::shared_ptr<bezier_surface_c0> surface = std::dynamic_pointer_cast<bezier_surface_c0> (object);
+		auto j = s_serialize_bicubic (id, surface, cache, "bezierPatchC0", "bezierSurfaceC0");
+
+		j["parameterWrapped"] = {
+			{ "u", surface->is_u_wrapped() },
+			{ "v", surface->is_v_wrapped() }
+		};
+
+		return j;
 	}
 
 	SERIALIZER (bspline_surface) (int id, std::shared_ptr<scene_obj_t> object, cache_object_id_t & cache) const {
-		return s_serialize_bicubic<bspline_surface> (id, object, cache, "bezierPatchC2", "bezierSurfaceC2");
+		std::shared_ptr<bspline_surface> surface = std::dynamic_pointer_cast<bspline_surface> (object);
+		auto j = s_serialize_bicubic(id, surface, cache, "bezierPatchC2", "bezierSurfaceC2");
+
+		j["parameterWrapped"] = {
+			{ "u", surface->is_u_wrapped() },
+			{ "v", surface->is_v_wrapped() }
+		};
+
+		return j;
 	}
 
 
@@ -573,6 +584,21 @@ namespace mini {
 		unsigned int patches_x = data["size"]["x"];
 		unsigned int patches_y = data["size"]["y"];
 
+		bool u_wrapped = false;
+		bool v_wrapped = false;
+
+		if (data.contains("parameterWrapped")) {
+			auto parameterWrapped = data["parameterWrapped"];
+
+			if (parameterWrapped.contains("u")) {
+				u_wrapped = parameterWrapped["u"].get<bool>();
+			}
+
+			if (parameterWrapped.contains("v")) {
+				v_wrapped = parameterWrapped["v"].get<bool>();
+			}
+		}
+
 		control_points.reserve (patches_x * patches_y * 3 + patches_y * 3 + patches_x * 3 + 1);
 		for (const auto & patch : data["patches"]) {
 			std::array<GLuint, 16> patch_topology;
@@ -586,12 +612,12 @@ namespace mini {
 			for (const auto & point_s : patch["controlPoints"]) {
 				int id = point_s["id"].get<int> ();
 
-				auto iter_id_map = id_map.find (id);
+				/*auto iter_id_map = id_map.find(id);
 				if (iter_id_map != id_map.end ()) {
 					patch_topology[patch_index] = iter_id_map->second;
 					patch_index++;
 					continue;
-				}
+				}*/
 
 				// point was not yet indexed, add it to the index
 				auto iter_cache = cache.find (id);
@@ -625,7 +651,7 @@ namespace mini {
 			store->get_bezier_surf_shader (),
 			store->get_bezier_surf_solid_shader (),
 			store->get_line_shader (),
-			patches_x, patches_y, control_points, topology);
+			patches_x, patches_y, control_points, topology, u_wrapped, v_wrapped);
 
 		patch->set_name (data["name"].get<std::string> ());
 		return patch;
@@ -642,6 +668,21 @@ namespace mini {
 		unsigned int patches_x = data["size"]["x"];
 		unsigned int patches_y = data["size"]["y"];
 
+		bool u_wrapped = false;
+		bool v_wrapped = false;
+
+		if (data.contains("parameterWrapped")) {
+			auto parameterWrapped = data["parameterWrapped"];
+
+			if (parameterWrapped.contains("u")) {
+				u_wrapped = parameterWrapped["u"].get<bool>();
+			}
+
+			if (parameterWrapped.contains("v")) {
+				v_wrapped = parameterWrapped["v"].get<bool>();
+			}
+		}
+
 		control_points.reserve ((3 + patches_x) * (3 + patches_y));
 		for (const auto & patch : data["patches"]) {
 			std::array<GLuint, 16> patch_topology;
@@ -655,12 +696,12 @@ namespace mini {
 			for (const auto & point_s : patch["controlPoints"]) {
 				int id = point_s["id"].get<int> ();
 
-				auto iter_id_map = id_map.find (id);
+				/*auto iter_id_map = id_map.find(id);
 				if (iter_id_map != id_map.end ()) {
 					patch_topology[patch_index] = iter_id_map->second;
 					patch_index++;
 					continue;
-				}
+				}*/
 
 				// point was not yet indexed, add it to the index
 				auto iter_cache = cache.find (id);
@@ -694,7 +735,7 @@ namespace mini {
 			store->get_bspline_surf_shader (),
 			store->get_bspline_surf_solid_shader (),
 			store->get_line_shader (),
-			patches_x, patches_y, control_points, topology);
+			patches_x, patches_y, control_points, topology, u_wrapped, v_wrapped);
 
 		patch->set_name (data["name"].get<std::string> ());
 		return patch;

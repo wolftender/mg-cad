@@ -196,16 +196,16 @@ namespace mini {
 		m_line_shader = m_load_shader ("shaders/vs_basic.glsl", "shaders/fs_solidcolor.glsl", "shaders/gs_lines.glsl");
 
 		// surface teselation shaders
-		m_bezier_surf_shader = m_load_shader ("shaders/vs_pass.glsl", "shaders/fs_solidcolor.glsl", 
-			"shaders/tcs_bezier_isolines.glsl", "shaders/tes_bezier_isolines.glsl", "shaders/gs_lines.glsl");
+		m_bezier_surf_shader = m_load_shader ("shaders/vs_pass_uv.glsl", "shaders/fs_trimming_isolines.glsl", 
+			"shaders/tcs_bezier_isolines.glsl", "shaders/tes_bezier_isolines.glsl", "shaders/gs_isolines_uv.glsl");
 
-		m_bezier_surf_solid_shader = m_load_shader ("shaders/vs_pass.glsl", "shaders/fs_solidcolor.glsl",
+		m_bezier_surf_solid_shader = m_load_shader ("shaders/vs_pass_uv.glsl", "shaders/fs_trimming.glsl",
 			"shaders/tcs_bezier_quads.glsl", "shaders/tes_bezier_quads.glsl");
 
-		m_bspline_surf_shader = m_load_shader ("shaders/vs_pass.glsl", "shaders/fs_solidcolor.glsl",
-			"shaders/tcs_bezier_isolines.glsl", "shaders/tes_bspline_isolines.glsl", "shaders/gs_lines.glsl");
+		m_bspline_surf_shader = m_load_shader ("shaders/vs_pass_uv.glsl", "shaders/fs_trimming_isolines.glsl",
+			"shaders/tcs_bezier_isolines.glsl", "shaders/tes_bspline_isolines.glsl", "shaders/gs_isolines_uv.glsl");
 
-		m_bspline_surf_solid_shader = m_load_shader ("shaders/vs_pass.glsl", "shaders/fs_solidcolor.glsl",
+		m_bspline_surf_solid_shader = m_load_shader ("shaders/vs_pass_uv.glsl", "shaders/fs_trimming.glsl",
 			"shaders/tcs_bezier_quads.glsl", "shaders/tes_bspline_quads.glsl");
 
 		m_gregory_surf_shader = m_load_shader ("shaders/vs_pass.glsl", "shaders/fs_solidcolor.glsl",
