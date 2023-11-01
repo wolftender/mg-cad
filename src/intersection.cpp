@@ -253,12 +253,12 @@ namespace mini {
 		};
 
 		const auto ddp = [this](float u, float v, float p, float q) -> float {
-			const auto der = 2.0f * m_surface2->ddu(u, v) * (m_surface2->sample(p, q) - m_surface1->sample(u, v));
+			const auto der = 2.0f * m_surface2->ddu(p, q) * (m_surface2->sample(p, q) - m_surface1->sample(u, v));
 			return der.x + der.y + der.z;
 		};
 
 		const auto ddq = [this](float u, float v, float p, float q) -> float {
-			const auto der = 2.0f * m_surface2->ddv(u, v) * (m_surface2->sample(p, q) - m_surface1->sample(u, v));
+			const auto der = 2.0f * m_surface2->ddv(p, q) * (m_surface2->sample(p, q) - m_surface1->sample(u, v));
 			return der.x + der.y + der.z;
 		};
 
