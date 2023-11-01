@@ -319,7 +319,7 @@ namespace mini {
 
 			//std::cout << "step " << direction.x << ", " << direction.y << ", " << direction.z << ", " << direction.w << std::endl;
 			//std::cout << "pos " << current.x << ", " << current.y << ", " << current.z << ", " << current.w << std::endl;
-		} while (d1 > epsilon || d2 > epsilon && num_steps < c_max_steps);
+		} while ((d1 > epsilon || d2 > epsilon) && num_steps < c_max_steps);
 
 		// check if this is actually a point of intersection
 		auto pos1 = m_surface1->sample(current[0], current[1]);
