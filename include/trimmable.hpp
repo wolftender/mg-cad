@@ -40,6 +40,7 @@ namespace mini {
 			void configure();
 
 			uint8_t at(int32_t x, int32_t y) const;
+			void trim(float u, float v);
 
 		private:
 			void m_draw_line(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint8_t color);

@@ -873,6 +873,10 @@ namespace mini {
 					m_find_intersection_cursor();
 				}
 
+				if (ImGui::MenuItem("Generate Paths", "Alt + P", nullptr)) {
+					m_gen_milling_path();
+				}
+
 				ImGui::Separator ();
 
 				if (ImGui::MenuItem ("Translate", "T", nullptr, selected_objects)) {
@@ -1265,6 +1269,11 @@ namespace mini {
 
 	void application::m_find_intersection_cursor() {
 		intersection_controller algorithm(*this, m_store, true);
+	}
+
+	void application::m_gen_milling_path() {
+		padlock_milling_script milling_script(*this);
+		milling_script.run();
 	}
 
 	void application::m_begin_box_select () {

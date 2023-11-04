@@ -92,6 +92,8 @@ namespace mini {
 				auto pos_x = static_cast<float>(mouse_pos.x - cursor_pos.x) / static_cast<float>(width);
 				auto pos_y = static_cast<float>(mouse_pos.y - cursor_pos.y) / static_cast<float>(width);
 
+				std::cout << "trim " << pos_x << ", " << pos_y << std::endl;
+
 				int32_t pixel_pos_x = pos_x * m_domain_width;
 				int32_t pixel_pos_y = pos_y * m_domain_height;
 
@@ -127,6 +129,14 @@ namespace mini {
 		auto base = 3 * (ry * m_domain_width + rx);
 
 		return m_domain[base];
+	}
+
+	void trimmable_surface_domain::trim(float u, float v) {
+		int32_t pixel_pos_x = u * m_domain_width;
+		int32_t pixel_pos_y = v * m_domain_height;
+
+		m_flood_fill(pixel_pos_x, pixel_pos_y);
+		update_texture();
 	}
 
 	void trimmable_surface_domain::m_draw_line(int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint8_t color) {

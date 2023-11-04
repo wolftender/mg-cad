@@ -109,7 +109,57 @@ namespace mini {
 		m_trace_intersection(p1, p2);
 	}
 
+	intersection_controller::intersection_controller(
+		scene_controller_base& scene, 
+		generic_surface_ptr surface1, 
+		generic_surface_ptr surface2, 
+		std::shared_ptr<resource_store> store, 
+		bool from_cursor) :
+		m_scene(scene),
+		m_from_cursor(from_cursor) {
+
+		m_store = store;
+		m_surface1 = surface1;
+		m_surface2 = surface2;
+
+		std::cout << "finding first intersection point..." << std::endl;
+		glm::vec2 p1, p2;
+		bool starting_points_found = false;
+
+		if (m_from_cursor) {
+			glm::vec2 s1, s2;
+
+			m_start_by_cursor(s1, s2);
+			if (m_find_starting_points(p1, p2, s1, s2)) {
+				starting_points_found = true;
+			} else {
+				std::cout << "warning! failed to find intersection by cursor!" << std::endl;
+			}
+		}
+
+		if (!starting_points_found) {
+			for (const auto& sp : c_offsets) {
+				if (m_find_starting_points(p1, p2, sp, sp)) {
+					starting_points_found = true;
+					break;
+				}
+			}
+		}
+
+		if (!starting_points_found) {
+			std::cout << "no intersection found between surfaces" << std::endl;
+			return;
+		}
+
+		std::cout << "begin tracing intersection..." << std::endl;
+		m_trace_intersection(p1, p2);
+	}
+
 	intersection_controller::~intersection_controller() { }
+
+	const intersection_controller::result_t& intersection_controller::get_verbose() const {
+		return m_result;
+	}
 
 	inline void intersection_controller::m_wrap_coordinates(const generic_surface_ptr& surface, float& u, float& v) const {
 		bool is_u_wrapped = surface->is_u_wrapped();
@@ -356,7 +406,7 @@ namespace mini {
 		return true;
 	}
 
-	void intersection_controller::m_trace_intersection(const glm::vec2 & s1, const glm::vec2 & s2) const {		
+	void intersection_controller::m_trace_intersection(const glm::vec2 & s1, const glm::vec2 & s2) {		
 		glm::vec3 t;
 		glm::vec3 P0;
 
@@ -518,5 +568,15 @@ namespace mini {
 
 		m_scene.add_object("intersection_curve", curve1);
 		m_scene.add_object("intersection_curve", curve2);
+
+		m_result.s11 = s11;
+		m_result.s21 = s21;
+		m_result.d11 = d11;
+		m_result.d21 = d21;
+
+		m_result.s12 = s12;
+		m_result.s22 = s22;
+		m_result.d12 = d12;
+		m_result.d22 = d22;
 	}
 }

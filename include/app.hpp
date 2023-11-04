@@ -15,8 +15,12 @@
 #include "sprite.hpp"
 #include "gizmo.hpp"
 
+#include "milling/milling.hpp"
+
 namespace mini {
 	class application : public app_window, public scene_controller_base {
+		friend class padlock_milling_script;
+
 		private:
 			struct object_wrapper_t {
 				std::shared_ptr<scene_obj_t> object;
@@ -246,6 +250,7 @@ namespace mini {
 			void m_fillin_selection ();
 			void m_find_intersection();
 			void m_find_intersection_cursor();
+			void m_gen_milling_path();
 
 			// selection methods
 			void m_begin_box_select ();
