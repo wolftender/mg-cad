@@ -30,7 +30,8 @@ namespace mini {
 		m_prepare_heightmap();
 
 		// path generation
-		m_gen_path_1();
+		//m_gen_path_1();
+		m_gen_path_2();
 	}
 
 	void padlock_milling_script::m_prepare_base() {
@@ -347,6 +348,222 @@ namespace mini {
 		auto curve1 = std::make_shared<curve>(m_app, m_app.m_store->get_line_shader(), m_path_1);
 		curve1->set_color({ 1.0f, 0.0f, 0.0f, 1.0f });
 		curve1->set_line_width(3.0f);
-		m_app.add_object("intersection_curve", curve1);
+		m_app.add_object("milling_curve_k16", curve1);
+	}
+
+	inline bool intersect_segment(
+		float x1, float y1, 
+		float x2, float y2, 
+		float x3, float y3, 
+		float x4, float y4, 
+		float & t, float & u,
+		float & xi, float & yi) {
+
+		float den = (x1 - x2)*(y3 - y4) - (y1 - y2)*(x3 - x4);
+
+		if (den == 0.0f) {
+			xi = yi = 0.0f;
+			return false;
+		}
+
+		float num_t = (x1 - x3)*(y3 - y4) - (y1 - y3)*(x3 - x4);
+		float num_u = (x1 - x3)*(y1 - y2) - (y1 - y3)*(x1 - x2);
+
+		// 0 < num_t/den < 1
+		if (num_t * den < 0 || num_t > den || num_u * den < 0 || num_u > den) {
+			xi = yi = 0.0f;
+			return false;
+		}
+
+		t = num_t / den;
+		u = num_u / den;
+		
+		xi = x1 + t * (x2 - x1);
+		yi = y1 + t * (y2 - y1);
+		return true;
+	}
+
+	inline std::vector<glm::vec2> merge_intersection_curve(
+		const std::vector<glm::vec2>& c1,
+		const std::vector<glm::vec2>& c2) {
+		
+		std::vector<glm::vec2> join;
+		join.reserve(c1.size() + c2.size());
+
+		for (auto iter = c1.rbegin(); iter != c1.rend(); ++iter) {
+			join.push_back(*iter);
+		}
+
+		for (auto iter = c2.begin(); iter != c2.end(); ++iter) {
+			join.push_back(*iter);
+		}
+
+		return join;
+	}
+
+	inline std::vector<glm::vec3> extrude_intersection_xz(
+		const std::shared_ptr<differentiable_surface_base>& surf,
+		const std::vector<glm::vec2> curve,
+		float sign) {
+
+		// extrude the inersection between base and body
+		std::vector<glm::vec3> intersection_curve;
+		intersection_curve.reserve(curve.size());
+
+		int num_int_pts = static_cast<int>(curve.size());
+		for (int i = 0; i < num_int_pts; ++i) {
+			auto d1 = glm::vec3{ 0.0f, 0.0f, 0.0f };
+			auto d2 = glm::vec3{ 0.0f, 0.0f, 0.0f };
+
+			const auto& curr = curve[i + 0];
+			auto ccurr = surf->sample(curr.x, curr.y);
+
+			if (i > 0) {
+				const auto& prev = curve[i - 1];
+				auto cprev = surf->sample(prev.x, prev.y);
+				d1 = glm::normalize(ccurr - cprev);
+			}
+
+			if (i < num_int_pts - 1) {
+				const auto& next = curve[i + 1];
+				auto cnext = surf->sample(next.x, next.y);
+				d2 = glm::normalize(cnext - ccurr);
+			}
+
+			auto norm1 = glm::vec3{ -d1.z, 0.0f, d1.x };
+			auto norm2 = glm::vec3{ -d2.z, 0.0f, d2.x };
+
+			auto norm = glm::normalize(norm1 + norm2);
+			intersection_curve.push_back(ccurr + norm * sign);
+		}
+
+		return intersection_curve;
+	}
+
+	void padlock_milling_script::m_gen_path_2() {
+		// this is the second stage of generation for paths
+		// here the base is evened out to be nice and smooth
+
+		const float real_cutter_radius = 0.6f;
+
+		const float cutter_radius = real_cutter_radius * 4.0f / 5.0f;
+		const float path_width = 0.9f * cutter_radius * 2.0f;
+		const float eps1 = 0.2f;
+		const float eps2 = 0.05f;
+
+		m_path_2.push_back({ 0.0f, -6.0f, 0.0f });
+
+		const float hw = m_base_width / 2.0f;
+		const float hh = m_base_height / 2.0f;
+		const float pw = path_width;
+		const float hp = path_width / 2.0f;
+		const float depth = 5.0f - m_base_depth;
+		const float hd = depth / 2.0f;
+
+		const int path_count = static_cast<int>(m_base_width / hp) + 4;
+
+		auto body_curve = merge_intersection_curve(m_int_base_body.s21, m_int_base_body.s22);
+		auto body_bound = extrude_intersection_xz(m_model_base, body_curve, +1.0f);
+
+		auto shackle_curve = merge_intersection_curve(m_int_base_shackle1.s21, m_int_base_shackle1.s22);
+		auto shackle_bound = extrude_intersection_xz(m_model_base, shackle_curve, +1.0f);
+
+		auto curve2 = std::make_shared<curve>(m_app, m_app.m_store->get_line_shader(), shackle_bound);
+		curve2->set_color({ 0.0f, 1.0f, 0.0f, 1.0f });
+		curve2->set_line_width(3.0f);
+		m_app.add_object("milling_curve_f12", curve2);
+
+		return;
+
+		// begin generating path for the base of the model
+
+		glm::vec3 position = { 0.0f, -6.0f, -hh - pw - 0.45f };
+		m_path_2.push_back(position);
+
+		position = { 0.0f, 0.0f, -hh - pw - eps1 };
+		m_path_2.push_back(position);
+
+		const auto collide_path = [&](const glm::vec3& start, const glm::vec3& end) -> glm::vec3 {
+			glm::vec3 min_end = end;
+			float min_u = 1.0f;
+
+			for (int i = 0; i < m_int_base_body.s21.size() - 1; ++i) {
+				auto start_d = m_int_base_body.s21[i];
+				auto end_d = m_int_base_body.s21[i + 1];
+
+				auto cstart = m_model_base->sample(start_d.x, start_d.y);
+				auto cend = m_model_base->sample(end_d.x, end_d.y);
+
+				float t, u, xi, yi;
+				if (!intersect_segment(
+					cstart.x, cstart.z, cend.x, cend.z,
+					start.x, start.z, end.x, end.z, 
+					t, u, xi, yi)) {
+					continue;
+				}
+
+				if (u < min_u) {
+					min_u = u;
+					min_end = { xi, 0.0f, yi };
+				}
+			}
+
+			return min_end;
+		};
+
+		bool is_left = true;
+		for (int i = 0; i < path_count; ++i) {
+			float dz = i * hp;
+			float ndz = (i + 1) * hp;
+
+			if (is_left) {
+				position = collide_path(position, { hw + pw, 0.0f, -hh - pw + dz });
+				m_path_2.push_back(position);
+				position = { hw + pw, 0.0f, -hh - pw + ndz };
+				m_path_2.push_back(position);
+
+				is_left = false;
+			} else {
+				position = { 0.0f, 0.0f, -hh - pw + dz };
+				m_path_2.push_back(position);
+				position = { 0.0f, 0.0f, -hh - pw + ndz };
+				m_path_2.push_back(position);
+
+				is_left = true;
+			}
+		}
+
+		position = { -hw - pw, 0.0f, hh + pw - hp };
+		m_path_2.push_back(position);
+
+		for (int i = 0; i < path_count; ++i) {
+			float dz = (i+1) * hp;
+			float ndz = (i+2) * hp;
+
+			if (is_left) {
+				position = { -hw - pw, 0.0f, hh + pw - dz };
+				m_path_2.push_back(position);
+				position = { -hw - pw, 0.0f, hh + pw - ndz };
+				m_path_2.push_back(position);
+
+				is_left = false;
+			} else {
+				position = { 0.0f, 0.0f, hh + pw - dz };
+				m_path_2.push_back(position);
+				position = { 0.0f, 0.0f, hh + pw - ndz };
+				m_path_2.push_back(position);
+
+				is_left = true;
+			}
+		}
+
+		position = { 0.0f, -6.0f, -hh - pw - 0.45f };
+		m_path_2.push_back(position);
+		m_path_2.push_back({ 0.0f, -6.0f, 0.0f });
+
+		auto curve1 = std::make_shared<curve>(m_app, m_app.m_store->get_line_shader(), m_path_2);
+		curve1->set_color({ 0.0f, 1.0f, 0.0f, 1.0f });
+		curve1->set_line_width(3.0f);
+		m_app.add_object("milling_curve_f12", curve1);
 	}
 }

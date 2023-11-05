@@ -57,5 +57,6 @@ namespace mini {
 			float m_query_bitmap(float x, float y) const;
 
 			void m_gen_path_1();
+			void m_gen_path_2();
 	};
 }
