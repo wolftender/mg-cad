@@ -13,6 +13,13 @@ namespace mini {
 			std::shared_ptr<bspline_surface> m_padlock_shackle;
 			std::shared_ptr<bezier_surface_c0> m_model_base;
 
+			std::vector<float> m_heightmap;
+			uint32_t m_hm_width;
+			uint32_t m_hm_height;
+
+			float m_hm_units_x;
+			float m_hm_units_y;
+
 			application& m_app;
 
 		public:
@@ -27,5 +34,6 @@ namespace mini {
 		private:
 			void m_prepare_base();
 			void m_identify_model();
+			void m_prepare_heightmap();
 	};
 }

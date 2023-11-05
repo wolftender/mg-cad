@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>heightmap visualize</title>
+        <script src="hm.js"></script>
+        <script>
+            'use strict';
+
+            const heightmap_visualize = (heightmap, width, height) => {
+                const canvas = document.createElement("canvas");
+
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                const image_data = ctx.createImageData(width, height);
+                const data = image_data.data;
+
+                for (let i = 0; i < width*height; ++i) {
+                    const index = i * 4;
+                    const color = Math.floor(Math.max(Math.min(heightmap[i]*255, 255), 0));
+
+                    data[index + 0] = color;
+                    data[index + 1] = color;
+                    data[index + 2] = color;
+                    data[index + 3] = 255;
+                }
+
+                ctx.putImageData(image_data, 0, 0);
+                return canvas;
+            };
+        </script>
+    </head>
+    <body>
+        
+    </body>
+</html>
