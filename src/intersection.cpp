@@ -463,7 +463,7 @@ namespace mini {
 
 			P0 = m_surface1->sample(p1.x, p1.y);
 
-			for (int i = 0; i < 1000; ++i) {
+			for (int i = 0; i < 1100; ++i) {
 				auto n1 = m_surface1->normal(p1.x, p1.y);
 				auto n2 = m_surface2->normal(p2.x, p2.y);
 

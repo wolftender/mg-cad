@@ -2,6 +2,7 @@
 #include "surface.hpp"
 #include "beziersurf.hpp"
 #include "bsplinesurf.hpp"
+#include "intersection.hpp"
 
 namespace mini {
 	class application;
@@ -20,7 +21,24 @@ namespace mini {
 			float m_hm_units_x;
 			float m_hm_units_y;
 
+			float m_base_width;
+			float m_base_height;
+			float m_base_depth;
+			float m_scale;
+
 			application& m_app;
+
+			intersection_controller::result_t m_int_body_hole;
+			intersection_controller::result_t m_int_body_shackle1;
+			intersection_controller::result_t m_int_body_shackle2;
+			intersection_controller::result_t m_int_base_body;
+			intersection_controller::result_t m_int_base_shackle1;
+			intersection_controller::result_t m_int_base_shackle2;
+
+			std::vector<glm::vec3> m_path_1;
+			std::vector<glm::vec3> m_path_2;
+			std::vector<glm::vec3> m_path_3;
+			std::vector<glm::vec3> m_path_4;
 
 		public:
 			padlock_milling_script(application& app);
@@ -35,5 +53,9 @@ namespace mini {
 			void m_prepare_base();
 			void m_identify_model();
 			void m_prepare_heightmap();
+
+			float m_query_bitmap(float x, float y) const;
+
+			void m_gen_path_1();
 	};
 }
