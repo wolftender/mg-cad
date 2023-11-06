@@ -3,7 +3,7 @@
 #include "surface.hpp"
 
 namespace mini {
-	class intersection_controller final {\
+	class intersection_controller final {
 		public: 
 			struct result_t {
 				std::vector<glm::vec2> s11, s21, d11, d21;

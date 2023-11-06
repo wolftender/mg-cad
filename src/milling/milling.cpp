@@ -48,6 +48,22 @@ namespace mini {
 		return true;
 	}
 
+	inline bool intersect_segment(
+		const glm::vec2& s1,
+		const glm::vec2& e1,
+		const glm::vec2& s2,
+		const glm::vec2& e2,
+		glm::vec2& p
+	) {
+		float t, u;
+		if (!intersect_segment(s1.x, s1.y, e1.x, e1.y, s2.x, s2.y, e2.x, e2.y, t, u)) {
+			return false;
+		}
+
+		p = glm::mix(s1, e1, t);
+		return true;
+	}
+
 	inline std::vector<glm::vec2> merge_intersection_curve(
 		const std::vector<glm::vec2>& c1,
 		const std::vector<glm::vec2>& c2) {
@@ -61,6 +77,72 @@ namespace mini {
 
 		for (auto iter = c2.begin(); iter != c2.end(); ++iter) {
 			join.push_back(*iter);
+		}
+
+		return join;
+	}
+
+	inline std::vector<glm::vec2> join_intersection_curves(
+		const std::vector<glm::vec2>& c1,
+		const std::vector<glm::vec2>& c2) {
+
+		std::vector<glm::vec2> join;
+		join.reserve(c1.size() + c2.size());
+
+		struct intersection_t {
+			std::size_t c1_index;
+			std::size_t c2_index;
+			glm::vec2 point;
+		};
+
+		std::vector<intersection_t> intersections;
+
+		glm::vec2 p;
+		for (auto i = 0UL; i < c1.size() - 1; ++i) {
+			const auto& s1 = c1[i + 0];
+			const auto& e1 = c1[i + 1];
+
+			for (auto j = 0UL; j < c2.size() - 1; ++j) {
+				const auto& s2 = c2[j + 0];
+				const auto& e2 = c2[j + 1];
+
+				if (intersect_segment(s1, e1, s2, e2, p)) {
+					intersections.push_back({i, j, p});
+				}
+			}
+		}
+
+		auto next_int = intersections.begin();
+		int surface = 0;
+
+		for (size_t i = 0, j = 0; i < c1.size() && j < c2.size();) {
+			if (surface == 0) {
+				join.push_back(c1[i]);
+
+				if (next_int != intersections.end() &&
+					next_int->c1_index == i) {
+
+					surface = 1;
+					join.push_back(next_int->point);
+					j = next_int->c2_index + 1;
+					next_int++;
+				}
+
+				i++;
+			} else {
+				join.push_back(c2[j]);
+
+				if (next_int != intersections.end() &&
+					next_int->c2_index == j) {
+
+					surface = 0;
+					join.push_back(next_int->point);
+					i = next_int->c1_index + 1;
+					next_int++;
+				}
+
+				j++;
+			}
 		}
 
 		return join;
@@ -475,6 +557,9 @@ namespace mini {
 
 		auto shackle_curve = merge_intersection_curve(m_int_base_shackle1.s21, m_int_base_shackle1.s22);
 		auto shackle_bound = extrude_intersection_xz(m_model_base, shackle_curve, hp + eps2);
+
+		auto join_curve = join_intersection_curves(body_curve, shackle_curve);
+		auto join_bound = extrude_intersection_xz(m_model_base, join_curve, 0.0f);
 
 		// begin generating path for the base of the model
 		m_path_2.push_back({ 0.0f, -6.0f, -hh - pw - 0.45f });
