@@ -148,9 +148,58 @@ namespace mini {
 		return join;
 	}
 
+	inline std::vector<glm::vec2> extrude_intersection(
+		const std::vector<glm::vec2>& curve,
+		float sign) {
+
+		constexpr float eps = 0.00001f;
+
+		// extrude the inersection between base and body
+		std::vector<glm::vec2> intersection_curve;
+		intersection_curve.reserve(curve.size());
+
+		int num_int_pts = static_cast<int>(curve.size());
+		for (int i = 0; i < num_int_pts; ++i) {
+			auto d1 = glm::vec2{ 0.0f, 0.0f };
+			auto d2 = glm::vec2{ 0.0f, 0.0f };
+
+			const auto& curr = curve[i + 0];
+
+			if (i > 0) {
+				const auto& prev = curve[i - 1];
+				d1 = curr - prev;
+			}
+
+			if (i < num_int_pts - 1) {
+				const auto& next = curve[i + 1];
+				d2 = next - curr;
+			}
+
+			if (glm::length(d1) < eps && glm::length(d2) < eps) {
+				continue;
+			}
+
+			if (glm::length(d1) >= eps) {
+				d1 = glm::normalize(d1);
+			}
+
+			if (glm::length(d2) >= eps) {
+				d2 = glm::normalize(d2);
+			}
+
+			auto norm1 = glm::vec2{ -d1.y, d1.x };
+			auto norm2 = glm::vec2{ -d2.y, d2.x };
+
+			auto norm = glm::normalize(norm1 + norm2);
+			intersection_curve.push_back(curr + norm * sign);
+		}
+
+		return intersection_curve;
+	}
+
 	inline std::vector<glm::vec3> extrude_intersection_xz(
 		const std::shared_ptr<differentiable_surface_base>& surf,
-		const std::vector<glm::vec2> curve,
+		const std::vector<glm::vec2>& curve,
 		float sign) {
 
 		// extrude the inersection between base and body
@@ -207,8 +256,13 @@ namespace mini {
 		m_prepare_heightmap();
 
 		// path generation
-		//m_gen_path_1();
+		m_gen_path_1();
 		m_gen_path_2();
+		m_gen_path_3();
+
+		m_export_path("1.k16", m_path_1);
+		m_export_path("2.f12", m_path_2);
+		m_export_path("3.f10", m_path_3);
 	}
 
 	void padlock_milling_script::m_prepare_base() {
@@ -553,13 +607,10 @@ namespace mini {
 		// connect and extrude paths, this makes a nice border that we can use to not intersect the model
 		// when carving out our base
 		auto body_curve = merge_intersection_curve(m_int_base_body.s21, m_int_base_body.s22);
-		auto body_bound = extrude_intersection_xz(m_model_base, body_curve, hp + eps2);
+		auto body_bound = extrude_intersection_xz(m_model_base, body_curve, hp + eps1);
 
 		auto shackle_curve = merge_intersection_curve(m_int_base_shackle1.s21, m_int_base_shackle1.s22);
-		auto shackle_bound = extrude_intersection_xz(m_model_base, shackle_curve, hp + eps2);
-
-		auto join_curve = join_intersection_curves(body_curve, shackle_curve);
-		auto join_bound = extrude_intersection_xz(m_model_base, join_curve, 0.0f);
+		auto shackle_bound = extrude_intersection_xz(m_model_base, shackle_curve, hp + eps1);
 
 		// begin generating path for the base of the model
 		m_path_2.push_back({ 0.0f, -6.0f, -hh - pw - 0.45f });
@@ -650,5 +701,76 @@ namespace mini {
 		curve1->set_color({ 0.0f, 1.0f, 0.0f, 1.0f });
 		curve1->set_line_width(3.0f);
 		m_app.add_object("milling_curve_f12", curve1);
+	}
+
+	void padlock_milling_script::m_gen_path_3() {
+		// generate third curve
+		const float real_cutter_radius = 0.5f;
+		const float cutter_radius = real_cutter_radius * 4.0f / 5.0f;
+
+		const float path_width = 0.9f * cutter_radius * 2.0f;
+		const float eps1 = 0.2f;
+		const float eps2 = 0.05f;
+
+		m_path_2.push_back({ 0.0f, -6.0f, 0.0f });
+
+		const float hw = m_base_width / 2.0f;
+		const float hh = m_base_height / 2.0f;
+		const float pw = path_width;
+		const float hp = path_width / 2.0f;
+		const float depth = 5.0f - m_base_depth;
+		const float hd = depth / 2.0f;
+
+		// parameter space width for the base is 12 units
+		// so scale this by 1/12
+		const float extrude_radius = -(hp + eps2) / 12.0f;
+
+		auto body_curve = merge_intersection_curve(m_int_base_body.s21, m_int_base_body.s22);
+		auto body_bound = extrude_intersection(body_curve, extrude_radius);
+
+		auto shackle_curve = merge_intersection_curve(m_int_base_shackle1.s21, m_int_base_shackle1.s22);
+		auto shackle_bound = extrude_intersection(shackle_curve, extrude_radius);
+
+		auto join_curve = join_intersection_curves(body_bound, shackle_bound);
+		auto join_bound = extrude_intersection_xz(m_model_base, join_curve, 0.0f);
+
+		auto first_curve_pt = join_bound.front();
+
+		m_path_3.push_back({ 0.0f, -6.0f, 0.0f });
+		m_path_3.push_back({ hh + pw + 0.45f, -6.0f, first_curve_pt.z });
+		m_path_3.push_back({ hh + pw + 0.45f, 0.0f, first_curve_pt.z });
+		m_path_3.insert(m_path_3.end(), join_bound.begin(), join_bound.end());
+		m_path_3.push_back({ hh + pw + 0.45f, 0.0f, first_curve_pt.z });
+		m_path_3.push_back({ hh + pw + 0.45f, -6.0f, first_curve_pt.z });
+		m_path_3.push_back({ 0.0f, -6.0f, 0.0f });
+
+		auto curve2 = std::make_shared<curve>(m_app, m_app.m_store->get_line_shader(), m_path_3);
+		curve2->set_color({ 1.0f, 0.0f, 1.0f, 1.0f });
+		curve2->set_line_width(3.0f);
+		m_app.add_object("milling_curve_f10", curve2);
+	}
+
+	void padlock_milling_script::m_export_path(const std::string& name, const std::vector<glm::vec3>& path) const {
+		std::ofstream fs(name);
+
+		if (fs) {
+			int n = 3;
+			const float scale = 5.0f / 4.0f;
+
+			for (const auto& point : path) {
+				float px = -point.x * 10.0f * scale;
+				float py = -point.z * 10.0f * scale;
+				float pz = (m_base_depth - point.y) * 10.0f * scale;
+
+				fs << "N" << n 
+					<< "G01X" << std::setprecision(3) << std::fixed << px 
+					<< "Y" << std::setprecision(3) << std::fixed << py 
+					<< "Z" << std::setprecision(3) << std::fixed << pz << std::endl;
+
+				n++;
+			}
+		} else {
+			std::cerr << "failed to export path " << name << std::endl;
+		}
 	}
 }

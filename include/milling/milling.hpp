@@ -58,5 +58,8 @@ namespace mini {
 
 			void m_gen_path_1();
 			void m_gen_path_2();
+			void m_gen_path_3();
+
+			void m_export_path(const std::string& name, const std::vector<glm::vec3>& path) const;
 	};
 }
