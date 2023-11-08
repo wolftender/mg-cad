@@ -99,6 +99,20 @@ namespace mini {
             gui::prefix_label("Color: ", 250.0f);
             gui::color_editor("##gcurve_color", m_color);
             ImGui::NewLine();
+
+            int idx_end = m_idx_end;
+
+            gui::prefix_label("Index end: ", 250.0f);
+            if (ImGui::InputInt("##gcurve_idxend", &idx_end)) {
+                if (idx_end > m_indices.size()) {
+                    idx_end = m_indices.size();
+                } else if (idx_end <= 0) {
+                    idx_end = 0;
+                }
+
+                m_idx_end = idx_end;
+            }
+            ImGui::NewLine();
         }
 
         gui::clamp(m_line_width, 1.0f, 25.0f);
@@ -136,7 +150,7 @@ namespace mini {
             m_line_shader->set_uniform("u_color", m_color * point_object::s_select_default);
         }
 
-        glDrawElements(GL_LINES, m_indices.size(), GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_LINES, m_idx_end, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
     };
 
@@ -187,6 +201,8 @@ namespace mini {
 		glBufferData (GL_ELEMENT_ARRAY_BUFFER, sizeof (GLuint) * m_indices.size (), m_indices.data (), GL_STATIC_DRAW);
 
         glBindVertexArray(0);
+
+        m_idx_end = m_indices.size();
         m_ready = true;
     }
 

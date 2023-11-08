@@ -84,7 +84,8 @@ namespace mini {
 
 	inline std::vector<glm::vec2> join_intersection_curves(
 		const std::vector<glm::vec2>& c1,
-		const std::vector<glm::vec2>& c2) {
+		const std::vector<glm::vec2>& c2,
+		float merge_eps = -1.0f) {
 
 		std::vector<glm::vec2> join;
 		join.reserve(c1.size() + c2.size());
@@ -96,8 +97,8 @@ namespace mini {
 		};
 
 		std::vector<intersection_t> intersections;
-
 		glm::vec2 p;
+
 		for (auto i = 0UL; i < c1.size() - 1; ++i) {
 			const auto& s1 = c1[i + 0];
 			const auto& e1 = c1[i + 1];
@@ -107,7 +108,24 @@ namespace mini {
 				const auto& e2 = c2[j + 1];
 
 				if (intersect_segment(s1, e1, s2, e2, p)) {
-					intersections.push_back({i, j, p});
+					if (merge_eps >= 0.0f) {
+						bool already_found = false;
+
+						for (const auto& found_intersection : intersections) {
+							if (glm::distance(found_intersection.point, p) < merge_eps) {
+								already_found = true;
+								break;
+							}
+						}
+
+						if (already_found) {
+							continue;
+						}
+
+						intersections.push_back({ i, j, p });
+					} else {
+						intersections.push_back({ i, j, p });
+					}
 				}
 			}
 		}
@@ -124,6 +142,11 @@ namespace mini {
 
 					surface = 1;
 					join.push_back(next_int->point);
+
+					if (next_int->c2_index + 1 <= j) {
+						break;
+					}
+
 					j = next_int->c2_index + 1;
 					next_int++;
 				}
@@ -137,6 +160,11 @@ namespace mini {
 
 					surface = 0;
 					join.push_back(next_int->point);
+
+					if (next_int->c1_index + 1 <= i) {
+						break;
+					}
+
 					i = next_int->c1_index + 1;
 					next_int++;
 				}
@@ -195,6 +223,40 @@ namespace mini {
 		}
 
 		return intersection_curve;
+	}
+
+	inline std::vector<glm::vec3> curve_to_world(
+		const std::shared_ptr<differentiable_surface_base>& surf,
+		const std::vector<glm::vec2>& curve
+	) {
+		std::vector<glm::vec3> out;
+		out.reserve(curve.size());
+
+		for (const auto& el : curve) {
+			out.push_back(surf->sample(el.x, el.y));
+		}
+
+		return out;
+	}
+
+	inline std::vector<glm::vec2> optimize_curve(
+		const std::vector<glm::vec2>& curve,
+		float eps = 0.00001f
+	) {
+		std::vector<glm::vec2> out;
+		out.reserve(curve.size());
+
+		glm::vec2 previous;
+		for (auto& point : curve) {
+			if (glm::distance(point, previous) < eps) {
+				continue;
+			}
+
+			previous = point;
+			out.push_back(point);
+		}
+
+		return out;
 	}
 
 	inline std::vector<glm::vec3> extrude_intersection_xz(
@@ -256,9 +318,10 @@ namespace mini {
 		m_prepare_heightmap();
 
 		// path generation
-		m_gen_path_1();
-		m_gen_path_2();
-		m_gen_path_3();
+		//m_gen_path_1();
+		//m_gen_path_2();
+		//m_gen_path_3();
+		m_gen_path_4();
 
 		m_export_path("1.k16", m_path_1);
 		m_export_path("2.f12", m_path_2);
@@ -745,6 +808,178 @@ namespace mini {
 		m_path_3.push_back({ 0.0f, -6.0f, 0.0f });
 
 		auto curve2 = std::make_shared<curve>(m_app, m_app.m_store->get_line_shader(), m_path_3);
+		curve2->set_color({ 1.0f, 0.0f, 1.0f, 1.0f });
+		curve2->set_line_width(3.0f);
+		m_app.add_object("milling_curve_f10", curve2);
+	}
+
+	inline std::vector<glm::vec3> create_milling_curve(
+		const std::shared_ptr<differentiable_surface_base> & surface,
+		const std::vector<const std::vector<glm::vec2>&> & bounds,
+		const bool vertical,
+		const float middle_line,
+		const float path_width) {
+
+
+	}
+
+	inline std::vector<glm::vec2> remove_looping(
+		const std::vector<glm::vec2>& curve
+	) {
+		std::vector<glm::vec2> curve_1, curve_2;
+		curve_1.reserve(curve.size());
+		curve_2.reserve(curve.size());
+
+		glm::vec2 first = curve.front();
+		glm::vec2 previous = curve.front();
+		auto iter = curve.begin();
+
+		bool looped = false;
+		for (; iter != curve.end(); ++iter) {
+			if (glm::distance(previous, *iter) > 0.5f) {
+				looped = true;
+				break;
+			}
+
+			previous = *iter;
+			curve_1.push_back(*iter);
+		}
+
+		if (!looped) {
+			return curve_1;
+		}
+
+		for (; iter != curve.end(); ++iter) {
+			curve_2.push_back(*iter);
+
+			if (glm::distance(first, *iter) < 0.005f) {
+				curve_2.push_back(first);
+				break;
+			}
+		}
+
+		std::vector<glm::vec2> res;
+		res.reserve(curve_1.size() + curve_2.size());
+
+		for (auto m = curve_2.begin(); m != curve_2.end(); ++m) res.push_back(*m);
+		for (auto m = curve_1.begin(); m != curve_1.end(); ++m) res.push_back(*m);
+
+		return res;
+	}
+
+	inline std::vector<glm::vec2> trim_curves(
+		const std::vector<glm::vec2>& c1,
+		const std::vector<glm::vec2>& c2,
+		const bool start) {
+
+		std::vector<glm::vec2> trimmed;
+		trimmed.reserve(c1.size());
+		glm::vec2 p;
+
+		bool add = start, intersected = false;
+
+		if (add) {
+			trimmed.push_back(c1.front());
+		}
+
+		for (auto i = 0UL; i < c1.size() - 1; ++i) {
+			const auto& s1 = c1[i + 0];
+			const auto& e1 = c1[i + 1];
+
+			bool intersects = false;
+
+			if (!intersected) {
+				for (auto j = 0UL; j < c2.size() - 1; ++j) {
+					const auto& s2 = c2[j + 0];
+					const auto& e2 = c2[j + 1];
+
+					if (intersect_segment(s1, e1, s2, e2, p)) {
+						intersects = true;
+					}
+				}
+			}
+
+			if (intersects) {
+				trimmed.push_back(p);
+				add = !add;
+				intersected = true;
+
+				if (start) {
+					break;
+				}
+			} else if (add) {
+				trimmed.push_back(e1);
+			}
+		}
+
+		return trimmed;
+	}
+
+	void padlock_milling_script::m_gen_path_4() {
+		const float real_cutter_radius = 0.4f;
+		const float cutter_radius = real_cutter_radius * 4.0f / 5.0f;
+
+		const float path_width = 0.65f * cutter_radius * 2.0f;
+		const float eps = 0.005f;
+
+		m_body_eqd = std::make_shared<equidistant_surface>(m_padlock_body, cutter_radius + eps);
+		m_shackle_eqd = std::make_shared<equidistant_surface>(m_padlock_shackle, cutter_radius + eps);
+		m_keyhole_eqd = std::make_shared<equidistant_surface>(m_padlock_keyhole, cutter_radius + eps);
+		m_base_eqd = std::make_shared<equidistant_surface>(m_model_base, -cutter_radius - eps);
+
+		intersection_controller controller1(m_app, m_body_eqd, m_keyhole_eqd, m_app.m_store, false);
+
+		// intersect shackle
+		m_app.set_cursor_pos({ 0.9f, 0.0f, -1.2f });
+		intersection_controller controller2(m_app, m_body_eqd, m_shackle_eqd, m_app.m_store, true);
+		m_app.set_cursor_pos({ -0.9f, 0.0f, -1.2f });
+		intersection_controller controller3(m_app, m_body_eqd, m_shackle_eqd, m_app.m_store, true);
+
+		intersection_controller controller4(m_app, m_body_eqd, m_base_eqd, m_app.m_store, false);
+
+		// intersect shackle
+		m_app.set_cursor_pos({ 1.87f, 0.0f, -1.132f });
+		intersection_controller controller5(m_app, m_shackle_eqd, m_base_eqd, m_app.m_store, true);
+
+		m_app.set_cursor_pos({ 0.85f, 0.0f, -1.154f });
+		intersection_controller controller6(m_app, m_shackle_eqd, m_base_eqd, m_app.m_store, true);
+
+		// prepare curves for bounds on domains of equidistant surfaces
+		auto int_body_base = controller4.get_verbose();
+		auto int_body_shackle1 = controller2.get_verbose();
+		auto int_body_shackle2 = controller3.get_verbose();
+		auto int_body_keyhole = controller1.get_verbose();
+		auto int_shackle_base1 = controller5.get_verbose();
+		auto int_shackle_base2 = controller6.get_verbose();
+
+		auto joint_body_outer = join_intersection_curves(
+			join_intersection_curves(
+				merge_intersection_curve(optimize_curve(int_body_base.s11), optimize_curve(int_body_base.s12)),
+				optimize_curve(int_body_shackle1.s11),
+				0.0001f
+			), optimize_curve(int_body_shackle2.s11), 
+			0.0001f
+		);
+
+		auto shackle_loop_1 = remove_looping(optimize_curve(int_body_shackle1.s22));
+		auto shackle_loop_2 = remove_looping(optimize_curve(int_body_shackle2.s22));
+
+		auto shackle_inner_lining = optimize_curve(merge_intersection_curve(int_shackle_base2.s11, int_shackle_base2.s12));
+		std::reverse(shackle_inner_lining.begin(), shackle_inner_lining.end());
+
+		shackle_inner_lining = trim_curves(shackle_inner_lining, shackle_loop_1, false);
+		shackle_inner_lining = trim_curves(shackle_inner_lining, shackle_loop_2, true);
+
+		auto joint_shackle_outer = trim_curves(shackle_loop_1, shackle_inner_lining, false);
+		joint_shackle_outer = join_intersection_curves(joint_shackle_outer,
+			optimize_curve(merge_intersection_curve(int_shackle_base1.s11, int_shackle_base1.s12)));
+		joint_shackle_outer = join_intersection_curves(joint_shackle_outer, 
+			trim_curves(shackle_loop_2, shackle_inner_lining, true));
+
+		joint_shackle_outer.insert(joint_shackle_outer.end(), shackle_inner_lining.rbegin(), shackle_inner_lining.rend());
+		auto curve_debug = curve_to_world(m_shackle_eqd, joint_shackle_outer);
+
+		auto curve2 = std::make_shared<curve>(m_app, m_app.m_store->get_line_shader(), curve_debug);
 		curve2->set_color({ 1.0f, 0.0f, 1.0f, 1.0f });
 		curve2->set_line_width(3.0f);
 		m_app.add_object("milling_curve_f10", curve2);

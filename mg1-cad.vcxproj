@@ -155,6 +155,7 @@
     <ClInclude Include="include\gui.hpp" />
     <ClInclude Include="include\interpolate.hpp" />
     <ClInclude Include="include\intersection.hpp" />
+    <ClInclude Include="include\milling\equidistant.hpp" />
     <ClInclude Include="include\milling\milling.hpp" />
     <ClInclude Include="include\object.hpp" />
     <ClInclude Include="include\point.hpp" />
@@ -188,6 +189,7 @@
     <ClCompile Include="src\gui.cpp" />
     <ClCompile Include="src\interpolate.cpp" />
     <ClCompile Include="src\intersection.cpp" />
+    <ClCompile Include="src\milling\equidistant.cpp" />
     <ClCompile Include="src\milling\milling.cpp" />
     <ClCompile Include="src\object.cpp" />
     <ClCompile Include="src\algebra.cpp" />

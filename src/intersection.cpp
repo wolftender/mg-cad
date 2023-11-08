@@ -463,7 +463,7 @@ namespace mini {
 
 			P0 = m_surface1->sample(p1.x, p1.y);
 
-			for (int i = 0; i < 1100; ++i) {
+			for (int i = 0; i < 1200; ++i) {
 				auto n1 = m_surface1->normal(p1.x, p1.y);
 				auto n2 = m_surface2->normal(p2.x, p2.y);
 
@@ -566,8 +566,8 @@ namespace mini {
 		curve1->set_line_width(3.0f);
 		curve2->set_line_width(3.0f);
 
-		m_scene.add_object("intersection_curve", curve1);
-		m_scene.add_object("intersection_curve", curve2);
+		//m_scene.add_object("intersection_curve", curve1);
+		//m_scene.add_object("intersection_curve", curve2);
 
 		m_result.s11 = s11;
 		m_result.s21 = s21;

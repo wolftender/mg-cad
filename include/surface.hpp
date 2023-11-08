@@ -31,6 +31,14 @@ namespace mini {
 			virtual trimmable_surface_domain& get_trimmable_domain();
 	};
 
+	class double_differentiable_surface_base : public differentiable_surface_base {
+		public:
+			virtual glm::vec3 ddudu(float u, float v) const = 0;
+			virtual glm::vec3 ddudv(float u, float v) const = 0;
+			virtual glm::vec3 ddvdu(float u, float v) const = 0;
+			virtual glm::vec3 ddvdv(float u, float v) const = 0;
+	};
+
 	class bicubic_surface : public point_family_base {
 		public:
 			struct surface_patch {

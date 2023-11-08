@@ -4,6 +4,8 @@
 #include "bsplinesurf.hpp"
 #include "intersection.hpp"
 
+#include "milling/equidistant.hpp"
+
 namespace mini {
 	class application;
 
@@ -13,6 +15,11 @@ namespace mini {
 			std::shared_ptr<bspline_surface> m_padlock_body;
 			std::shared_ptr<bspline_surface> m_padlock_shackle;
 			std::shared_ptr<bezier_surface_c0> m_model_base;
+
+			std::shared_ptr<equidistant_surface> m_body_eqd;
+			std::shared_ptr<equidistant_surface> m_shackle_eqd;
+			std::shared_ptr<equidistant_surface> m_keyhole_eqd;
+			std::shared_ptr<equidistant_surface> m_base_eqd;
 
 			std::vector<float> m_heightmap;
 			uint32_t m_hm_width;
@@ -59,6 +66,7 @@ namespace mini {
 			void m_gen_path_1();
 			void m_gen_path_2();
 			void m_gen_path_3();
+			void m_gen_path_4();
 
 			void m_export_path(const std::string& name, const std::vector<glm::vec3>& path) const;
 	};

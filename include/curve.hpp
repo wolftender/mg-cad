@@ -19,6 +19,8 @@ namespace mini {
             glm::vec4 m_color;
             float m_line_width;
 
+            std::size_t m_idx_end;
+
         public:
             curve(
                 scene_controller_base& scene, 
