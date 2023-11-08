@@ -319,7 +319,7 @@ namespace mini {
 
 		// path generation
 		m_gen_path_1();
-		m_gen_path_2();
+	    m_gen_path_2();
 		m_gen_path_3();
 		m_gen_path_4();
 
@@ -510,6 +510,46 @@ namespace mini {
 		auto index = hm_pixel_y * m_hm_width + hm_pixel_x;
 
 		return m_heightmap[index];
+	}
+
+	void padlock_milling_script::m_prepare_hole(float cutter_radius, float eps) {
+		glm::vec3 tl{ 1.7f, -cutter_radius, 0.75f };
+		glm::vec3 br{ -1.7f, -cutter_radius, -4.0f };
+
+		float step_x = (br.x - tl.x) / 3.0f;
+		float step_z = (br.z - tl.z) / 3.0f;
+
+		point_list points;
+
+		for (int sx = 0; sx < 4; ++sx) {
+			for (int sz = 0; sz < 4; ++sz) {
+				glm::vec3 pos{ tl.x + (sx * step_x), -cutter_radius, tl.z + (sz * step_z) };
+
+				const auto point_obj = std::make_shared<point_object>(m_app,
+					m_app.m_store->get_billboard_s_shader(),
+					m_app.m_store->get_point_texture());
+
+				point_obj->set_translation(pos);
+				point_obj->set_color({ 1.0f, 0.0f, 0.0f, 1.0f });
+
+				m_app.add_object("milling_point_hole", point_obj);
+				points.push_back(point_obj);
+			}
+		}
+
+		const auto base_surf = std::make_shared<bezier_surface_c0>(
+			m_app,
+			m_app.m_store->get_bezier_surf_shader(),
+			m_app.m_store->get_bezier_surf_solid_shader(),
+			m_app.m_store->get_line_shader(),
+			1, 1,
+			points,
+			false, false);
+
+		m_app.add_object("milling_hole_base", base_surf);
+		m_hole_base = base_surf;
+
+		m_hole_base->integrate(0.0f);
 	}
 
 	void padlock_milling_script::m_gen_path_1() {
@@ -862,7 +902,6 @@ namespace mini {
 					if (intersect_segment(
 						line_start.x, line_start.y, line_end.x, line_end.y,
 						b_start.x, b_start.y, b_end.x, b_end.y, t, u)) {
-
 						if (t <= lbound) {
 							t_start = glm::max(t, t_start);
 						} else {
@@ -876,7 +915,7 @@ namespace mini {
 				continue;
 			}
 
-			for (float t = t_start; t < t_end; t += accuracy) {
+			for (float t = t_start; t < t_end + accuracy; t += accuracy) {
 				float rt = glm::min(t, t_end);
 				lines.push_back(glm::mix(line_start, line_end, rt));
 			}
@@ -1057,6 +1096,7 @@ namespace mini {
 
 		m_path_4.push_back({0.0f, -6.0f, 0.0f});
 
+		// generate detailed paths for c2 surfaces
 		auto body_lines1 = create_milling_curve(m_body_eqd, body_bounds, false, false, 0.25f, 0.75f, 0.3f, 0.6f, 0.01f, 0.5f, 0.005f);
 		m_path_4.push_back({ body_lines1.front().x, -4.0f, body_lines1.front().z });
 		m_path_4.insert(m_path_4.end(), body_lines1.begin(), body_lines1.end());
@@ -1067,12 +1107,12 @@ namespace mini {
 		m_path_4.insert(m_path_4.end(), body_lines2.begin(), body_lines2.end());
 		m_path_4.push_back({ body_lines2.back().x, -4.0f, body_lines2.back().z });
 
-		auto body_lines3 = create_milling_curve(m_body_eqd, body_bounds, true, false, 0.36f, 0.75f, 0.1f, 0.27f, 0.008f, 0.75f, 0.01f);
+		auto body_lines3 = create_milling_curve(m_body_eqd, body_bounds, true, false, 0.36f, 0.74f, 0.1f, 0.27f, 0.005f, 0.75f, 0.01f);
 		m_path_4.push_back({ body_lines3.front().x, -4.0f, body_lines3.front().z });
 		m_path_4.insert(m_path_4.end(), body_lines3.begin(), body_lines3.end());
 		m_path_4.push_back({ body_lines3.back().x, -4.0f, body_lines3.back().z });
 
-		auto body_lines4 = create_milling_curve(m_body_eqd, body_bounds, true, false, 0.37f, 0.75f, 0.7f, 0.9f, 0.008f, 0.05f, 0.01f);
+		auto body_lines4 = create_milling_curve(m_body_eqd, body_bounds, true, false, 0.36f, 0.74f, 0.7f, 0.9f, 0.005f, 0.05f, 0.01f);
 		m_path_4.push_back({ body_lines4.front().x, -4.0f, body_lines4.front().z });
 		m_path_4.insert(m_path_4.end(), body_lines4.begin(), body_lines4.end());
 		m_path_4.push_back({ body_lines4.back().x, -4.0f, body_lines4.back().z });
@@ -1086,18 +1126,43 @@ namespace mini {
 		m_path_4.insert(m_path_4.end(), world_body_outer.begin(), world_body_outer.end());
 		m_path_4.push_back({ world_body_outer.back().x, -4.0f, world_body_outer.back().z });
 
-		m_path_4.push_back({ 0.0f, -4.0f, 0.0f });
 		m_path_4.push_back({ world_shackle_outer.front().x, -4.0f, world_shackle_outer.front().z });
 		m_path_4.insert(m_path_4.end(), world_shackle_outer.begin(), world_shackle_outer.end());
 		m_path_4.push_back({ world_shackle_outer.back().x, -4.0f, world_shackle_outer.back().z });
-		m_path_4.push_back({ 0.0f, -4.0f, 0.0f });
+
+		// create surface for the hole
+		m_prepare_hole(cutter_radius, eps);
+
+		// generate detailed paths for the HOLE
+		std::vector<std::vector<glm::vec2>*> hole_bounds;
+
+		intersection_controller hole_controller(m_app, m_hole_base, m_shackle_eqd, m_app.m_store, true);
+		intersection_controller hole_controller2(m_app, m_hole_base, m_body_eqd, m_app.m_store, true);
+
+		auto hole_bound1 = optimize_curve(hole_controller.get_verbose().s12);
+		auto hole_bound2 = optimize_curve(merge_intersection_curve(
+			hole_controller2.get_verbose().s11, hole_controller2.get_verbose().s12));
+
+		hole_bounds.push_back(&hole_bound1);
+		hole_bounds.push_back(&hole_bound2);
+
+		auto hole_lines1 = create_milling_curve(m_hole_base, hole_bounds, false, false, 0.25f, 0.75f, 0.4f, 0.9f, 0.02f, 0.25f, 1.0f);
+		auto hole_lines2 = create_milling_curve(m_hole_base, hole_bounds, true, false, 0.5f, 0.78f, 0.1f, 0.9f, 0.02f, 0.5f, 1.0f);
+		hole_lines1.insert(hole_lines1.end(), hole_lines2.begin(), hole_lines2.end());
+
+		m_path_4.push_back({ hole_lines1.front().x, -4.0f, hole_lines1.front().z });
+		m_path_4.insert(m_path_4.end(), hole_lines1.begin(), hole_lines1.end());
+		m_path_4.push_back({ hole_lines1.back().x, -4.0f, hole_lines1.back().z });
+
+		// return to starting position
+		m_path_4.push_back({ 0.0f, -6.0f, 0.0f });
 
 		for (auto& el : m_path_4) {
 			el.y += cutter_radius;
 		}
 
 		// display curve
-		auto curve1 = std::make_shared<curve>(m_app, m_app.m_store->get_line_shader(), world_body_outer);
+		auto curve1 = std::make_shared<curve>(m_app, m_app.m_store->get_line_shader(), hole_lines1);
 		curve1->set_color({ 1.0f, 0.0f, 0.0f, 1.0f });
 		curve1->set_line_width(3.0f);
 		m_app.add_object("milling_curve_f10", curve1);

@@ -15,6 +15,7 @@ namespace mini {
 			std::shared_ptr<bspline_surface> m_padlock_body;
 			std::shared_ptr<bspline_surface> m_padlock_shackle;
 			std::shared_ptr<bezier_surface_c0> m_model_base;
+			std::shared_ptr<bezier_surface_c0> m_hole_base;
 
 			std::shared_ptr<equidistant_surface> m_body_eqd;
 			std::shared_ptr<equidistant_surface> m_shackle_eqd;
@@ -62,6 +63,8 @@ namespace mini {
 			void m_prepare_heightmap();
 
 			float m_query_bitmap(float x, float y) const;
+
+			void m_prepare_hole(float cutter_radius, float eps);
 
 			void m_gen_path_1();
 			void m_gen_path_2();
