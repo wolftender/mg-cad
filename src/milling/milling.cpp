@@ -1122,14 +1122,6 @@ namespace mini {
 		m_path_4.insert(m_path_4.end(), shackle_lines1.begin(), shackle_lines1.end());
 		m_path_4.push_back({ shackle_lines1.back().x, -4.0f, shackle_lines1.back().z });
 
-		m_path_4.push_back({ world_body_outer.front().x, -4.0f, world_body_outer.front().z });
-		m_path_4.insert(m_path_4.end(), world_body_outer.begin(), world_body_outer.end());
-		m_path_4.push_back({ world_body_outer.back().x, -4.0f, world_body_outer.back().z });
-
-		m_path_4.push_back({ world_shackle_outer.front().x, -4.0f, world_shackle_outer.front().z });
-		m_path_4.insert(m_path_4.end(), world_shackle_outer.begin(), world_shackle_outer.end());
-		m_path_4.push_back({ world_shackle_outer.back().x, -4.0f, world_shackle_outer.back().z });
-
 		// create surface for the hole
 		m_prepare_hole(cutter_radius, eps);
 
@@ -1154,6 +1146,38 @@ namespace mini {
 		m_path_4.insert(m_path_4.end(), hole_lines1.begin(), hole_lines1.end());
 		m_path_4.push_back({ hole_lines1.back().x, -4.0f, hole_lines1.back().z });
 
+		// keyhole paths, this is the "sharp" part of the model so we need to make it SHARP
+		std::vector<std::vector<glm::vec2>*> keyhole_bounds;
+		int_body_keyhole.s21 = optimize_curve(int_body_keyhole.s21);
+		int_body_keyhole.s22 = optimize_curve(int_body_keyhole.s22);
+
+		keyhole_bounds.push_back(&int_body_keyhole.s21);
+		keyhole_bounds.push_back(&int_body_keyhole.s22);
+
+		auto keyhole_lines1 = create_milling_curve(m_keyhole_eqd, keyhole_bounds, false, false, 0.07f, 0.88f, 0.45f, 0.6666f, 0.008f, 0.95f, 0.02f);
+		m_path_4.push_back({ keyhole_lines1.front().x, -4.0f, keyhole_lines1.front().z });
+		m_path_4.insert(m_path_4.end(), keyhole_lines1.begin(), keyhole_lines1.end());
+		m_path_4.push_back({ keyhole_lines1.back().x, -4.0f, keyhole_lines1.back().z });
+
+		auto keyhole_lines2 = create_milling_curve(m_keyhole_eqd, keyhole_bounds, false, false, 0.07f, 0.88f, 0.6705f, 0.85f, 0.008f, 0.05f, 0.02f);
+		m_path_4.push_back({ keyhole_lines2.front().x, -4.0f, keyhole_lines2.front().z });
+		m_path_4.insert(m_path_4.end(), keyhole_lines2.begin(), keyhole_lines2.end());
+		m_path_4.push_back({ keyhole_lines2.back().x, -4.0f, keyhole_lines2.back().z });
+
+		// go over all the intersections as the last stage!
+		m_path_4.push_back({ world_body_outer.front().x, -4.0f, world_body_outer.front().z });
+		m_path_4.insert(m_path_4.end(), world_body_outer.begin(), world_body_outer.end());
+		m_path_4.push_back({ world_body_outer.back().x, -4.0f, world_body_outer.back().z });
+
+		m_path_4.push_back({ world_shackle_outer.front().x, -4.0f, world_shackle_outer.front().z });
+		m_path_4.insert(m_path_4.end(), world_shackle_outer.begin(), world_shackle_outer.end());
+		m_path_4.push_back({ world_shackle_outer.back().x, -4.0f, world_shackle_outer.back().z });
+
+		auto world_keyhole_outer = curve_to_world(m_body_eqd, int_body_keyhole.s11);
+		m_path_4.push_back({ world_keyhole_outer.front().x, -4.0f, world_keyhole_outer.front().z });
+		m_path_4.insert(m_path_4.end(), world_keyhole_outer.begin(), world_keyhole_outer.end());
+		m_path_4.push_back({ world_keyhole_outer.back().x, -4.0f, world_keyhole_outer.back().z });
+
 		// return to starting position
 		m_path_4.push_back({ 0.0f, -6.0f, 0.0f });
 
@@ -1162,10 +1186,10 @@ namespace mini {
 		}
 
 		// display curve
-		auto curve1 = std::make_shared<curve>(m_app, m_app.m_store->get_line_shader(), hole_lines1);
-		curve1->set_color({ 1.0f, 0.0f, 0.0f, 1.0f });
-		curve1->set_line_width(3.0f);
-		m_app.add_object("milling_curve_f10", curve1);
+		//auto curve1 = std::make_shared<curve>(m_app, m_app.m_store->get_line_shader(), curve_to_world(m_body_eqd, int_body_keyhole.s11));
+		//curve1->set_color({ 1.0f, 0.0f, 0.0f, 1.0f });
+		//curve1->set_line_width(3.0f);
+		//m_app.add_object("milling_curve_f10", curve1);
 
 		auto curve2 = std::make_shared<curve>(m_app, m_app.m_store->get_line_shader(), m_path_4);
 		curve2->set_color({ 0.0f, 1.0f, 1.0f, 1.0f });
