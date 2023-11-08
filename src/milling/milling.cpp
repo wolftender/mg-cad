@@ -318,14 +318,15 @@ namespace mini {
 		m_prepare_heightmap();
 
 		// path generation
-		//m_gen_path_1();
-		//m_gen_path_2();
-		//m_gen_path_3();
+		m_gen_path_1();
+		m_gen_path_2();
+		m_gen_path_3();
 		m_gen_path_4();
 
 		m_export_path("1.k16", m_path_1);
 		m_export_path("2.f12", m_path_2);
 		m_export_path("3.f10", m_path_3);
+		m_export_path("4.k08", m_path_4);
 	}
 
 	void padlock_milling_script::m_prepare_base() {
@@ -815,12 +816,73 @@ namespace mini {
 
 	inline std::vector<glm::vec3> create_milling_curve(
 		const std::shared_ptr<differentiable_surface_base> & surface,
-		const std::vector<const std::vector<glm::vec2>&> & bounds,
+		const std::vector<std::vector<glm::vec2>*> & bounds,
 		const bool vertical,
+		const bool invert,
+		const float start_level,
+		const float end_level,
+		const float start_line,
 		const float middle_line,
-		const float path_width) {
+		const float path_width,
+		const float line_bound,
+		const float accuracy) {
 
+		std::vector<glm::vec2> lines;
+		int iteration = 0;
 
+		if (invert) {
+			iteration++;
+		}
+
+		float sgn = glm::sign(path_width);
+
+		for (float shift = start_level; shift*sgn < end_level*sgn; shift += path_width, iteration++) {
+			const float s = (sgn == 1.0f) ? glm::min(shift, end_level) : glm::max(shift, end_level);
+
+			glm::vec2 line_start = vertical ? glm::vec2{ s, start_line } : glm::vec2{ start_line, s };
+			glm::vec2 line_end = vertical ? glm::vec2{ s, middle_line } : glm::vec2{ middle_line, s };
+
+			float lbound = line_bound;
+
+			if (iteration % 2 != 0) {
+				lbound = 1.0f - lbound;
+				std::swap(line_start, line_end);
+			}
+
+			float t_start = 0.0f;
+			float t_end = 1.0f;
+
+			for (const auto* bound : bounds) {
+				for (size_t i = 0; i < bound->size() - 1; ++i) {
+					const auto& b_start = (*bound)[i + 0];
+					const auto& b_end = (*bound)[i + 1];
+
+					float t, u;
+
+					if (intersect_segment(
+						line_start.x, line_start.y, line_end.x, line_end.y,
+						b_start.x, b_start.y, b_end.x, b_end.y, t, u)) {
+
+						if (t <= lbound) {
+							t_start = glm::max(t, t_start);
+						} else {
+							t_end = glm::min(t, t_end);
+						}
+					}
+				}
+			}
+
+			if (glm::abs(t_start - t_end) < 0.05f) {
+				continue;
+			}
+
+			for (float t = t_start; t < t_end; t += accuracy) {
+				float rt = glm::min(t, t_end);
+				lines.push_back(glm::mix(line_start, line_end, rt));
+			}
+		}
+
+		return curve_to_world(surface, lines);
 	}
 
 	inline std::vector<glm::vec2> remove_looping(
@@ -952,6 +1014,8 @@ namespace mini {
 		auto int_shackle_base1 = controller5.get_verbose();
 		auto int_shackle_base2 = controller6.get_verbose();
 
+
+		/// GENERATE OUTER LINING FOR BODY
 		auto joint_body_outer = join_intersection_curves(
 			join_intersection_curves(
 				merge_intersection_curve(optimize_curve(int_body_base.s11), optimize_curve(int_body_base.s12)),
@@ -961,6 +1025,7 @@ namespace mini {
 			0.0001f
 		);
 
+		/// GENERATE OUTER LINING FOR SHACKLE
 		auto shackle_loop_1 = remove_looping(optimize_curve(int_body_shackle1.s22));
 		auto shackle_loop_2 = remove_looping(optimize_curve(int_body_shackle2.s22));
 
@@ -977,10 +1042,68 @@ namespace mini {
 			trim_curves(shackle_loop_2, shackle_inner_lining, true));
 
 		joint_shackle_outer.insert(joint_shackle_outer.end(), shackle_inner_lining.rbegin(), shackle_inner_lining.rend());
-		auto curve_debug = curve_to_world(m_shackle_eqd, joint_shackle_outer);
 
-		auto curve2 = std::make_shared<curve>(m_app, m_app.m_store->get_line_shader(), curve_debug);
-		curve2->set_color({ 1.0f, 0.0f, 1.0f, 1.0f });
+		// EXPORT OUTER LINING MILLING PATH
+		auto world_body_outer = curve_to_world(m_body_eqd, joint_body_outer);
+		auto world_shackle_outer = curve_to_world(m_shackle_eqd, joint_shackle_outer);
+
+		// BOUNDS FOR SURFACES
+		std::vector<std::vector<glm::vec2>*> body_bounds;
+		body_bounds.push_back(&joint_body_outer);
+		body_bounds.push_back(&int_body_keyhole.s11);
+
+		std::vector<std::vector<glm::vec2>*> shackle_bounds;
+		shackle_bounds.push_back(&joint_shackle_outer);
+
+		m_path_4.push_back({0.0f, -6.0f, 0.0f});
+
+		auto body_lines1 = create_milling_curve(m_body_eqd, body_bounds, false, false, 0.25f, 0.75f, 0.3f, 0.6f, 0.01f, 0.5f, 0.005f);
+		m_path_4.push_back({ body_lines1.front().x, -4.0f, body_lines1.front().z });
+		m_path_4.insert(m_path_4.end(), body_lines1.begin(), body_lines1.end());
+		m_path_4.push_back({ body_lines1.back().x, -4.0f, body_lines1.back().z });
+
+		auto body_lines2 = create_milling_curve(m_body_eqd, body_bounds, false, false, 0.75f, 0.25f, 0.5f, 0.8f, -0.01f, 0.5f, 0.005f);
+		m_path_4.push_back({ body_lines2.front().x, -4.0f, body_lines2.front().z });
+		m_path_4.insert(m_path_4.end(), body_lines2.begin(), body_lines2.end());
+		m_path_4.push_back({ body_lines2.back().x, -4.0f, body_lines2.back().z });
+
+		auto body_lines3 = create_milling_curve(m_body_eqd, body_bounds, true, false, 0.36f, 0.75f, 0.1f, 0.27f, 0.008f, 0.75f, 0.01f);
+		m_path_4.push_back({ body_lines3.front().x, -4.0f, body_lines3.front().z });
+		m_path_4.insert(m_path_4.end(), body_lines3.begin(), body_lines3.end());
+		m_path_4.push_back({ body_lines3.back().x, -4.0f, body_lines3.back().z });
+
+		auto body_lines4 = create_milling_curve(m_body_eqd, body_bounds, true, false, 0.37f, 0.75f, 0.7f, 0.9f, 0.008f, 0.05f, 0.01f);
+		m_path_4.push_back({ body_lines4.front().x, -4.0f, body_lines4.front().z });
+		m_path_4.insert(m_path_4.end(), body_lines4.begin(), body_lines4.end());
+		m_path_4.push_back({ body_lines4.back().x, -4.0f, body_lines4.back().z });
+
+		auto shackle_lines1 = create_milling_curve(m_shackle_eqd, shackle_bounds, false, false, 0.06f, 0.94f, 0.2f, 0.8f, 0.005f, 0.75f, 0.01f);
+		m_path_4.push_back({ shackle_lines1.front().x, -4.0f, shackle_lines1.front().z });
+		m_path_4.insert(m_path_4.end(), shackle_lines1.begin(), shackle_lines1.end());
+		m_path_4.push_back({ shackle_lines1.back().x, -4.0f, shackle_lines1.back().z });
+
+		m_path_4.push_back({ world_body_outer.front().x, -4.0f, world_body_outer.front().z });
+		m_path_4.insert(m_path_4.end(), world_body_outer.begin(), world_body_outer.end());
+		m_path_4.push_back({ world_body_outer.back().x, -4.0f, world_body_outer.back().z });
+
+		m_path_4.push_back({ 0.0f, -4.0f, 0.0f });
+		m_path_4.push_back({ world_shackle_outer.front().x, -4.0f, world_shackle_outer.front().z });
+		m_path_4.insert(m_path_4.end(), world_shackle_outer.begin(), world_shackle_outer.end());
+		m_path_4.push_back({ world_shackle_outer.back().x, -4.0f, world_shackle_outer.back().z });
+		m_path_4.push_back({ 0.0f, -4.0f, 0.0f });
+
+		for (auto& el : m_path_4) {
+			el.y += cutter_radius;
+		}
+
+		// display curve
+		auto curve1 = std::make_shared<curve>(m_app, m_app.m_store->get_line_shader(), world_body_outer);
+		curve1->set_color({ 1.0f, 0.0f, 0.0f, 1.0f });
+		curve1->set_line_width(3.0f);
+		m_app.add_object("milling_curve_f10", curve1);
+
+		auto curve2 = std::make_shared<curve>(m_app, m_app.m_store->get_line_shader(), m_path_4);
+		curve2->set_color({ 0.0f, 1.0f, 1.0f, 1.0f });
 		curve2->set_line_width(3.0f);
 		m_app.add_object("milling_curve_f10", curve2);
 	}
