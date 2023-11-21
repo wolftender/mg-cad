@@ -929,6 +929,90 @@ namespace mini {
 		return curve_to_world(surface, lines);
 	}
 
+	inline std::vector<glm::vec3> create_milling_curve_2(
+		const std::shared_ptr<differentiable_surface_base>& surface,
+		const std::vector<std::vector<glm::vec2>*>& bounds,
+		const bool vertical,
+		const bool invert,
+		const float start_level,
+		const float end_level,
+		const float path_width,
+		const float accuracy,
+		const std::function<float(float)> correction = nullptr) {
+
+		std::vector<glm::vec2> lines;
+		int iteration = 0;
+
+		if (invert) {
+			iteration++;
+		}
+
+		float sgn = glm::sign(path_width);
+
+		for (float shift = start_level; shift * sgn < end_level * sgn; shift += path_width, iteration++) {
+			if (correction) {
+				shift += path_width * sgn * correction(glm::abs(shift / (end_level - start_level)));
+			}
+
+			const float s = (sgn == 1.0f) ? glm::min(shift, end_level) : glm::max(shift, end_level);
+
+			glm::vec2 line_start = vertical ? glm::vec2{ s, 0.0f } : glm::vec2{ 0.0f, s };
+			glm::vec2 line_end = vertical ? glm::vec2{ s, 1.0f } : glm::vec2{ 1.0f, s };
+
+			if (iteration % 2 != 0) {
+				std::swap(line_start, line_end);
+			}
+
+			float t_start = 0.0f;
+			float t_end = 1.0f;
+
+			float c1 = -1.0f, c2 = -1.0f;
+
+			for (const auto* bound : bounds) {
+				for (size_t i = 0; i < bound->size() - 1; ++i) {
+					const auto& b_start = (*bound)[i + 0];
+					const auto& b_end = (*bound)[i + 1];
+
+					float t, u;
+
+					if (intersect_segment(
+						line_start.x, line_start.y, line_end.x, line_end.y,
+						b_start.x, b_start.y, b_end.x, b_end.y, t, u)) {
+						
+						if (c1 < 0.0f) {
+							c1 = t;
+						} else {
+							c2 = t;
+							break;
+						}
+					}
+				}
+			}
+
+			if (c1 < 0.0f || c2 < 0.0f) {
+				if (lines.empty()) {
+					continue;
+				} else {
+					break;
+				}
+			}
+
+			if (glm::abs(t_start - t_end) < 0.05f) {
+				continue;
+			}
+
+			t_start = glm::min(c1, c2);
+			t_end = glm::max(c1, c2);
+
+			for (float t = t_start + 0.005f; t < t_end + accuracy; t += accuracy) {
+				float rt = glm::min(t, t_end - 0.005f);
+				lines.push_back(glm::mix(line_start, line_end, rt));
+			}
+		}
+
+		return curve_to_world(surface, lines);
+	}
+
 	inline std::vector<glm::vec2> remove_looping(
 		const std::vector<glm::vec2>& curve
 	) {
@@ -1169,15 +1253,24 @@ namespace mini {
 		keyhole_bounds.push_back(&int_body_keyhole.s21);
 		keyhole_bounds.push_back(&int_body_keyhole.s22);
 
-		auto keyhole_lines1 = create_milling_curve(m_keyhole_eqd, keyhole_bounds, false, false, 0.07f, 0.88f, 0.45f, 0.6666f, 0.008f, 0.95f, 0.02f);
+		//auto keyhole_lines1 = create_milling_curve(m_keyhole_eqd, keyhole_bounds, true, false, 0.45f, 0.6666f, 0.05f, 0.5f, 0.008f, 0.95f, 0.02f);
+
+		auto keyhole_lines1 = create_milling_curve_2(m_keyhole_eqd, keyhole_bounds, true, false, 0.45f, 0.6666f, 0.008f, 0.02f);
 		m_path_4.push_back({ keyhole_lines1.front().x, safe_height, keyhole_lines1.front().z });
 		m_path_4.insert(m_path_4.end(), keyhole_lines1.begin(), keyhole_lines1.end());
 		m_path_4.push_back({ keyhole_lines1.back().x, safe_height, keyhole_lines1.back().z });
 
-		auto keyhole_lines2 = create_milling_curve(m_keyhole_eqd, keyhole_bounds, false, false, 0.07f, 0.88f, 0.6705f, 0.85f, 0.008f, 0.05f, 0.02f);
+		auto keyhole_lines2 = create_milling_curve_2(m_keyhole_eqd, keyhole_bounds, true, false, 0.6705f, 0.85f, 0.008f, 0.02f);
 		m_path_4.push_back({ keyhole_lines2.front().x, safe_height, keyhole_lines2.front().z });
 		m_path_4.insert(m_path_4.end(), keyhole_lines2.begin(), keyhole_lines2.end());
 		m_path_4.push_back({ keyhole_lines2.back().x, safe_height, keyhole_lines2.back().z });
+
+		/*auto keyhole_lines2 = create_milling_curve(m_keyhole_eqd, keyhole_bounds, false, false, 0.07f, 0.88f, 0.6705f, 0.85f, 0.008f, 0.05f, 0.02f);
+		m_path_4.push_back({ keyhole_lines2.front().x, safe_height, keyhole_lines2.front().z });
+		m_path_4.insert(m_path_4.end(), keyhole_lines2.begin(), keyhole_lines2.end());
+		m_path_4.push_back({ keyhole_lines2.back().x, safe_height, keyhole_lines2.back().z });*/
+
+		//auto keyhole_lines1 = create_milling_curve(m_keyhole_eqd, keyhole_bounds, false, false, 0.07f, 0.88f, 0.45f, 0.6666f, 0.008f, 0.95f, 0.02f);
 
 		// go over all the intersections as the last stage!
 		m_path_4.push_back({ world_body_outer.front().x, safe_height, world_body_outer.front().z });
