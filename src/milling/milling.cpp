@@ -318,14 +318,14 @@ namespace mini {
 		m_prepare_heightmap();
 
 		// path generation
-		m_gen_path_1();
-	    m_gen_path_2();
-		m_gen_path_3();
+		//m_gen_path_1();
+	    //m_gen_path_2();
+		//m_gen_path_3();
 		m_gen_path_4();
 
-		m_export_path("1.k16", m_path_1);
-		m_export_path("2.f12", m_path_2);
-		m_export_path("3.f10", m_path_3);
+		//m_export_path("1.k16", m_path_1);
+		//m_export_path("2.f12", m_path_2);
+		//m_export_path("3.f10", m_path_3);
 		m_export_path("4.k08", m_path_4);
 	}
 
@@ -865,7 +865,8 @@ namespace mini {
 		const float middle_line,
 		const float path_width,
 		const float line_bound,
-		const float accuracy) {
+		const float accuracy,
+		const std::function<float(float)> correction = nullptr) {
 
 		std::vector<glm::vec2> lines;
 		int iteration = 0;
@@ -877,6 +878,10 @@ namespace mini {
 		float sgn = glm::sign(path_width);
 
 		for (float shift = start_level; shift*sgn < end_level*sgn; shift += path_width, iteration++) {
+			if (correction) {
+				shift += path_width*sgn*correction(glm::abs(shift/(end_level - start_level)));
+			}
+
 			const float s = (sgn == 1.0f) ? glm::min(shift, end_level) : glm::max(shift, end_level);
 
 			glm::vec2 line_start = vertical ? glm::vec2{ s, start_line } : glm::vec2{ start_line, s };
@@ -915,8 +920,8 @@ namespace mini {
 				continue;
 			}
 
-			for (float t = t_start; t < t_end + accuracy; t += accuracy) {
-				float rt = glm::min(t, t_end);
+			for (float t = t_start + 0.005f; t < t_end + accuracy; t += accuracy) {
+				float rt = glm::min(t, t_end - 0.005f);
 				lines.push_back(glm::mix(line_start, line_end, rt));
 			}
 		}
@@ -1096,31 +1101,41 @@ namespace mini {
 
 		m_path_4.push_back({0.0f, -6.0f, 0.0f});
 
+		const float safe_height = -3.0f;
+
 		// generate detailed paths for c2 surfaces
-		auto body_lines1 = create_milling_curve(m_body_eqd, body_bounds, false, false, 0.25f, 0.75f, 0.3f, 0.6f, 0.01f, 0.5f, 0.005f);
-		m_path_4.push_back({ body_lines1.front().x, -4.0f, body_lines1.front().z });
+		auto body_lines1 = create_milling_curve(m_body_eqd, body_bounds, false, false, 0.2f, 0.75f, 0.3f, 0.58f, 0.007f, 0.5f, 0.005f);
+		m_path_4.push_back({ body_lines1.front().x, safe_height, body_lines1.front().z });
 		m_path_4.insert(m_path_4.end(), body_lines1.begin(), body_lines1.end());
-		m_path_4.push_back({ body_lines1.back().x, -4.0f, body_lines1.back().z });
+		m_path_4.push_back({ body_lines1.back().x, safe_height, body_lines1.back().z });
 
-		auto body_lines2 = create_milling_curve(m_body_eqd, body_bounds, false, false, 0.75f, 0.25f, 0.5f, 0.8f, -0.01f, 0.5f, 0.005f);
-		m_path_4.push_back({ body_lines2.front().x, -4.0f, body_lines2.front().z });
+		auto body_lines2 = create_milling_curve(m_body_eqd, body_bounds, false, false, 0.75f, 0.2f, 0.53f, 0.8f, -0.007f, 0.5f, 0.005f);
+		m_path_4.push_back({ body_lines2.front().x, safe_height, body_lines2.front().z });
 		m_path_4.insert(m_path_4.end(), body_lines2.begin(), body_lines2.end());
-		m_path_4.push_back({ body_lines2.back().x, -4.0f, body_lines2.back().z });
+		m_path_4.push_back({ body_lines2.back().x, safe_height, body_lines2.back().z });
 
-		auto body_lines3 = create_milling_curve(m_body_eqd, body_bounds, true, false, 0.36f, 0.74f, 0.1f, 0.27f, 0.005f, 0.75f, 0.01f);
-		m_path_4.push_back({ body_lines3.front().x, -4.0f, body_lines3.front().z });
+		auto body_lines3 = create_milling_curve(m_body_eqd, body_bounds, true, false, 0.36f, 0.74f, 0.1f, 0.27f, 0.004f, 0.75f, 0.01f);
+		m_path_4.push_back({ body_lines3.front().x, safe_height, body_lines3.front().z });
 		m_path_4.insert(m_path_4.end(), body_lines3.begin(), body_lines3.end());
-		m_path_4.push_back({ body_lines3.back().x, -4.0f, body_lines3.back().z });
+		m_path_4.push_back({ body_lines3.back().x, safe_height, body_lines3.back().z });
 
-		auto body_lines4 = create_milling_curve(m_body_eqd, body_bounds, true, false, 0.36f, 0.74f, 0.7f, 0.9f, 0.005f, 0.05f, 0.01f);
-		m_path_4.push_back({ body_lines4.front().x, -4.0f, body_lines4.front().z });
+		auto body_lines4 = create_milling_curve(m_body_eqd, body_bounds, true, false, 0.36f, 0.74f, 0.7f, 0.9f, 0.004f, 0.05f, 0.01f);
+		m_path_4.push_back({ body_lines4.front().x, safe_height, body_lines4.front().z });
 		m_path_4.insert(m_path_4.end(), body_lines4.begin(), body_lines4.end());
-		m_path_4.push_back({ body_lines4.back().x, -4.0f, body_lines4.back().z });
+		m_path_4.push_back({ body_lines4.back().x, safe_height, body_lines4.back().z });
 
-		auto shackle_lines1 = create_milling_curve(m_shackle_eqd, shackle_bounds, false, false, 0.06f, 0.94f, 0.2f, 0.8f, 0.005f, 0.75f, 0.01f);
-		m_path_4.push_back({ shackle_lines1.front().x, -4.0f, shackle_lines1.front().z });
+		auto shackle_lines1 = create_milling_curve(m_shackle_eqd, shackle_bounds, false, false, 0.06f, 0.94f, 0.2f, 0.8f, 0.004f, 0.75f, 0.01f, 
+		[=](float t)->float {
+			float V = 0.1f;
+			float E = 0.56f;
+
+			float exponent = (t - E)/V;
+			return (4.0f / (12.0f * V)) * glm::exp(-0.5f * exponent * exponent);
+		});
+
+		m_path_4.push_back({ shackle_lines1.front().x, safe_height, shackle_lines1.front().z });
 		m_path_4.insert(m_path_4.end(), shackle_lines1.begin(), shackle_lines1.end());
-		m_path_4.push_back({ shackle_lines1.back().x, -4.0f, shackle_lines1.back().z });
+		m_path_4.push_back({ shackle_lines1.back().x, safe_height, shackle_lines1.back().z });
 
 		// create surface for the hole
 		m_prepare_hole(cutter_radius, eps);
@@ -1142,9 +1157,9 @@ namespace mini {
 		auto hole_lines2 = create_milling_curve(m_hole_base, hole_bounds, true, false, 0.5f, 0.78f, 0.1f, 0.9f, 0.02f, 0.5f, 1.0f);
 		hole_lines1.insert(hole_lines1.end(), hole_lines2.begin(), hole_lines2.end());
 
-		m_path_4.push_back({ hole_lines1.front().x, -4.0f, hole_lines1.front().z });
+		m_path_4.push_back({ hole_lines1.front().x, safe_height, hole_lines1.front().z });
 		m_path_4.insert(m_path_4.end(), hole_lines1.begin(), hole_lines1.end());
-		m_path_4.push_back({ hole_lines1.back().x, -4.0f, hole_lines1.back().z });
+		m_path_4.push_back({ hole_lines1.back().x, safe_height, hole_lines1.back().z });
 
 		// keyhole paths, this is the "sharp" part of the model so we need to make it SHARP
 		std::vector<std::vector<glm::vec2>*> keyhole_bounds;
@@ -1155,28 +1170,28 @@ namespace mini {
 		keyhole_bounds.push_back(&int_body_keyhole.s22);
 
 		auto keyhole_lines1 = create_milling_curve(m_keyhole_eqd, keyhole_bounds, false, false, 0.07f, 0.88f, 0.45f, 0.6666f, 0.008f, 0.95f, 0.02f);
-		m_path_4.push_back({ keyhole_lines1.front().x, -4.0f, keyhole_lines1.front().z });
+		m_path_4.push_back({ keyhole_lines1.front().x, safe_height, keyhole_lines1.front().z });
 		m_path_4.insert(m_path_4.end(), keyhole_lines1.begin(), keyhole_lines1.end());
-		m_path_4.push_back({ keyhole_lines1.back().x, -4.0f, keyhole_lines1.back().z });
+		m_path_4.push_back({ keyhole_lines1.back().x, safe_height, keyhole_lines1.back().z });
 
 		auto keyhole_lines2 = create_milling_curve(m_keyhole_eqd, keyhole_bounds, false, false, 0.07f, 0.88f, 0.6705f, 0.85f, 0.008f, 0.05f, 0.02f);
-		m_path_4.push_back({ keyhole_lines2.front().x, -4.0f, keyhole_lines2.front().z });
+		m_path_4.push_back({ keyhole_lines2.front().x, safe_height, keyhole_lines2.front().z });
 		m_path_4.insert(m_path_4.end(), keyhole_lines2.begin(), keyhole_lines2.end());
-		m_path_4.push_back({ keyhole_lines2.back().x, -4.0f, keyhole_lines2.back().z });
+		m_path_4.push_back({ keyhole_lines2.back().x, safe_height, keyhole_lines2.back().z });
 
 		// go over all the intersections as the last stage!
-		m_path_4.push_back({ world_body_outer.front().x, -4.0f, world_body_outer.front().z });
+		m_path_4.push_back({ world_body_outer.front().x, safe_height, world_body_outer.front().z });
 		m_path_4.insert(m_path_4.end(), world_body_outer.begin(), world_body_outer.end());
-		m_path_4.push_back({ world_body_outer.back().x, -4.0f, world_body_outer.back().z });
+		m_path_4.push_back({ world_body_outer.back().x, safe_height, world_body_outer.back().z });
 
-		m_path_4.push_back({ world_shackle_outer.front().x, -4.0f, world_shackle_outer.front().z });
+		m_path_4.push_back({ world_shackle_outer.front().x, safe_height, world_shackle_outer.front().z });
 		m_path_4.insert(m_path_4.end(), world_shackle_outer.begin(), world_shackle_outer.end());
-		m_path_4.push_back({ world_shackle_outer.back().x, -4.0f, world_shackle_outer.back().z });
+		m_path_4.push_back({ world_shackle_outer.back().x, safe_height, world_shackle_outer.back().z });
 
 		auto world_keyhole_outer = curve_to_world(m_body_eqd, int_body_keyhole.s11);
-		m_path_4.push_back({ world_keyhole_outer.front().x, -4.0f, world_keyhole_outer.front().z });
+		m_path_4.push_back({ world_keyhole_outer.front().x, safe_height, world_keyhole_outer.front().z });
 		m_path_4.insert(m_path_4.end(), world_keyhole_outer.begin(), world_keyhole_outer.end());
-		m_path_4.push_back({ world_keyhole_outer.back().x, -4.0f, world_keyhole_outer.back().z });
+		m_path_4.push_back({ world_keyhole_outer.back().x, safe_height, world_keyhole_outer.back().z });
 
 		// return to starting position
 		m_path_4.push_back({ 0.0f, -6.0f, 0.0f });
