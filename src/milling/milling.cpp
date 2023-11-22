@@ -936,8 +936,11 @@ namespace mini {
 		const bool invert,
 		const float start_level,
 		const float end_level,
+		const float start_line,
+		const float end_line,
 		const float path_width,
 		const float accuracy,
+		const float collision_eps,
 		const std::function<float(float)> correction = nullptr) {
 
 		std::vector<glm::vec2> lines;
@@ -948,6 +951,7 @@ namespace mini {
 		}
 
 		float sgn = glm::sign(path_width);
+		std::vector<float> collisions;
 
 		for (float shift = start_level; shift * sgn < end_level * sgn; shift += path_width, iteration++) {
 			if (correction) {
@@ -956,18 +960,13 @@ namespace mini {
 
 			const float s = (sgn == 1.0f) ? glm::min(shift, end_level) : glm::max(shift, end_level);
 
-			glm::vec2 line_start = vertical ? glm::vec2{ s, 0.0f } : glm::vec2{ 0.0f, s };
-			glm::vec2 line_end = vertical ? glm::vec2{ s, 1.0f } : glm::vec2{ 1.0f, s };
-
-			if (iteration % 2 != 0) {
-				std::swap(line_start, line_end);
-			}
+			glm::vec2 line_start = vertical ? glm::vec2{ s, start_line } : glm::vec2{ start_line, s };
+			glm::vec2 line_end = vertical ? glm::vec2{ s, end_line } : glm::vec2{ end_line, s };
 
 			float t_start = 0.0f;
 			float t_end = 1.0f;
 
-			float c1 = -1.0f, c2 = -1.0f;
-
+			collisions.clear();
 			for (const auto* bound : bounds) {
 				for (size_t i = 0; i < bound->size() - 1; ++i) {
 					const auto& b_start = (*bound)[i + 0];
@@ -979,17 +978,22 @@ namespace mini {
 						line_start.x, line_start.y, line_end.x, line_end.y,
 						b_start.x, b_start.y, b_end.x, b_end.y, t, u)) {
 						
-						if (c1 < 0.0f) {
-							c1 = t;
-						} else {
-							c2 = t;
-							break;
+						bool repeated = false;
+						for (const auto& other : collisions) {
+							if (glm::distance(other, t) < collision_eps) {
+								repeated = true;
+								break;
+							}
+						}
+
+						if (!repeated) {
+							collisions.push_back(t);
 						}
 					}
 				}
 			}
 
-			if (c1 < 0.0f || c2 < 0.0f) {
+			if (collisions.size() == 0) {
 				if (lines.empty()) {
 					continue;
 				} else {
@@ -997,12 +1001,20 @@ namespace mini {
 				}
 			}
 
-			if (glm::abs(t_start - t_end) < 0.05f) {
-				continue;
+			std::sort(collisions.begin(), collisions.end());
+
+			t_start = collisions[0];
+			t_end = (collisions.size() > 1) ? collisions[1] : 1.0f;
+
+			if (iteration % 2 != 0) {
+				std::swap(line_start, line_end);
+				std::swap(t_start, t_end);
+
+				t_start = 1.0f - t_start;
+				t_end = 1.0f - t_end;
 			}
 
-			t_start = glm::min(c1, c2);
-			t_end = glm::max(c1, c2);
+			//std::cout << "from (" << line_start.x << ", " << line_start.y << ") to (" << line_end.x << ", " << line_end.y << ") ts = " << t_start << ", te = " << t_end << ", N = " << collisions.size() << std::endl;
 
 			for (float t = t_start + 0.005f; t < t_end + accuracy; t += accuracy) {
 				float rt = glm::min(t, t_end - 0.005f);
@@ -1055,6 +1067,29 @@ namespace mini {
 		for (auto m = curve_1.begin(); m != curve_1.end(); ++m) res.push_back(*m);
 
 		return res;
+	}
+
+	inline std::vector<glm::vec2> remove_self_inters(
+		const std::vector<glm::vec2>& curve,
+		size_t start_index
+	) {
+		if (start_index >= curve.size()) {
+			throw std::runtime_error("cannot select index higher than curve length");
+		}
+
+		std::vector<glm::vec2> out_curve;
+		out_curve.reserve(curve.size());
+
+		auto first = out_curve.front();
+		for (auto iter = curve.begin() + start_index; iter != curve.end(); ++iter) {
+			out_curve.push_back(*iter);
+
+			if (glm::distance(*iter, first) < 0.005f) {
+				break;
+			}
+		}
+
+		return out_curve;
 	}
 
 	inline std::vector<glm::vec2> trim_curves(
@@ -1188,7 +1223,7 @@ namespace mini {
 		const float safe_height = -3.0f;
 
 		// generate detailed paths for c2 surfaces
-		auto body_lines1 = create_milling_curve(m_body_eqd, body_bounds, false, false, 0.2f, 0.75f, 0.3f, 0.58f, 0.007f, 0.5f, 0.005f);
+		/*auto body_lines1 = create_milling_curve(m_body_eqd, body_bounds, false, false, 0.2f, 0.75f, 0.3f, 0.58f, 0.007f, 0.5f, 0.005f);
 		m_path_4.push_back({ body_lines1.front().x, safe_height, body_lines1.front().z });
 		m_path_4.insert(m_path_4.end(), body_lines1.begin(), body_lines1.end());
 		m_path_4.push_back({ body_lines1.back().x, safe_height, body_lines1.back().z });
@@ -1204,6 +1239,16 @@ namespace mini {
 		m_path_4.push_back({ body_lines3.back().x, safe_height, body_lines3.back().z });
 
 		auto body_lines4 = create_milling_curve(m_body_eqd, body_bounds, true, false, 0.36f, 0.74f, 0.7f, 0.9f, 0.004f, 0.05f, 0.01f);
+		m_path_4.push_back({ body_lines4.front().x, safe_height, body_lines4.front().z });
+		m_path_4.insert(m_path_4.end(), body_lines4.begin(), body_lines4.end());
+		m_path_4.push_back({ body_lines4.back().x, safe_height, body_lines4.back().z });*/
+
+		auto body_lines3 = create_milling_curve_2(m_body_eqd, body_bounds, true, false, 0.2f, 0.8f, 0.0f, 0.5f, 0.002f, 0.005f, 0.001f);
+		m_path_4.push_back({ body_lines3.front().x, safe_height, body_lines3.front().z });
+		m_path_4.insert(m_path_4.end(), body_lines3.begin(), body_lines3.end());
+		m_path_4.push_back({ body_lines3.back().x, safe_height, body_lines3.back().z });
+
+		auto body_lines4 = create_milling_curve_2(m_body_eqd, body_bounds, true, false, 0.2f, 0.8f, 1.0f, 0.45f, 0.002f, 0.005f, 0.001f);
 		m_path_4.push_back({ body_lines4.front().x, safe_height, body_lines4.front().z });
 		m_path_4.insert(m_path_4.end(), body_lines4.begin(), body_lines4.end());
 		m_path_4.push_back({ body_lines4.back().x, safe_height, body_lines4.back().z });
@@ -1251,26 +1296,16 @@ namespace mini {
 		int_body_keyhole.s22 = optimize_curve(int_body_keyhole.s22);
 
 		keyhole_bounds.push_back(&int_body_keyhole.s21);
-		keyhole_bounds.push_back(&int_body_keyhole.s22);
 
-		//auto keyhole_lines1 = create_milling_curve(m_keyhole_eqd, keyhole_bounds, true, false, 0.45f, 0.6666f, 0.05f, 0.5f, 0.008f, 0.95f, 0.02f);
-
-		auto keyhole_lines1 = create_milling_curve_2(m_keyhole_eqd, keyhole_bounds, true, false, 0.45f, 0.6666f, 0.008f, 0.02f);
+		auto keyhole_lines1 = create_milling_curve_2(m_keyhole_eqd, keyhole_bounds, true, false, 0.45f, 0.6666f, 0.0f, 1.0f, 0.008f, 0.02f, 0.01f);
 		m_path_4.push_back({ keyhole_lines1.front().x, safe_height, keyhole_lines1.front().z });
 		m_path_4.insert(m_path_4.end(), keyhole_lines1.begin(), keyhole_lines1.end());
 		m_path_4.push_back({ keyhole_lines1.back().x, safe_height, keyhole_lines1.back().z });
 
-		auto keyhole_lines2 = create_milling_curve_2(m_keyhole_eqd, keyhole_bounds, true, false, 0.6705f, 0.85f, 0.008f, 0.02f);
+		auto keyhole_lines2 = create_milling_curve_2(m_keyhole_eqd, keyhole_bounds, true, false, 0.6705f, 0.85f, 0.0f, 1.0f, 0.008f, 0.02f, 0.001f);
 		m_path_4.push_back({ keyhole_lines2.front().x, safe_height, keyhole_lines2.front().z });
-		m_path_4.insert(m_path_4.end(), keyhole_lines2.begin(), keyhole_lines2.end());
+	    m_path_4.insert(m_path_4.end(), keyhole_lines2.begin(), keyhole_lines2.end());
 		m_path_4.push_back({ keyhole_lines2.back().x, safe_height, keyhole_lines2.back().z });
-
-		/*auto keyhole_lines2 = create_milling_curve(m_keyhole_eqd, keyhole_bounds, false, false, 0.07f, 0.88f, 0.6705f, 0.85f, 0.008f, 0.05f, 0.02f);
-		m_path_4.push_back({ keyhole_lines2.front().x, safe_height, keyhole_lines2.front().z });
-		m_path_4.insert(m_path_4.end(), keyhole_lines2.begin(), keyhole_lines2.end());
-		m_path_4.push_back({ keyhole_lines2.back().x, safe_height, keyhole_lines2.back().z });*/
-
-		//auto keyhole_lines1 = create_milling_curve(m_keyhole_eqd, keyhole_bounds, false, false, 0.07f, 0.88f, 0.45f, 0.6666f, 0.008f, 0.95f, 0.02f);
 
 		// go over all the intersections as the last stage!
 		m_path_4.push_back({ world_body_outer.front().x, safe_height, world_body_outer.front().z });
@@ -1300,7 +1335,7 @@ namespace mini {
 		//m_app.add_object("milling_curve_f10", curve1);
 
 		auto curve2 = std::make_shared<curve>(m_app, m_app.m_store->get_line_shader(), m_path_4);
-		curve2->set_color({ 0.0f, 1.0f, 1.0f, 1.0f });
+		curve2->set_color({ 1.0f, 0.0f, 0.0f, 1.0f });
 		curve2->set_line_width(3.0f);
 		m_app.add_object("milling_curve_f10", curve2);
 	}
