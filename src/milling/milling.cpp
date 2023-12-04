@@ -318,14 +318,14 @@ namespace mini {
 		m_prepare_heightmap();
 
 		// path generation
-		//m_gen_path_1();
-	    //m_gen_path_2();
-		//m_gen_path_3();
+		m_gen_path_1();
+	    m_gen_path_2();
+		m_gen_path_3();
 		m_gen_path_4();
 
-		//m_export_path("1.k16", m_path_1);
-		//m_export_path("2.f12", m_path_2);
-		//m_export_path("3.f10", m_path_3);
+		m_export_path("1.k16", m_path_1);
+		m_export_path("2.f12", m_path_2);
+		m_export_path("3.f10", m_path_3);
 		m_export_path("4.k08", m_path_4);
 	}
 
@@ -920,6 +920,24 @@ namespace mini {
 				continue;
 			}
 
+			if (lines.size() > 0) {
+				auto prev_point = lines.back();
+				auto next_point = glm::mix(line_start, line_end, t_start + 0.005f);
+				auto dist = glm::distance(line_start, next_point);
+
+				std::cout << dist << std::endl;
+				
+				if (dist > 0.025f) {
+					int steps = static_cast<int>(floorf(dist / 0.025f));
+					float step = 1.0f / steps;
+
+					for (int i = 0; i < steps - 1; ++i) {
+						float it = glm::min(1.0f, i * step);
+						lines.push_back(glm::mix(prev_point, next_point, it));
+					}
+				}
+			}
+
 			for (float t = t_start + 0.005f; t < t_end + accuracy; t += accuracy) {
 				float rt = glm::min(t, t_end - 0.005f);
 				lines.push_back(glm::mix(line_start, line_end, rt));
@@ -1220,7 +1238,7 @@ namespace mini {
 
 		m_path_4.push_back({0.0f, -6.0f, 0.0f});
 
-		const float safe_height = -3.0f;
+		const float safe_height = -2.5f;
 
 		// generate detailed paths for c2 surfaces
 		/*auto body_lines1 = create_milling_curve(m_body_eqd, body_bounds, false, false, 0.2f, 0.75f, 0.3f, 0.58f, 0.007f, 0.5f, 0.005f);
