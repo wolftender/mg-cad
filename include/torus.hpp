@@ -4,9 +4,10 @@
 #include <algorithm>
 
 #include "object.hpp"
+#include "surface.hpp"
 
 namespace mini {
-	class torus_object : public scene_obj_t {
+	class torus_object : public scene_obj_t, public differentiable_surface_base {
 		private:
 			float m_inner_radius, m_outer_radius;
 			int m_div_u, m_div_v;
@@ -21,6 +22,8 @@ namespace mini {
 			GLuint m_pos_buffer, m_uv_buffer, m_index_buffer, m_vao;
 			std::shared_ptr<shader_t> m_shader;
 			std::shared_ptr<shader_t> m_alt_shader;
+			
+			trimmable_surface_domain m_domain;
 
 		public:
 			torus_object (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> alt_shader, float inner_radius, float outer_radius);
@@ -44,6 +47,25 @@ namespace mini {
 
 			void set_inner_radius (float r);
 			void set_outer_radius (float r);
+			
+		// differentiable surface interface
+		public:
+			virtual float get_min_u() const override;
+			virtual float get_max_u() const override;
+			virtual float get_min_v() const override;
+			virtual float get_max_v() const override;
+
+			virtual glm::vec3 sample(float u, float v) const override;
+			virtual glm::vec3 normal(float u, float v) const override;
+
+			virtual glm::vec3 ddu(float u, float v) const override;
+			virtual glm::vec3 ddv(float u, float v) const override;
+
+			virtual bool is_u_wrapped() const override;
+			virtual bool is_v_wrapped() const override;
+
+			virtual bool is_trimmable() const;
+			virtual trimmable_surface_domain& get_trimmable_domain();
 
 		private:
 			void m_rebuild ();

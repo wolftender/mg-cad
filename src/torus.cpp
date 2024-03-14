@@ -5,8 +5,14 @@
 #include <iostream>
 
 namespace mini {
-	torus_object::torus_object (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> alt_shader,
-		float inner_radius, float outer_radius) : scene_obj_t (scene, "torus") {
+	torus_object::torus_object (
+		scene_controller_base & scene, 
+		std::shared_ptr<shader_t> shader, 
+		std::shared_ptr<shader_t> alt_shader,
+		float inner_radius, 
+		float outer_radius) : 
+		scene_obj_t (scene, "torus"),
+		m_domain(2048U, 2048U, 0.0f, 0.0f, 1.0f, 1.0f) {
 
 		m_shader = shader;
 		m_alt_shader = alt_shader;
@@ -247,5 +253,89 @@ namespace mini {
 		glDeleteBuffers (1, &m_pos_buffer);
 		glDeleteBuffers (1, &m_uv_buffer);
 		glDeleteBuffers (1, &m_index_buffer);
+	}
+	
+	// differentiable surface interface
+	
+	float torus_object::get_min_u() const {
+		return 0.0f;
+	}
+	
+	float torus_object::get_max_u() const {
+		return 1.0f;
+	}
+	
+	float torus_object::get_min_v() const {
+		return 0.0f;
+	}
+	
+	float torus_object::get_max_v() const {
+		return 1.0f;
+	}
+
+    // TODO: optimize world matrix being recaltulated each step
+	glm::vec3 torus_object::sample(float u, float v) const {
+		float A = (m_outer_radius + m_inner_radius) / 2.0f;
+		float B = (m_outer_radius - m_inner_radius) / 2.0f;
+		
+		float x = cos(v) * (A + B * cos(u));
+		float y = sin(v) * (A + B * cos(u));
+		float z = B * sin(u);
+		
+		auto world_matrix = get_matrix();
+		auto world_pos = world_matrix * glm::vec4{ x, y, z, 1.0f }; // affine
+		
+		return world_pos;
+	}
+	
+	glm::vec3 torus_object::normal(float u, float v) const {
+		auto d1 = ddu(u, v);
+		auto d2 = ddv(u, v);
+		
+		return glm::cross(d1, d2);
+	}
+
+	glm::vec3 torus_object::ddu(float u, float v) const {
+		float A = (m_outer_radius + m_inner_radius) / 2.0f;
+		float B = (m_outer_radius - m_inner_radius) / 2.0f;
+		
+		float grad_x = -B * sin(u) * cos(v);
+		float grad_y = -B * sin(u) * sin(v);
+		float grad_z = -B * cos(u);
+		
+		auto world_matrix = get_matrix();
+		auto world_grad = world_matrix * glm::vec4{ grad_x, grad_y, grad_z, 0.0f };
+		
+		return world_grad; 
+	}
+	
+	glm::vec3 torus_object::ddv(float u, float v) const {
+		float A = (m_outer_radius + m_inner_radius) / 2.0f;
+		float B = (m_outer_radius - m_inner_radius) / 2.0f;
+		
+		float grad_x = -sin(v) * (A + B * cos(u));
+		float grad_y = cos(v) * (A + B * cos(u));
+		float grad_z = 0.0f;
+		
+		auto world_matrix = get_matrix();
+		auto world_grad = world_matrix * glm::vec4{ grad_x, grad_y, grad_z, 0.0f };
+		
+		return world_grad; 
+	}
+
+	bool torus_object::is_u_wrapped() const {
+		return true;
+	}
+	
+	bool torus_object::is_v_wrapped() const {
+		return false;
+	}
+
+	bool torus_object::is_trimmable() const {
+		return true;
+	}
+	
+	trimmable_surface_domain& torus_object::get_trimmable_domain() {
+		return m_domain;
 	}
 }
