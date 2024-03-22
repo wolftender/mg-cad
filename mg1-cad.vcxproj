@@ -146,6 +146,7 @@
     <ClInclude Include="include\cube.hpp" />
     <ClInclude Include="include\billboard.hpp" />
     <ClInclude Include="include\curve.hpp" />
+    <ClInclude Include="include\diffdebug.hpp" />
     <ClInclude Include="include\event.hpp" />
     <ClInclude Include="include\factory.hpp" />
     <ClInclude Include="include\gapfilling.hpp" />
@@ -158,6 +159,7 @@
     <ClInclude Include="include\object.hpp" />
     <ClInclude Include="include\point.hpp" />
     <ClInclude Include="include\scamera.hpp" />
+    <ClInclude Include="include\segments.hpp" />
     <ClInclude Include="include\serializer.hpp" />
     <ClInclude Include="include\shader.hpp" />
     <ClInclude Include="include\sprite.hpp" />
@@ -179,6 +181,7 @@
     <ClCompile Include="src\bspline.cpp" />
     <ClCompile Include="src\bsplinesurf.cpp" />
     <ClCompile Include="src\curve.cpp" />
+    <ClCompile Include="src\diffdebug.cpp" />
     <ClCompile Include="src\factory.cpp" />
     <ClCompile Include="src\gapfilling.cpp" />
     <ClCompile Include="src\gizmo.cpp" />
@@ -197,6 +200,7 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\point.cpp" />
     <ClCompile Include="src\scamera.cpp" />
+    <ClCompile Include="src\segments.cpp" />
     <ClCompile Include="src\serializer.cpp" />
     <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\sprite.cpp" />

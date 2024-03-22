@@ -10,6 +10,7 @@
 #include "serializer.hpp"
 #include "gapfilling.hpp"
 #include "intersection.hpp"
+#include "diffdebug.hpp"
 
 namespace mini {
 	constexpr const std::string_view app_title = "modelowanie geometryczne 1";
@@ -873,6 +874,10 @@ namespace mini {
 					m_find_intersection_cursor();
 				}
 
+				if (ImGui::MenuItem("Debug Surface", nullptr, nullptr, selected_objects)) {
+					m_debug_surfaces();
+				}
+
 				ImGui::Separator ();
 
 				if (ImGui::MenuItem ("Translate", "T", nullptr, selected_objects)) {
@@ -1265,6 +1270,18 @@ namespace mini {
 
 	void application::m_find_intersection_cursor() {
 		intersection_controller algorithm(*this, m_store, true);
+	}
+
+	void application::m_debug_surfaces() {
+		for (auto iter = get_selected_objects(); iter->has(); iter->next()) {
+			auto object = iter->get_object();
+			auto diff_surface = std::dynamic_pointer_cast<differentiable_surface_base>(object);
+
+			if (diff_surface) {
+				auto debugger = std::make_shared<diff_surface_debugger>(*this, m_store->get_line_shader(), object, diff_surface);
+				m_add_object(object->get_name() + "_d", debugger, false);
+			}
+		}
 	}
 
 	void application::m_begin_box_select () {

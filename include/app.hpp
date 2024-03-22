@@ -246,6 +246,7 @@ namespace mini {
 			void m_fillin_selection ();
 			void m_find_intersection();
 			void m_find_intersection_cursor();
+			void m_debug_surfaces();
 
 			// selection methods
 			void m_begin_box_select ();

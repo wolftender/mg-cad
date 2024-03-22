@@ -256,6 +256,7 @@ namespace mini {
 	}
 	
 	// differentiable surface interface
+	constexpr float DPI = 2.0f * glm::pi<float>();
 	
 	float torus_object::get_min_u() const {
 		return 0.0f;
@@ -275,6 +276,9 @@ namespace mini {
 
     // TODO: optimize world matrix being recaltulated each step
 	glm::vec3 torus_object::sample(float u, float v) const {
+		u = u * DPI;
+		v = v * DPI;
+
 		float A = (m_outer_radius + m_inner_radius) / 2.0f;
 		float B = (m_outer_radius - m_inner_radius) / 2.0f;
 		
@@ -296,6 +300,9 @@ namespace mini {
 	}
 
 	glm::vec3 torus_object::ddu(float u, float v) const {
+		u = u * DPI;
+		v = v * DPI;
+
 		float A = (m_outer_radius + m_inner_radius) / 2.0f;
 		float B = (m_outer_radius - m_inner_radius) / 2.0f;
 		
@@ -310,6 +317,9 @@ namespace mini {
 	}
 	
 	glm::vec3 torus_object::ddv(float u, float v) const {
+		u = u * DPI;
+		v = v * DPI;
+
 		float A = (m_outer_radius + m_inner_radius) / 2.0f;
 		float B = (m_outer_radius - m_inner_radius) / 2.0f;
 		
