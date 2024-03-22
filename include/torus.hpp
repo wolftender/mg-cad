@@ -16,17 +16,17 @@ namespace mini {
 
 			std::vector<float> m_positions;
 			std::vector<float> m_uv;
+			std::vector<float> m_domain_uv;
 			std::vector<GLuint> m_indices;
 
 			// standard opengl stuff
-			GLuint m_pos_buffer, m_uv_buffer, m_index_buffer, m_vao;
+			GLuint m_pos_buffer, m_uv_buffer, m_tex_buffer, m_index_buffer, m_vao;
 			std::shared_ptr<shader_t> m_shader;
-			std::shared_ptr<shader_t> m_alt_shader;
 			
 			trimmable_surface_domain m_domain;
 
 		public:
-			torus_object (scene_controller_base & scene, std::shared_ptr<shader_t> shader, std::shared_ptr<shader_t> alt_shader, float inner_radius, float outer_radius);
+			torus_object (scene_controller_base & scene, std::shared_ptr<shader_t> shader, float inner_radius, float outer_radius);
 			~torus_object ();
 
 			torus_object (const torus_object &) = delete;
@@ -70,7 +70,13 @@ namespace mini {
 		private:
 			void m_rebuild ();
 			void m_generate_geometry ();
-			void m_build_geometry (const std::vector<float> & positions, const std::vector<float> & uv, const std::vector<GLuint> & indices);
+
+			void m_build_geometry (
+				const std::vector<float> & positions, 
+				const std::vector<float> & uv, 
+				const std::vector<float> & domain_uv, 
+				const std::vector<GLuint> & indices);
+
 			void m_free_geometry ();
 	};
 }
