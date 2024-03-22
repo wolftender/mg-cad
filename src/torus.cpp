@@ -293,8 +293,8 @@ namespace mini {
 	}
 	
 	glm::vec3 torus_object::normal(float u, float v) const {
-		auto d1 = ddu(u, v);
-		auto d2 = ddv(u, v);
+		auto d1 = ddv(u, v);
+		auto d2 = ddu(u, v);
 		
 		return glm::cross(d1, d2);
 	}
@@ -308,7 +308,7 @@ namespace mini {
 		
 		float grad_x = -B * sin(u) * cos(v);
 		float grad_y = -B * sin(u) * sin(v);
-		float grad_z = -B * cos(u);
+		float grad_z = B * cos(u);
 		
 		auto world_matrix = get_matrix();
 		auto world_grad = world_matrix * glm::vec4{ grad_x, grad_y, grad_z, 0.0f };
