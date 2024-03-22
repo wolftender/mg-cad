@@ -363,7 +363,7 @@ namespace mini {
 	}
 
 	bool torus_object::is_v_wrapped() const {
-		return false;
+		return true;
 	}
 
 	bool torus_object::is_trimmable() const {
