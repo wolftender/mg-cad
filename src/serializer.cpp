@@ -494,7 +494,6 @@ namespace mini {
 		auto torus = std::make_shared<torus_object> (
 			scene,
 			store->get_mesh_shader (),
-			store->get_alt_mesh_shader (),
 			small_r, large_r
 		);
 
